@@ -1,124 +1,180 @@
-# SHREENIKETH — Backend, Safety Layer and Analytics Lead
+# SHREENIKETH — Frontend: design kit, chat assistant panel, action log, debug drawer
 
-**Mission:** own the deterministic spine: sessions and the WebSocket, the **validator**, the **query engine**, the **executor**, the **verifier**, and the analytics. This is what makes the agent safe and trustworthy. Shashank's LLM proposes; your code decides what is allowed and checks the result.
+Hi Shreeniketh. You and Aditya are building the **AppPilot web app** (the screen) for HackFest 2026, problem 5A. Praneel's side builds the data, the backend server and the AI agent. This file tells you exactly what to build, how it must look, which backend API to use, and how to push your work.
 
-Read first: `00_DECISIONS_AND_PLAN.md` (sections 5, 6, 7, 8). Then all of `contracts/` (especially `interfaces.py`, `query.py`, `ui_state.py`, `dates.py`).
-
-You own: `backend/` and `docker-compose.yml`. Do not edit other folders. Contract changes follow the change rule.
-
----
-
-## What we want from you (deliverables)
-
-| # | Deliverable | File | Implements |
-|---|---|---|---|
-| B0 | docker-compose (Postgres 16 + backend), config, `make up` | `docker-compose.yml`, `backend/` | — |
-| B1 | Application loader and lookups | `backend/app_store.py` | loads `data/olist/application.json` (fall back to `examples/tenant_a_sample.json`) |
-| B2 | Session manager + WebSocket hub | `backend/sessions.py`, `backend/ws.py` | authoritative `UiState`, versions, nonces, ack waiting |
-| B3 | Query engine | `backend/query_engine.py` | `QueryEngine` |
-| B4 | Validator | `backend/validator.py` | `Validator` |
-| B5 | Executor (tools, undo, confirmation) | `backend/executor.py` | `Executor` |
-| B6 | Verifier | `backend/verifier.py` | `Verifier` |
-| B7 | Analytics | `backend/analytics.py` | `compare_periods`, `explain_change`, trends, `Evidence` |
-| B8 | REST + wiring to the agent + tracing | `backend/main.py`, `backend/trace.py` | endpoint table in the decisions file |
-| B9 | Fault injection | `backend/faults.py` | `POST /api/debug/fault` |
-| B10 | Tests | `backend/tests/` | all of the above |
-
-Order: B0 → B1 → B3 → B2 → B4 → B5 → B6 → B8 → B7 → B9 → B10 (write tests as you go).
+**Your part:** the shared design kit (components and theme), the **chat panel** where the user talks to the assistant, the live **action log** that shows every step the assistant takes, confirm and undo, citation chips, and the debug drawer.
+**Aditya's part:** the app shell, navigation, pages, charts and tables, URL state and the live connection. You two share one React project.
 
 ---
 
-## B3 — Query engine (~4 h)
-**Input:** `QuerySpec` (dataset, metric ids, dimensions, filters, date range, order, limit). **Output:** `QueryResult` (columns = dimensions then metrics, rows, SQL, row_count, `series_hash` via `canonical_series_hash`).
-1. Compile from the semantic layer: take each metric's `sql` from metadata, `GROUP BY` the dimensions, `WHERE` from filters and the date range on the dataset's `time_field`, `ORDER BY`, `LIMIT`.
-2. **Never string-concatenate user values.** Field names must be in the dataset's field list (whitelist); values go in as bound parameters.
-3. Validate the final SQL with `sqlglot` [PUB: `tobymao/sqlglot`]: exactly one statement, `SELECT` only, tables/columns in the allowlist, a row limit.
-4. Run on a **read-only DB role** (`default_transaction_read_only`) with a statement timeout (e.g. 5 s).
-5. `POST /api/widget-data` uses the **same** engine to serve the browser.
-6. **Honest limitation to remember:** the verifier's expectation and the browser's data both come from this compiler, so a compiler bug is invisible to the ack check. Praneel's gold answers (with independent hand SQL) are the safety net; keep this compiler small and well-tested.
+## 1. What AppPilot is (read once)
+AppPilot is an analytics app over real Brazilian e-commerce data (Olist, 2016–2018) with an AI assistant inside it. A user types "Show revenue by customer state last quarter", and the assistant opens the right page, sets the filters, checks that the screen really shows the right data, and answers with numbers that cite their source. **Your chat panel is where judges watch the assistant think and act.** Make every step visible, clear and honest.
 
-## B2 — Sessions and WebSocket (~3 h)
-- `POST /api/session` creates a session with an authoritative `UiState` (version 0, default page).
-- `WS /ws/{session_id}`: you send `apply_state` and `agent_event` envelopes; you receive `render_ack` and `user_state_change` (models in `contracts/ui_state.py`, `contracts/events.py`).
-- `apply(state, cause)`: increment `version` (S6), generate a unique `nonce`, send, and **await the matching ack** (same version and nonce) with a timeout (~5–8 s). Return the ack or a timeout error.
-- Keep an **undo stack** of previous states. `POST /api/session/{id}/undo` pops and re-applies.
-- `user_state_change` from the browser updates the authoritative state (version still increments).
+## 2. Setup
+1. Accept the GitHub invite, then: `git clone https://github.com/Praneel2005/apppiolt-frontend.git` and `cd apppiolt-frontend`
+2. Install **Node 20 LTS** and **Python 3.11+**.
+3. Read: `contracts/events.py` (the assistant's event types), `contracts/ui_state.py` (state and WebSocket messages), `contracts/actions.py` (`AgentConfig.confirm_mode`).
+4. **Run the backend locally.** You are not on our network, so use the **mock backend** in `mock/`: same API as the real server, real Olist numbers, and a **scripted fake assistant** that streams realistic events (so you can build the chat before the real AI exists).
+   ```
+   python -m venv .venv
+   # Windows: .venv\Scripts\activate      macOS/Linux: source .venv/bin/activate
+   pip install -r mock/requirements.txt
+   python -m uvicorn mock.server:app --port 8000 --reload      # run from the repo root
+   ```
+   If `mock/` is not in the repo yet, Praneel will push it; until then build against the sample events in §6.
+5. **Aditya creates the Vite project in `frontend/`** in his first hour. Pull it, then `cd frontend && npm ci`. Start with the design kit (§3), which needs nothing else.
 
-## B4 — Validator (~4 h)
-`validate(app, plan, state) -> ValidationResult` with a normalized plan and typed issues (`contracts/query.py`). Checks per step:
-- tool is in the allowed list; `page_id`, `filter_id`, `widget_id`, `metric`, `dimension` exist (`invalid_reference`);
-- filter op is in the filter's `allowed_ops`; values are in `allowed_values`, **after synonym resolution** ("western" → "West") (`invalid_value`); on failure fill `suggestion` with the nearest allowed value (edit distance) so the planner can fix it;
-- date presets resolve through `contracts/dates.py` against `app.as_of_date` (`invalid_date`); store explicit `from`/`to` plus the preset label (S3);
-- sort field is valid for the page (S4);
-- `unsafe` for anything mutating or outside the allowlist.
-- Apply the shared semantics S1–S5 when simulating the plan to compute the **expected final `UiState`** (the verifier reuses this).
-Write many small unit tests: this component is fully deterministic and is where the "near-zero action hallucination" KPI is earned.
+## 3. Design kit (you own this; Aditya uses it)
+**Feel:** clean, light, professional analytics tool. Plenty of whitespace, no gradients, no decorative stripes.
 
-## B5 — Executor (~3 h)
-Tools (names from `contracts/actions.py`):
-- `navigate` (S1, with `keep_state`), `set_filter` (S2), `set_date_range` (S3), `set_sort` (S4), `open_deep_link`: change the state via `apply(...)`, wait for the ack.
-- `read_view(widget_id)`: run the widget's query through the engine; return rows as `Evidence(kind="widget_read")`.
-- `run_metric_query`, `compare_periods`, `explain_change`: via B3/B7; return `Evidence`.
-- `search_pages`: delegates to Shashank's retrieval (or returns candidates passed in).
-- Confirmation: if `AgentConfig.confirm_mode` is on, or the policy marks the step as needing it, emit a `confirm_request` and wait for `POST /api/session/{id}/confirm`. Default policy: reversible UI-state steps auto-run with undo; anything mutating is **disabled**. (We implement both readings of the rulebook's "confirmation for state changes" through the toggle.)
-- Return `StepResult` with an `error_code` from the taxonomy.
+| Token | Value |
+|---|---|
+| Page background | `#F8FAFC` |
+| Card / surface | `#FFFFFF`, border `#E2E8F0`, radius 12px, shadow `0 1px 2px rgba(15,23,42,.06)` |
+| Text / muted text | `#0F172A` / `#64748B` |
+| Primary | `#4F46E5` (hover `#4338CA`) |
+| Success / warning / danger | `#16A34A` / `#D97706` / `#DC2626` |
+| Font | Inter (fallback: system-ui), 14px body, 20px titles |
+| Spacing | 8px grid (8 / 16 / 24 / 32) |
 
-## B6 — Verifier (~2 h)
-`verify(app, expected_state, ack) -> VerifyResult`:
-1. Route in the ack equals the expected route.
-2. For each widget on the page: expected `applied_filters` = the page filters that apply to that widget under rule S5, with the expected values; compare to `ack.applied_filters` (and date range, sort).
-3. Independently run the widget's expected `QuerySpec` through the **query engine** and compare `row_count` and `series_hash` with the ack. Mismatch → a `mismatches` entry `{widget_id, field, expected, actual}`.
-This is **not** a re-read of the store your executor wrote. It compares what the browser really did with what the engine says it should have shown.
+Put the tokens in the Tailwind config, then build in `src/ui/`: `Card`, `Button` (primary / secondary / ghost / danger), `Badge` (neutral / success / warning / danger), `Toggle`, `Select`, `MultiSelect` (searchable), `Spinner`, `Skeleton`, `Drawer`, `Tooltip`, `EmptyState`. Keep them small and typed. **Push the kit early (by 9 Oct midday) so Aditya can use it.**
 
-## B7 — Analytics (~4 h)
-Deterministic functions that return `Evidence` (with the validated SQL, source, and machine-readable values):
-- `compare_periods(metric, period_a, period_b, dims)`: current vs previous (use `previous_period` from `dates.py`), absolute and % change, per-dimension if requested.
-- Trend: monthly series, change over the window, direction.
-- `explain_change(metric, period_a, period_b)`: for **additive** metrics only (S9), decompose the change by each candidate dimension and rank members by **contribution to the total change** (member delta ÷ total delta), showing the top contributors per dimension and the dimension with the most concentrated change. Phrase results as "largest contributors", never as causes. For non-additive metrics return per-dimension deltas without contribution percentages.
-- Handle empty results and zero baselines explicitly (return a typed "no data" evidence so the agent says so).
-Every number must be traceable to the SQL that produced it.
+## 4. Layout and where your parts sit
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ Top bar: AppPilot · Olist Marketplace Analytics   [Data as of 31 Aug 2018]  [Debug] │
+├──────────────┬──────────────────────────────────────────────┬────────────────┤
+│ Left nav     │ Page (Aditya)                                │ CHAT PANEL     │
+│ (Aditya)     │                                              │ (you, 400px)   │
+│              │                                              │                │
+├──────────────┴──────────────────────────────────────────────┴────────────────┤
+│ DEBUG DRAWER (you): slides up from the bottom when [Debug] is clicked          │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
 
-## B8 — Wiring and tracing (~2 h)
-- Implement the endpoint table in the decisions file §7.
-- `POST /api/session/{id}/message` starts `agent.handle(...)` as a background task and streams each `AgentEvent` over the WebSocket as an `AgentEventEnvelope`. Shashank implements `agent.handle` (signature in `contracts/interfaces.py`); until then plug in a **scripted agent** that runs a fixed plan, so Aditya can build the UI.
-- Write a JSONL **trace** per run (every event, tool call, SQL, ack, timings). Praneel's evaluation and our debugging depend on it. Expose `GET /api/session/{id}/trace`.
+### Chat panel (400px, right side, collapsible to a 56px icon rail)
+```
+┌ AppPilot assistant ───────────── [Confirm mode ○] [↶ Undo] ┐
+│                                                             │
+│  (empty state) Try asking:                                  │
+│   [Show revenue by customer state last quarter]             │
+│   [Compare orders in São Paulo last month]                  │
+│   [Why did revenue change in November 2017?]                │
+│   [Open the late delivery trend]                            │
+│   [Delete all March orders]   ← shows a refusal             │
+│                                                             │
+│                      ┌─────────────────────────┐            │
+│                      │ user message (right)    │            │
+│                      └─────────────────────────┘            │
+│  ┌ Steps (collapsible, live) ──────────────────────┐        │
+│  │ 🔎 Understood: compare periods                  │        │
+│  │ 📄 Pages found: Revenue by customer state (+2)  │        │
+│  │ 🧭 Plan: navigate → set filter → set dates      │        │
+│  │ ✅ Plan checked against the app                  │        │
+│  │ ▶ navigate · set_filter · set_date_range        │        │
+│  │ 🛡 Screen verified ✓   (or red: 1 mismatch ▾)   │        │
+│  │ 📊 Evidence e1 read from widget                 │        │
+│  └──────────────────────────────────────────────────┘        │
+│  ┌ answer (left) ──────────────────────────────────┐        │
+│  │ … top entry is SP with revenue R$ 1,234,567 [e1]│        │
+│  │ [Open page]                                      │        │
+│  └──────────────────────────────────────────────────┘        │
+│ ┌──────────────────────────────────────────┐ [Send]          │
+│ │ Ask about your data…                     │                 │
+│ └──────────────────────────────────────────┘                 │
+└─────────────────────────────────────────────────────────────┘
+```
 
-## B9 — Fault injection (~1 h)
-`POST /api/debug/fault {kind}` with kinds like `drop_filter` (widget-data ignores one filter), `empty_widget`, `stale_render`, `slow_widget`, `rename_page` (metadata changes mid-session). Used by the demo (to show the verifier catching a wrong render) and by evaluation (error-recovery KPI). Dev-only.
+## 5. Behaviour you must implement
+1. **Sending:** `POST /api/session/{session_id}/message` with `{"text": "...", "config": {"confirm_mode": true|false}}` → 202. The reply arrives as a stream of `agent_event` messages on the WebSocket (Aditya's connection puts them into the store; read them with `useAgentEvents()`). Disable the input while a run is active (until the `done` event); show a spinner on the current step.
+2. **Steps timeline:** one row per event, appended live in `seq` order (§6 table). Collapsed to a one-line summary once the answer arrives; click to expand.
+3. **Verify row:** green badge "Screen verified ✓" when `data.ok` is true. When false, a red badge "Screen mismatch" that expands to list each mismatch (`widget_id`, `field`, expected vs actual). **Never hide a mismatch**; it is a feature the judges should see.
+4. **Answer bubble:** render `data.text`, turning citation markers like `[e1]` into small chips. Clicking a chip calls Aditya's `highlightWidget(evidence.source)` (the `evidence` event with that `evidence_id` tells you the widget). Show `data.deep_links` as "Open page" buttons that navigate to the route.
+5. **Confirm mode:** a toggle in the header (default **off**). When on, the assistant sends `confirm_request {action_id, summary}` before changing the screen: show an inline card with the summary and **Approve / Decline** → `POST /api/session/{id}/confirm` with `{"action_id", "approve": true|false}`.
+6. **Undo:** header button → `POST /api/session/{id}/undo`. The server pushes the previous state to the screen; show a small toast "Reverted to the previous view".
+7. **Errors:** an `error` event shows a red row with `message`; if `recoverable`, add a "Try again" button that resends the last message.
+8. **Suggested prompts:** the five chips in the empty state send that text when clicked.
+9. **Keyboard:** Enter sends, Shift+Enter makes a new line, Esc collapses the panel.
 
----
+## 6. Assistant events (exact; from `contracts/events.py`)
+Every WebSocket message of this kind looks like `{"type": "agent_event", "event": {"seq": 3, "type": "plan", "data": {...}}}`.
 
-## What to read and explore (time-boxed)
-| Item | Time | What to extract |
+| `event.type` | `data` | Show as |
 |---|---|---|
-| `contracts/` end to end | 45 min | Every type you will produce/consume |
-| BIRD paper (NeurIPS 2023) | 20 min | Why metric definitions matter in text-to-SQL; don't let the model write free SQL |
-| CRITIC (arXiv 2305.11738) | 20 min | Verification must use an **external** signal; that is your verifier |
-| ToolSafe (arXiv 2601.10156) and the "Closed-World Resolution" paper (arXiv 2609.19425), abstracts | 20 min | Related guardrail work; we apply the same idea to app metadata and must say so |
-| τ-bench paper and `sierra-research/tau-bench` repo | 30 min | State-based scoring and how tool errors are typed |
-| Docs: FastAPI WebSockets, psycopg 3, sqlglot (`tobymao/sqlglot`) | 20 min each | APIs |
-| Postgres: read-only roles, `statement_timeout` | 15 min | Safe execution |
+| `understanding` | `{intent, slots}` | 🔎 "Understood: <intent in words>" (`compare_periods` → "compare periods", `unsafe_action` → "not allowed") |
+| `retrieval` | `{candidates: [{page_id, title}]}` | 📄 "Pages found: <first title> (+N)", expandable list |
+| `plan` | `{steps: [{tool, args}]}` | 🧭 "Plan: navigate → set filter → …" (tool names in words) |
+| `validation` | `{ok, issues}` | ✅ "Plan checked against the app", or ⚠ list of issues |
+| `confirm_request` | `{action_id, summary}` | inline confirm card (§5.5) |
+| `action` | `{tool, args, status}` | ▶ one line per tool call |
+| `verify` | `{ok, mismatches}` | 🛡 green or red badge (§5.3) |
+| `evidence` | `{evidence_id, kind, source, query, values}` | 📊 "Evidence e1 read from <source>"; keep it for the citation chips |
+| `answer_delta` | `{text}` | append to the answer while streaming (may not be used yet) |
+| `answer` | `{text, citations, deep_links}` | the answer bubble |
+| `error` | `{code, message, recoverable}` | red row (§5.7) |
+| `done` | `{steps, replans, elapsed_ms}` | end of run; re-enable input; small muted "done in 2.1 s" |
 
-## Interfaces
-- **You consume:** `application.json` and the Postgres data (Praneel); `Agent.handle` (Shashank); `render_ack` (Aditya).
-- **You provide:** the endpoints and WebSocket; implementations of `Validator`, `QueryEngine`, `Executor`, `Verifier`; analytics evidence.
-- Post your endpoint list with example payloads in the chat as soon as the skeleton runs, so Aditya can build against it.
+Sample stream to build against before the mock is ready:
+```json
+{"type":"agent_event","event":{"seq":1,"type":"understanding","data":{"intent":"set_state","slots":{}}}}
+{"type":"agent_event","event":{"seq":2,"type":"retrieval","data":{"candidates":[{"page_id":"sales.revenue_by_customer_state","title":"Revenue by customer state"}]}}}
+{"type":"agent_event","event":{"seq":3,"type":"plan","data":{"steps":[{"tool":"navigate","args":{"page_id":"sales.revenue_by_customer_state"}},{"tool":"set_date_range","args":{"preset":"last_quarter"}}]}}}
+{"type":"agent_event","event":{"seq":4,"type":"validation","data":{"ok":true,"issues":[]}}}
+{"type":"agent_event","event":{"seq":5,"type":"action","data":{"tool":"navigate","args":{"page_id":"sales.revenue_by_customer_state"},"status":"running"}}}
+{"type":"agent_event","event":{"seq":6,"type":"verify","data":{"ok":true,"mismatches":[]}}}
+{"type":"agent_event","event":{"seq":7,"type":"evidence","data":{"evidence_id":"e1","kind":"widget_read","source":"sales.revenue_by_customer_state.chart","query":null,"values":{}}}}
+{"type":"agent_event","event":{"seq":8,"type":"answer","data":{"text":"SP has the highest revenue last quarter [e1].","citations":["e1"],"deep_links":["/sales/revenue-by-customer-state"]}}}
+{"type":"agent_event","event":{"seq":9,"type":"done","data":{"steps":3,"replans":0,"elapsed_ms":2100}}}
+```
 
-## Done when
-- Checkpoint **I1**: backend serves `GET /api/application`, pushes an `apply_state`, receives an ack, and verifies it.
-- Checkpoint **I2**: a hand-written plan (no LLM) passes validator → executor → verifier; a fault-injected wrong ack is detected with the right `mismatches`.
-- Query engine rejects non-SELECT, unknown columns and oversized queries; unit tests cover it.
-- Analytics results match Praneel's gold answers on the dev analytic tasks.
+## 7. Debug drawer (bottom, opened by the [Debug] button in the top bar)
+Tabs:
+- **State:** current UI state JSON from `useUiState()` (pretty-printed, copy button).
+- **Last ack:** the last `render_ack` the browser sent (Aditya stores it in the store as `lastAck`).
+- **Verify:** the last `verify` event, with mismatches in a table.
+- **Faults:** a dropdown `none / drop_filter / empty_widget / slow_widget` → `POST /api/debug/fault {"kind": ...}`. In the demo we switch on `drop_filter` and show the verify row turning red. Label the tab "Developer / demo tools".
 
-## Pitfalls
-- String-building SQL from user text.
-- Using the store as the verifier's source of truth (circular).
-- Forgetting that dates resolve against `as_of_date`, not today.
-- Decomposing non-additive metrics.
-- Letting a missing ack hang a session (always time out).
-- Different filter semantics between your verifier and Aditya's renderer (S5).
+## 8. Backend API you use (same on the mock and the real server)
+| Call | Body → response |
+|---|---|
+| `POST /api/session/{id}/message` | `{"text", "config": {"confirm_mode"}}` → 202; events arrive on the WebSocket |
+| `POST /api/session/{id}/confirm` | `{"action_id", "approve"}` → `{"ok"}` |
+| `POST /api/session/{id}/undo` | → `{"ack", "verify"}` or `{"error"}` |
+| `POST /api/debug/fault` | `{"kind"}` → `{"kind"}` |
+| `GET /api/application` | page titles, if you need them for display |
 
-## Messages you owe others
-- To Aditya: the endpoint list and sample payloads; the mock/scripted agent.
-- To Shashank: confirmation that your `Validator`/`Executor` match the interfaces, plus real `ValidationIssue` examples to feed his retry prompt.
-- To Praneel: the semantic-layer compiler entry point so he can compute gold answers.
+The session id and the WebSocket come from Aditya's `useSession()`; do not open a second connection.
+
+## 9. Folder ownership inside `frontend/`
+| You (Shreeniketh) | Aditya |
+|---|---|
+| `src/ui/` (design kit), `src/chat/`, `src/debug/`, Tailwind theme config | `src/app/`, `src/nav/`, `src/pages/`, `src/widgets/`, `src/state/`, `src/net/`, `src/lib/` |
+
+Shared contract between you: Aditya's `src/state/store.ts` exposes `useUiState()`, `useSession()`, `useAgentEvents()`, `lastAck`, and he exports `highlightWidget(id)`. Agree on these names on day one and don't rename them later.
+
+## 10. How to push your work
+- Work on a branch: `git checkout -b shree/<feature>` (for example `shree/chat-panel`).
+- Commit small and often: `git commit -m "chat: steps timeline"`. Never commit `node_modules`, `.env` or build output.
+- Push and open a **Pull Request into `main`** on GitHub: `git push -u origin shree/<feature>`. Praneel reviews and merges.
+- Before starting work each day: `git checkout main && git pull`, then rebase or merge into your branch.
+- **Only change files inside `frontend/`.** If something in `contracts/`, `mock/` or the API looks wrong, message Praneel; don't edit it.
+
+## 11. Deadlines
+| When | You must have |
+|---|---|
+| **8 Oct (tonight)** | Read this file and the contracts; Tailwind theme and first components started |
+| **9 Oct, 13:00** | Design kit pushed (Aditya needs it) |
+| **9 Oct, 23:00** | Chat panel sends messages and renders the full event stream from the mock (steps timeline, answer, citations) |
+| **10 Oct, 18:00** | Confirm card, undo, verify mismatch view, error rows, suggested prompts, debug drawer with faults; Playwright test: send a message → steps appear → answer with a citation chip |
+| **10 Oct, 21:00** | Feature freeze; `npm run build` passes; demo rehearsal on Praneel's PC |
+
+## 12. Definition of done
+- [ ] Every event type in §6 renders correctly and live, in order.
+- [ ] Verify mismatches are clearly visible (test with the `drop_filter` fault).
+- [ ] Citation chips highlight the right widget; "Open page" navigates.
+- [ ] Confirm mode works end to end (approve and decline); undo works.
+- [ ] Suggested prompts, keyboard shortcuts, collapsed panel, error retry.
+- [ ] Debug drawer shows state, last ack and verify, and switches faults.
+- [ ] The design kit is used consistently across the app.
+
+If you use an AI coding assistant, give it this file plus `AGENTS.md` and the `contracts/` folder. Questions → Praneel.

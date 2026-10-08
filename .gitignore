@@ -12,3 +12,6 @@ node_modules/
 dist/
 playwright-report/
 test-results/
+
+mock/olist_mock.sqlite
+__pycache__/
