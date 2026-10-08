@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ── AppPilot design tokens ── */
+@theme {
+  --color-primary: #4F46E5;
+  --color-primary-hover: #4338CA;
+  --color-success: #16A34A;
+  --color-warning: #D97706;
+  --color-danger: #DC2626;
+  --color-page-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-border: #E2E8F0;
+  --color-text: #0F172A;
+  --color-muted: #64748B;
+
+  --font-family-sans: Inter, system-ui, sans-serif;
+  --font-size-body: 14px;
+  --font-size-title: 20px;
+  --font-size-kpi: 28px;
+
+  --spacing-base: 8px;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: var(--color-page-bg);
+  color: var(--color-text);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-body);
+}
+
+/* ── Widget highlight (called by highlightWidget) ── */
+.widget-highlight {
+  outline: 2px solid #4F46E5 !important;
+  outline-offset: 2px;
+  transition: outline 0s;
+}
