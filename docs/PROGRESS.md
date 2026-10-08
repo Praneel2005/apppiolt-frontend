@@ -1,6 +1,6 @@
 # PROGRESS LOG (the implementer updates this after every card)
 
-Last updated: 2026-10-08  ·  Mode: planner builds directly on the workstation (the local-agent route was dropped)  ·  Current phase: A  ·  Next: T6 application generator
+Last updated: 2026-10-08  ·  Mode: planner builds directly on the workstation (the local-agent route was dropped)  ·  Current phase: A  ·  Next: mock backend + FRONTEND_BRIEF for the frontend pair, then backend core (T9-T11)
 
 ## Facts established
 - Contracts in `contracts/` are frozen; `python -m pytest` = 33 passing (Python side verified on the planner's workstation).
@@ -19,7 +19,11 @@ Last updated: 2026-10-08  ·  Mode: planner builds directly on the workstation (
 
 | T5 semantic layer | done | `generator/semantic_layer.py`: 4 datasets, 15 governed metrics (BRL; rates as ratios), enum values from DB (27 states, 5 regions, 74 categories); `tests/test_semantic_layer.py`; pytest 52 passed. Example Q2-2018: revenue 2,849,730.26 BRL, 19,897 orders, late rate 0.0483 |
 
+| T6 application generator | done | `generator/build_application.py` → `data/olist/application.json` (committed): 7 modules, **100 pages** (7 overviews, 61 one-dimension breakdowns, 18 two-dimension breakdowns, 14 trends), 215 widgets; unique descriptions; state-name, region, payment and category synonyms; `tests/test_application.py`; pytest 58 passed |
+
 ## Decisions and deviations (append, dated)
+
+- 2026-10-08: Frontend is built by Aditya + Shreeniketh in `frontend/` via the GitHub repo (they are not on the workstation network → they need a local mock backend). Praneel + Claude build data, backend, agent, evaluation.
 
 ## Open issues
 
