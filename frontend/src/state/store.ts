@@ -20,36 +20,36 @@ import type {
 } from "../lib/types";
 
 // ─── Pending ack registry ────────────────────────────────────────────────────
-// Widgets call registerWidgetAck() when their data arrives.
-// The WS layer calls collectAck() after all widgets resolve (or 5 s timeout).
+// Widgets call resolveWidgetAck() when their data arrives.
+// The WS layer calls registerPendingWidget() during apply_state handling.
 
-type WidgetAckEntry = {
-  resolve: (ack: WidgetAck) => void;
-  reject: (err: string) => void;
-};
-
-const pendingWidgetAcks = new Map<string, WidgetAckEntry>();
+const pendingResolvers = new Map<string, (ack: WidgetAck) => void>();
+const completedAcks = new Map<string, WidgetAck>();
 
 export function registerPendingWidget(
   widgetId: string,
-  resolve: (ack: WidgetAck) => void,
-  reject: (err: string) => void
+  resolve: (ack: WidgetAck) => void
 ) {
-  pendingWidgetAcks.set(widgetId, { resolve, reject });
+  const existing = completedAcks.get(widgetId);
+  if (existing) {
+    resolve(existing);
+  } else {
+    pendingResolvers.set(widgetId, resolve);
+  }
 }
 
 export function resolveWidgetAck(widgetId: string, ack: WidgetAck) {
-  pendingWidgetAcks.get(widgetId)?.resolve(ack);
-  pendingWidgetAcks.delete(widgetId);
-}
-
-export function rejectWidgetAck(widgetId: string, err: string) {
-  pendingWidgetAcks.get(widgetId)?.reject(err);
-  pendingWidgetAcks.delete(widgetId);
+  completedAcks.set(widgetId, ack);
+  const resolver = pendingResolvers.get(widgetId);
+  if (resolver) {
+    pendingResolvers.delete(widgetId);
+    resolver(ack);
+  }
 }
 
 export function clearPendingWidgetAcks() {
-  pendingWidgetAcks.clear();
+  pendingResolvers.clear();
+  completedAcks.clear();
 }
 
 // ─── Store shape ─────────────────────────────────────────────────────────────
@@ -110,6 +110,10 @@ export const useAppStore = create<AppStore>()(
     setLastVerify: (v) => set({ lastVerify: v }),
   }))
 );
+
+if (typeof window !== "undefined") {
+  (window as unknown as { __APP_STORE__: typeof useAppStore }).__APP_STORE__ = useAppStore;
+}
 
 // ─── Named hook exports (shared contract names) ───────────────────────────────
 

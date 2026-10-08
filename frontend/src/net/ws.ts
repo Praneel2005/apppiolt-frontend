@@ -32,8 +32,8 @@ function send(msg: unknown) {
 async function collectWidgetAcks(widgetIds: string[]): Promise<WidgetAck[]> {
   const promises: Promise<WidgetAck>[] = widgetIds.map(
     (id) =>
-      new Promise<WidgetAck>((resolve, reject) => {
-        registerPendingWidget(id, resolve, reject);
+      new Promise<WidgetAck>((resolve) => {
+        registerPendingWidget(id, resolve);
       })
   );
 

@@ -115,6 +115,8 @@ function AppRoutes() {
 
 // ─── App bootstrap ────────────────────────────────────────────────────────────
 
+let initStarted = false;
+
 function AppInner() {
   const setApplication = useAppStore((s) => s.setApplication);
   const setDatePresets = useAppStore((s) => s.setDatePresets);
@@ -122,7 +124,8 @@ function AppInner() {
   const application = useAppStore((s) => s.application);
 
   useEffect(() => {
-    let mounted = true;
+    if (initStarted) return;
+    initStarted = true;
 
     async function init() {
       try {
@@ -132,7 +135,6 @@ function AppInner() {
           api.createSession(),
         ]);
 
-        if (!mounted) return;
         setApplication(app);
         setDatePresets(presets);
         setUiState(session.state);
@@ -145,9 +147,6 @@ function AppInner() {
     }
 
     init();
-    return () => {
-      mounted = false;
-    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

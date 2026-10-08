@@ -37,11 +37,12 @@ function buildAppliedFilters(
   datasetFields: Set<string>
 ): Record<string, FilterValue> {
   const applied: Record<string, FilterValue> = {};
-  for (const fd of pageFilters) {
-    if (!datasetFields.has(fd.field)) continue;
-    const fv = storeFilters[fd.filter_id];
-    if (fv && fv.value.length > 0) {
-      applied[fd.filter_id] = fv;
+  for (const [key, fv] of Object.entries(storeFilters)) {
+    if (!fv || !fv.value || fv.value.length === 0) continue;
+    const pf = pageFilters.find((f) => f.filter_id === key);
+    const fieldName = pf ? pf.field : key;
+    if (datasetFields.has(fieldName)) {
+      applied[key] = fv;
     }
   }
   return applied;
@@ -63,6 +64,7 @@ export function useWidgetData({
   sort,
 }: UseWidgetDataOpts) {
   const storeFilters = useAppStore((s) => s.uiState?.filters ?? {});
+  const uiStateVersion = useAppStore((s) => s.uiState?.version ?? 0);
   const datasetFields = new Set(datasetFieldNames);
 
   const [data, setData] = useState<WidgetDataResponse | null>(null);
@@ -134,7 +136,7 @@ export function useWidgetData({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [widget.widget_id, filterKey, dateKey, sortKey]);
+  }, [widget.widget_id, filterKey, dateKey, sortKey, uiStateVersion]);
 
   return { data, loading, error };
 }
