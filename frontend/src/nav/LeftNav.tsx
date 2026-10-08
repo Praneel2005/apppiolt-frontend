@@ -68,9 +68,10 @@ export function LeftNav({ application }: NavProps) {
     return groups;
   }, [application, search]);
 
+  const setUiState = useAppStore((s) => s.setUiState);
+
   function navigate_to(page: Page) {
-    if (!wsSend || !uiState) return;
-    // Build a user_state_change to the new page (keep date range)
+    if (!uiState) return;
     const newState = {
       ...uiState,
       route: page.route,
@@ -78,8 +79,12 @@ export function LeftNav({ application }: NavProps) {
       filters: {},
       sort: null,
       selected_widget: null,
+      version: uiState.version + 1,
     };
-    wsSend({ type: "user_state_change", state: newState });
+    setUiState(newState);
+    if (wsSend) {
+      wsSend({ type: "user_state_change", state: newState });
+    }
     const search = uiStateToSearch(newState);
     navigate(page.route + (search ? `?${search}` : ""));
   }
