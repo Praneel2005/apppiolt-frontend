@@ -1,0 +1,191 @@
+{
+  "note": "canonical_series_hash vectors; every implementation must match every hash",
+  "cases": [
+    {
+      "name": "basic",
+      "columns": [
+        "region",
+        "revenue"
+      ],
+      "rows": [
+        {
+          "region": "West",
+          "revenue": 1.5
+        },
+        {
+          "region": "East",
+          "revenue": 2.0
+        }
+      ],
+      "hash": "dcbfca2190f80c25240be94ce5426029d308456f741d013875f0bad14939b9b9"
+    },
+    {
+      "name": "order_independent",
+      "columns": [
+        "region",
+        "revenue"
+      ],
+      "rows": [
+        {
+          "region": "East",
+          "revenue": 2.0
+        },
+        {
+          "region": "West",
+          "revenue": 1.5
+        }
+      ],
+      "hash": "dcbfca2190f80c25240be94ce5426029d308456f741d013875f0bad14939b9b9"
+    },
+    {
+      "name": "int_vs_float_same",
+      "columns": [
+        "n"
+      ],
+      "rows": [
+        {
+          "n": 2
+        },
+        {
+          "n": 3.0
+        }
+      ],
+      "hash": "4a290c9ff89595f6e29b600923df87ed5701e8e41a83418ee7aeb385521a40ec"
+    },
+    {
+      "name": "float_rounding",
+      "columns": [
+        "x"
+      ],
+      "rows": [
+        {
+          "x": 1.0000004
+        },
+        {
+          "x": 0.1234565
+        }
+      ],
+      "hash": "7c1b85ebdab14855388364e2eb4e575ff38162f36b0ac08b631417252a1e3c33"
+    },
+    {
+      "name": "tie_one_128th",
+      "columns": [
+        "x"
+      ],
+      "rows": [
+        {
+          "x": 0.0078125
+        },
+        {
+          "x": 1.0078125
+        },
+        {
+          "x": -0.0078125
+        }
+      ],
+      "hash": "e66c3e9ff04206a21da3ba1e604c58d0d2f196d1c35438e72406fc6bc052ea12"
+    },
+    {
+      "name": "negative_zero",
+      "columns": [
+        "x"
+      ],
+      "rows": [
+        {
+          "x": -1e-07
+        },
+        {
+          "x": -0.0
+        }
+      ],
+      "hash": "fd71a062bb62f574967b30ac46448c29bcaf2a6c6d9af26c616d2120e8ee0bb2"
+    },
+    {
+      "name": "null_bool_text",
+      "columns": [
+        "a",
+        "b",
+        "c"
+      ],
+      "rows": [
+        {
+          "a": null,
+          "b": true,
+          "c": "x y"
+        },
+        {
+          "a": "2026-01-01",
+          "b": false,
+          "c": ""
+        }
+      ],
+      "hash": "82abe6b1dfdbd5b6c3cf9193e04e992530803b5c7388bf3b7e1f6a0442e285ff"
+    },
+    {
+      "name": "missing_key",
+      "columns": [
+        "a",
+        "b"
+      ],
+      "rows": [
+        {
+          "a": "k"
+        }
+      ],
+      "hash": "c6eed37c449899a83b7179302bb7cb9f07e060ea9d1abad7f52cc9103baf2493"
+    },
+    {
+      "name": "empty",
+      "columns": [
+        "a"
+      ],
+      "rows": [],
+      "hash": "881863ff440a304233047cf9a999bd1eed42789e0537e14457461c4b477718c5"
+    },
+    {
+      "name": "unicode",
+      "columns": [
+        "city"
+      ],
+      "rows": [
+        {
+          "city": "São Paulo"
+        },
+        {
+          "city": "Brasília"
+        }
+      ],
+      "hash": "86a119a1e06d0afaab6f003e7728b6c40243b664882ea7113111c59098ddcc51"
+    },
+    {
+      "name": "large_money",
+      "columns": [
+        "m"
+      ],
+      "rows": [
+        {
+          "m": 1234567.891234567
+        }
+      ],
+      "hash": "69844781bc2aae079af45b4f0f0c2a1dc24c70771ee2cd8d9455a3160d5084a8"
+    },
+    {
+      "name": "big_and_small",
+      "columns": [
+        "m"
+      ],
+      "rows": [
+        {
+          "m": 123456789.123456
+        },
+        {
+          "m": 1e-06
+        },
+        {
+          "m": 4e-07
+        }
+      ],
+      "hash": "285ba975ae5de878467a05dcec970cdff94d6f2c8ef87a138cd4efc72a1d3bcb"
+    }
+  ]
+}

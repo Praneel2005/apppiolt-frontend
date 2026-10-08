@@ -1,0 +1,20 @@
+# Postgres for AppPilot. `docker compose up -d db` then `docker compose ps` should show it healthy.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_DB: appdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql/00_roles.sql:/docker-entrypoint-initdb.d/00_roles.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+volumes:
+  pgdata:

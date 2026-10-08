@@ -1,0 +1,83 @@
+{
+  "schema_version": "0.1.0",
+  "app_id": "meridian",
+  "name": "Meridian Retail & Distribution (sample)",
+  "source_format": "native",
+  "modules": [
+    {"module_id": "sales", "title": "Sales", "description": "Revenue, orders and product performance"},
+    {"module_id": "inventory", "title": "Inventory", "description": "Stock levels and replenishment"}
+  ],
+  "directories": [
+    {"path": "sales", "title": "Sales", "description": "Sales module"},
+    {"path": "sales/revenue", "title": "Revenue", "description": "Revenue analysis pages"},
+    {"path": "inventory", "title": "Inventory", "description": "Inventory module"}
+  ],
+  "datasets": [
+    {
+      "dataset_id": "ds_sales_orders",
+      "table": "fact_orders",
+      "description": "One row per order line with region, product category and revenue",
+      "time_field": "order_date",
+      "fields": [
+        {"name": "order_date", "type": "date", "role": "time", "description": "Date the order was placed"},
+        {"name": "region", "type": "enum", "role": "dimension", "values": ["North", "South", "East", "West"]},
+        {"name": "category", "type": "enum", "role": "dimension", "values": ["Beverages", "Snacks", "Dairy", "Frozen"]},
+        {"name": "revenue", "type": "decimal", "role": "metric", "description": "Net revenue of the line"}
+      ],
+      "metrics": [
+        {"metric_id": "revenue", "title": "Revenue", "description": "Total net revenue", "sql": "SUM(revenue)", "unit": "USD"},
+        {"metric_id": "order_count", "title": "Orders", "description": "Number of order lines", "sql": "COUNT(*)", "unit": "count"}
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "widget_id": "sales.revenue_by_region.chart_main",
+      "type": "bar_chart",
+      "title": "Revenue by region",
+      "description": "Bar chart of total revenue per sales region for the selected period. Answers: which region earns the most, how revenue compares across regions.",
+      "dataset_id": "ds_sales_orders",
+      "metrics": ["revenue"],
+      "dimensions": ["region"],
+      "supports": ["sort", "filter", "date_range"],
+      "render": {"query_metrics": ["revenue"], "query_dimensions": ["region"]}
+    },
+    {
+      "widget_id": "sales.revenue_by_region.grid",
+      "type": "grid",
+      "title": "Revenue by region and category",
+      "description": "Table of revenue split by region and product category; sortable.",
+      "dataset_id": "ds_sales_orders",
+      "metrics": ["revenue", "order_count"],
+      "dimensions": ["region", "category"],
+      "supports": ["sort", "filter", "date_range"],
+      "render": {"query_metrics": ["revenue", "order_count"], "query_dimensions": ["region", "category"]}
+    }
+  ],
+  "pages": [
+    {
+      "page_id": "sales.revenue_by_region",
+      "title": "Revenue by Region",
+      "description": "Monthly and quarterly revenue split by sales region, with period comparison and category breakdown.",
+      "directory": "sales/revenue",
+      "route": "/sales/revenue-by-region",
+      "keywords": ["sales", "revenue", "region", "geography", "quarter"],
+      "widgets": ["sales.revenue_by_region.chart_main", "sales.revenue_by_region.grid"],
+      "filters": [
+        {"filter_id": "date_range", "field": "order_date", "type": "date_range", "title": "Date range", "allowed_ops": ["between"]},
+        {
+          "filter_id": "region", "field": "region", "type": "multiselect", "title": "Region",
+          "allowed_ops": ["eq", "in"],
+          "allowed_values": ["North", "South", "East", "West"],
+          "synonyms": {"West": ["western", "west coast"], "North": ["northern"]}
+        },
+        {
+          "filter_id": "category", "field": "category", "type": "multiselect", "title": "Category",
+          "allowed_ops": ["eq", "in"],
+          "allowed_values": ["Beverages", "Snacks", "Dairy", "Frozen"]
+        }
+      ],
+      "default_state": {"date_range": {"preset": "last_12_months"}}
+    }
+  ]
+}

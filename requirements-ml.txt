@@ -1,0 +1,3 @@
+# Heavy (pulls PyTorch, a large download). Install after the core file: pip install -r requirements-ml.txt
+sentence-transformers
+faiss-cpu
