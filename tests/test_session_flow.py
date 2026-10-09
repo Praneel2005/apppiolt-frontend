@@ -92,7 +92,10 @@ def test_navigate_with_synonym_is_normalised_executed_and_verified(api, sid):
     ver = next(e for e in r["events"] if e["type"] == "verify")
     assert ver["data"]["ok"] and ver["data"]["source"] == "simulated_browser"
     ctx = api.get(f"/api/session/{sid}/context").json()
-    assert ctx["widgets"][0]["rows"] and all(x["customer_state"] == "RJ" for x in ctx["widgets"][0]["rows"])
+    grid = next(w for w in ctx["widgets"] if w["widget_id"] == "ops.orders.grid")
+    assert grid["rows"] and all(x["customer_state"] == "RJ" for x in grid["rows"])
+    strip = next(w for w in ctx["widgets"] if w["widget_id"] == "ops.orders.strip")  # charts follow the same filters
+    assert strip["applied_filters"]["customer_state"]["value"] == ["RJ"]
 
 
 def test_validator_blocks_bad_plans_with_suggestions(api, sid):
@@ -157,7 +160,7 @@ def test_filters_sort_and_date_steps(api, sid):
     assert f["priority"]["value"] == ["urgent"] and f["status"]["value"] == ["open"]
     assert r["state"]["sort"] == {"field": "age_hours", "dir": "desc"}
     ctx = api.get(f"/api/session/{sid}/context").json()
-    rows = ctx["widgets"][0]["rows"]
+    rows = next(w for w in ctx["widgets"] if w["widget_id"] == "ops.tickets.grid")["rows"]
     assert all(x["priority"] == "urgent" and x["status"] == "open" for x in rows)
     r = run(api, sid, ("clear_filter", {"filter_id": "all"}))
     assert r["ok"] and r["state"]["filters"] == {}

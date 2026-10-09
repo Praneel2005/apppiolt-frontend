@@ -4,12 +4,15 @@ import { toast, useStore } from '../state/store'
 import { ChartWidget } from '../widgets/ChartWidget'
 import { GridWidget } from '../widgets/GridWidget'
 import { KpiCard } from '../widgets/KpiCard'
+import { KpiStrip } from '../widgets/KpiStrip'
 import { FilterBar } from './FilterBar'
 
 function renderWidget(w: Widget, page: Page) {
   switch (w.type) {
     case 'kpi_card': return <KpiCard key={w.widget_id} widget={w} page={page} />
+    case 'kpi_strip': return <KpiStrip key={w.widget_id} widget={w} page={page} />
     case 'bar_chart':
+    case 'pie_chart':
     case 'line_chart': return <ChartWidget key={w.widget_id} widget={w} page={page} />
     case 'grid': return <GridWidget key={w.widget_id} widget={w} page={page} />
     default: return null

@@ -162,4 +162,5 @@ def test_free_text_is_flagged_and_shortened(api):
     assert all(len(r["review_comment_message"] or "") <= 300 for r in ev["rows"])
     sid2, _ = run(api, [("navigate", {"page_id": "ops.reviews"})])
     ctx = api.get(f"/api/session/{sid2}/context").json()
-    assert "review_comment_message" in ctx["widgets"][0]["untrusted_columns"]
+    grid = next(w for w in ctx["widgets"] if w["widget_id"] == "ops.reviews.grid")
+    assert "review_comment_message" in grid["untrusted_columns"]

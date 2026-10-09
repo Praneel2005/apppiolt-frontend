@@ -234,6 +234,7 @@ async def undo_last_write(s: Session) -> dict:
     status, body = await call_internal("POST", f"/api/actions/{code}/undo", headers={"x-actor": "user"})
     if status == 200:
         s.writes.pop()
+        s.stats["writes_undone"] += 1
     await emit(s, "action", {"tool": "undo_write", "args": {"action_id": code}, "status": "done" if status == 200 else "failed",
                              "message": body.get("error", {}).get("message", "") if status != 200 else "reverted"})
     return {"ok": status == 200, "action_id": code, "response": body}
@@ -312,13 +313,19 @@ async def run_plan(s: Session, plan: Plan, config: AgentConfig | None = None, au
     it is recorded on every confirm_request event."""
     config = config or s.config
     t0 = time.time()
+    s.stats["plan_runs"] += 1
     async with s.lock:
         await emit(s, "plan", {"intent": plan.intent.model_dump(), "steps": [st.model_dump() for st in plan.steps]})
         if config.use_validator:
             vr = validate(app_model(), plan, s.state, _catalog())
             await emit(s, "validation", {"ok": vr.ok, "issues": [x.model_dump() for x in vr.issues]})
             if not vr.ok:
-                await emit(s, "done", {"steps": 0, "replans": 0, "elapsed_ms": int((time.time() - t0) * 1000), "ok": False})
+                s.stats["validation_failures"] += 1
+                for i in vr.issues:
+                    s.issue_counts[i.code] = s.issue_counts.get(i.code, 0) + 1
+                ms = int((time.time() - t0) * 1000)
+                s.runs.append({"elapsed_ms": ms, "steps": 0, "ok": False, "stage": "validation"})
+                await emit(s, "done", {"steps": 0, "replans": 0, "elapsed_ms": ms, "ok": False})
                 return {"ok": False, "stage": "validation", "issues": [x.model_dump() for x in vr.issues], "results": []}
             plan = vr.normalized_plan
         results: list[StepResult] = []
@@ -331,11 +338,14 @@ async def run_plan(s: Session, plan: Plan, config: AgentConfig | None = None, au
             except Exception as e:  # noqa: BLE001
                 res = StepResult(step_index=i, ok=False, error_code="query_failed", message=f"{type(e).__name__}: {e}")
             results.append(res)
+            s.stats["agent_steps"] += 1
             await emit(s, "action", {"tool": step.tool, "status": "done" if res.ok else "failed", "step_index": i,
                                      "error_code": res.error_code, "message": res.message, "evidence_id": res.evidence_id})
             if not res.ok:
                 break
         ok = bool(results) and all(r.ok for r in results) and len(results) == len(plan.steps)
-        await emit(s, "done", {"steps": len(results), "replans": 0, "elapsed_ms": int((time.time() - t0) * 1000), "ok": ok})
+        ms = int((time.time() - t0) * 1000)
+        s.runs.append({"elapsed_ms": ms, "steps": len(results), "ok": ok, "stage": "executed"})
+        await emit(s, "done", {"steps": len(results), "replans": 0, "elapsed_ms": ms, "ok": ok})
     return {"ok": ok, "stage": "executed", "results": [r.model_dump() for r in results],
             "state": s.state.model_dump(by_alias=True), "evidence_ids": [r.evidence_id for r in results if r.evidence_id]}

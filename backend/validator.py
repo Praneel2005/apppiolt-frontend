@@ -285,7 +285,9 @@ def _h_read_view(c: _Ctx, a: dict) -> dict | None:
     if wid and wid not in c.page.widgets:
         c.bad("invalid_reference", f"Widget '{wid}' is not on page '{c.page.title}'.", _near(str(wid), c.page.widgets))
         return None
-    return {"widget_id": wid or c.page.widgets[0], "max_rows": min(int(a.get("max_rows", 20)), 200)}
+    if not wid:  # default: the page's main table (its rows), else its first widget
+        wid = next((i for i in c.page.widgets if c.app.widget(i).type == "grid"), c.page.widgets[0])
+    return {"widget_id": wid, "max_rows": min(int(a.get("max_rows", 20)), 200)}
 
 
 def _metric_args(c: _Ctx, a: dict, compare: bool, explain: bool) -> dict | None:

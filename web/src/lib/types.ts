@@ -77,7 +77,7 @@ export interface WidgetSource {
 export interface Widget {
   widget_id: string
   widget_code: string | null
-  type: 'grid' | 'bar_chart' | 'line_chart' | 'pie_chart' | 'kpi_card' | 'filter_bar'
+  type: 'grid' | 'bar_chart' | 'line_chart' | 'pie_chart' | 'kpi_card' | 'kpi_strip' | 'filter_bar'
   title: string
   description: string
   dataset_id: string | null

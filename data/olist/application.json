@@ -256,6 +256,9 @@
     "ops.dashboard.kpi_late",
     "ops.dashboard.kpi_review",
     "ops.dashboard.trend",
+    "ops.dashboard.region_share",
+    "ops.dashboard.late_by_region",
+    "ops.dashboard.tickets_status",
     "ops.dashboard.open_tickets",
     "ops.dashboard.low_stock"
    ],
@@ -267,7 +270,12 @@
      "ops.dashboard.kpi_review"
     ],
     [
-     "ops.dashboard.trend"
+     "ops.dashboard.trend",
+     "ops.dashboard.region_share"
+    ],
+    [
+     "ops.dashboard.late_by_region",
+     "ops.dashboard.tickets_status"
     ],
     [
      "ops.dashboard.open_tickets",
@@ -310,9 +318,23 @@
     "customers"
    ],
    "widgets": [
+    "ops.orders.strip",
+    "ops.orders.by_status",
+    "ops.orders.trend",
+    "ops.orders.by_state",
     "ops.orders.grid"
    ],
    "layout": [
+    [
+     "ops.orders.strip"
+    ],
+    [
+     "ops.orders.by_status",
+     "ops.orders.trend"
+    ],
+    [
+     "ops.orders.by_state"
+    ],
     [
      "ops.orders.grid"
     ]
@@ -833,10 +855,20 @@
     "sla"
    ],
    "widgets": [
+    "ops.late.strip",
+    "ops.late.by_state",
+    "ops.late.buckets",
     "ops.late.late",
     "ops.late.overdue"
    ],
    "layout": [
+    [
+     "ops.late.strip"
+    ],
+    [
+     "ops.late.by_state",
+     "ops.late.buckets"
+    ],
     [
      "ops.late.late"
     ],
@@ -1326,9 +1358,25 @@
     "cases"
    ],
    "widgets": [
+    "ops.tickets.strip",
+    "ops.tickets.by_status",
+    "ops.tickets.by_category",
+    "ops.tickets.per_day",
+    "ops.tickets.by_priority",
     "ops.tickets.grid"
    ],
    "layout": [
+    [
+     "ops.tickets.strip"
+    ],
+    [
+     "ops.tickets.by_status",
+     "ops.tickets.by_category"
+    ],
+    [
+     "ops.tickets.per_day",
+     "ops.tickets.by_priority"
+    ],
     [
      "ops.tickets.grid"
     ]
@@ -1602,9 +1650,23 @@
     "complaints"
    ],
    "widgets": [
+    "ops.reviews.strip",
+    "ops.reviews.score_dist",
+    "ops.reviews.monthly",
+    "ops.reviews.neg_by_state",
     "ops.reviews.grid"
    ],
    "layout": [
+    [
+     "ops.reviews.strip"
+    ],
+    [
+     "ops.reviews.score_dist",
+     "ops.reviews.monthly"
+    ],
+    [
+     "ops.reviews.neg_by_state"
+    ],
     [
      "ops.reviews.grid"
     ]
@@ -1848,9 +1910,19 @@
     "catalog"
    ],
    "widgets": [
+    "ops.products.strip",
+    "ops.products.value_by_cat",
+    "ops.products.low_by_cat",
     "ops.products.grid"
    ],
    "layout": [
+    [
+     "ops.products.strip"
+    ],
+    [
+     "ops.products.value_by_cat",
+     "ops.products.low_by_cat"
+    ],
     [
      "ops.products.grid"
     ]
@@ -2151,12 +2223,18 @@
     "reorder"
    ],
    "widgets": [
-    "ops.alerts.grid",
-    "ops.alerts.trend"
+    "ops.alerts.strip",
+    "ops.alerts.trend",
+    "ops.alerts.by_cat",
+    "ops.alerts.grid"
    ],
    "layout": [
     [
-     "ops.alerts.trend"
+     "ops.alerts.strip"
+    ],
+    [
+     "ops.alerts.trend",
+     "ops.alerts.by_cat"
     ],
     [
      "ops.alerts.grid"
@@ -2456,9 +2534,19 @@
     "replenishment"
    ],
    "widgets": [
+    "ops.restock.strip",
+    "ops.restock.by_status",
+    "ops.restock.per_month",
     "ops.restock.grid"
    ],
    "layout": [
+    [
+     "ops.restock.strip"
+    ],
+    [
+     "ops.restock.by_status",
+     "ops.restock.per_month"
+    ],
     [
      "ops.restock.grid"
     ]
@@ -2500,9 +2588,19 @@
     "performance"
    ],
    "widgets": [
+    "ops.sellers.strip",
+    "ops.sellers.top10",
+    "ops.sellers.by_state",
     "ops.sellers.grid"
    ],
    "layout": [
+    [
+     "ops.sellers.strip"
+    ],
+    [
+     "ops.sellers.top10",
+     "ops.sellers.by_state"
+    ],
     [
      "ops.sellers.grid"
     ]
@@ -2592,9 +2690,19 @@
     "violations"
    ],
    "widgets": [
+    "ops.flags.strip",
+    "ops.flags.by_reason",
+    "ops.flags.by_severity",
     "ops.flags.grid"
    ],
    "layout": [
+    [
+     "ops.flags.strip"
+    ],
+    [
+     "ops.flags.by_reason",
+     "ops.flags.by_severity"
+    ],
     [
      "ops.flags.grid"
     ]
@@ -2653,12 +2761,18 @@
    ],
    "widgets": [
     "ops.funnel.chart",
+    "ops.funnel.conversion",
+    "ops.funnel.revenue_share",
     "ops.funnel.channels",
     "ops.funnel.deals"
    ],
    "layout": [
     [
      "ops.funnel.chart",
+     "ops.funnel.conversion"
+    ],
+    [
+     "ops.funnel.revenue_share",
      "ops.funnel.channels"
     ],
     [
@@ -2765,11 +2879,17 @@
     "missed target"
    ],
    "widgets": [
+    "ops.targets.strip",
+    "ops.targets.monthly",
     "ops.targets.chart",
     "ops.targets.grid"
    ],
    "layout": [
     [
+     "ops.targets.strip"
+    ],
+    [
+     "ops.targets.monthly",
      "ops.targets.chart"
     ],
     [
@@ -2997,11 +3117,17 @@
     "delivery performance"
    ],
    "widgets": [
+    "ops.sla.strip",
+    "ops.sla.monthly",
     "ops.sla.chart",
     "ops.sla.grid"
    ],
    "layout": [
     [
+     "ops.sla.strip"
+    ],
+    [
+     "ops.sla.monthly",
      "ops.sla.chart"
     ],
     [
@@ -3088,11 +3214,13 @@
    ],
    "widgets": [
     "ops.forecast.chart",
+    "ops.forecast.error_by_state",
     "ops.forecast.grid"
    ],
    "layout": [
     [
-     "ops.forecast.chart"
+     "ops.forecast.chart",
+     "ops.forecast.error_by_state"
     ],
     [
      "ops.forecast.grid"
@@ -3305,9 +3433,13 @@
     "offers"
    ],
    "widgets": [
+    "ops.promotions.discounts",
     "ops.promotions.grid"
    ],
    "layout": [
+    [
+     "ops.promotions.discounts"
+    ],
     [
      "ops.promotions.grid"
     ]
@@ -49367,8 +49499,2834 @@
    }
   },
   {
-   "widget_id": "sales.overview.kpi_revenue",
+   "widget_id": "ops.dashboard.region_share",
    "widget_code": "R-0029",
+   "type": "pie_chart",
+   "title": "Revenue share by region",
+   "description": "Share of revenue earned in each customer macro-region for the selected period.",
+   "dataset_id": "ds_order_items",
+   "metrics": [
+    "revenue"
+   ],
+   "dimensions": [
+    "customer_region"
+   ],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [
+     "revenue"
+    ],
+    "query_dimensions": [
+     "customer_region"
+    ],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": null
+  },
+  {
+   "widget_id": "ops.dashboard.late_by_region",
+   "widget_code": "R-0030",
+   "type": "bar_chart",
+   "title": "Late order rate by region",
+   "description": "Share of delivered orders that arrived late in each customer macro-region.",
+   "dataset_id": "ds_orders",
+   "metrics": [
+    "order_late_rate"
+   ],
+   "dimensions": [
+    "customer_region"
+   ],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [
+     "order_late_rate"
+    ],
+    "query_dimensions": [
+     "customer_region"
+    ],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": null
+  },
+  {
+   "widget_id": "ops.dashboard.tickets_status",
+   "widget_code": "R-0031",
+   "type": "pie_chart",
+   "title": "Tickets by status",
+   "description": "How the support tickets of the period are split across open, in progress, resolved and closed.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "tickets.summary",
+    "params": {
+     "group_by": "status"
+    },
+    "filter_params": {},
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "status",
+      "title": "Status",
+      "type": "badge",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "tickets",
+      "title": "Tickets",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "status",
+     "y": [
+      "tickets"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.orders.strip",
+   "widget_code": "R-0032",
+   "type": "kpi_strip",
+   "title": "Orders at a glance",
+   "description": "Totals for the filtered orders: count, value, late share, average delay, overdue orders and average review score.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "orders.summary",
+    "params": {},
+    "filter_params": {
+     "order_status": "status",
+     "customer_state": "customer_state",
+     "product_category": "product_category",
+     "late": "late",
+     "has_open_ticket": "has_open_ticket"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "orders",
+      "title": "Orders",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "items_value",
+      "title": "Order value",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "late_rate",
+      "title": "Late rate",
+      "type": "ratio",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "avg_days_late",
+      "title": "Avg days late",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "overdue_orders",
+      "title": "Overdue now",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "avg_review_score",
+      "title": "Avg review",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": null,
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.orders.by_status",
+   "widget_code": "R-0033",
+   "type": "pie_chart",
+   "title": "Orders by status",
+   "description": "How the filtered orders split by order status.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "orders.summary",
+    "params": {
+     "group_by": "status"
+    },
+    "filter_params": {
+     "order_status": "status",
+     "customer_state": "customer_state",
+     "product_category": "product_category",
+     "late": "late",
+     "has_open_ticket": "has_open_ticket"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "status",
+      "title": "Status",
+      "type": "badge",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "orders",
+      "title": "Orders",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "status",
+     "y": [
+      "orders"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.orders.trend",
+   "widget_code": "R-0034",
+   "type": "line_chart",
+   "title": "Orders per month",
+   "description": "Number of filtered orders placed each month.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "orders.summary",
+    "params": {
+     "group_by": "month"
+    },
+    "filter_params": {
+     "order_status": "status",
+     "customer_state": "customer_state",
+     "product_category": "product_category",
+     "late": "late",
+     "has_open_ticket": "has_open_ticket"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "month",
+      "title": "Month",
+      "type": "date",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "orders",
+      "title": "Orders",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "month",
+     "y": [
+      "orders"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.orders.by_state",
+   "widget_code": "R-0035",
+   "type": "bar_chart",
+   "title": "Orders by customer state",
+   "description": "Which states the filtered orders come from.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "orders.summary",
+    "params": {
+     "group_by": "customer_state"
+    },
+    "filter_params": {
+     "order_status": "status",
+     "customer_state": "customer_state",
+     "product_category": "product_category",
+     "late": "late",
+     "has_open_ticket": "has_open_ticket"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "customer_state",
+      "title": "State",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "orders",
+      "title": "Orders",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "customer_state",
+     "y": [
+      "orders"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.late.strip",
+   "widget_code": "R-0036",
+   "type": "kpi_strip",
+   "title": "Delivery problems at a glance",
+   "description": "Late orders, late rate, average delay and orders currently overdue for the filtered period.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "orders.summary",
+    "params": {},
+    "filter_params": {
+     "customer_state": "customer_state",
+     "product_category": "product_category",
+     "has_open_ticket": "has_open_ticket"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "late_orders",
+      "title": "Delivered late",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "late_rate",
+      "title": "Late rate",
+      "type": "ratio",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "avg_days_late",
+      "title": "Avg days late",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "overdue_orders",
+      "title": "Overdue now",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": null,
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.late.by_state",
+   "widget_code": "R-0037",
+   "type": "bar_chart",
+   "title": "Late orders by state",
+   "description": "Which customer states receive the most late deliveries.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "orders.summary",
+    "params": {
+     "group_by": "customer_state",
+     "late": true
+    },
+    "filter_params": {
+     "customer_state": "customer_state",
+     "product_category": "product_category",
+     "has_open_ticket": "has_open_ticket"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "customer_state",
+      "title": "State",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "late_orders",
+      "title": "Late orders",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "customer_state",
+     "y": [
+      "late_orders"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.late.buckets",
+   "widget_code": "R-0038",
+   "type": "bar_chart",
+   "title": "How late are late orders",
+   "description": "Late deliveries by number of days after the estimated date.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "orders.summary",
+    "params": {
+     "group_by": "days_late_bucket",
+     "late": true
+    },
+    "filter_params": {
+     "customer_state": "customer_state",
+     "product_category": "product_category",
+     "has_open_ticket": "has_open_ticket"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "days_late_bucket",
+      "title": "Delay",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "orders",
+      "title": "Orders",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "days_late_bucket",
+     "y": [
+      "orders"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.tickets.strip",
+   "widget_code": "R-0039",
+   "type": "kpi_strip",
+   "title": "Support at a glance",
+   "description": "Tickets in the period: total, open, urgent, unassigned and average resolution time.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "tickets.summary",
+    "params": {},
+    "filter_params": {
+     "status": "status",
+     "priority": "priority",
+     "category": "category",
+     "customer_state": "customer_state"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "tickets",
+      "title": "Tickets",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "open_tickets",
+      "title": "Open",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "urgent_tickets",
+      "title": "Urgent",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "unassigned",
+      "title": "Unassigned (open)",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "avg_resolution_hours",
+      "title": "Avg resolution (h)",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": null,
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.tickets.by_status",
+   "widget_code": "R-0040",
+   "type": "pie_chart",
+   "title": "Tickets by status",
+   "description": "Share of tickets that are open, in progress, resolved or closed.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "tickets.summary",
+    "params": {
+     "group_by": "status"
+    },
+    "filter_params": {
+     "status": "status",
+     "priority": "priority",
+     "category": "category",
+     "customer_state": "customer_state"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "status",
+      "title": "Status",
+      "type": "badge",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "tickets",
+      "title": "Tickets",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "status",
+     "y": [
+      "tickets"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.tickets.by_category",
+   "widget_code": "R-0041",
+   "type": "bar_chart",
+   "title": "Tickets by category",
+   "description": "What customers contact support about.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "tickets.summary",
+    "params": {
+     "group_by": "category"
+    },
+    "filter_params": {
+     "status": "status",
+     "priority": "priority",
+     "category": "category",
+     "customer_state": "customer_state"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "category",
+      "title": "Category",
+      "type": "badge",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "tickets",
+      "title": "Tickets",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "category",
+     "y": [
+      "tickets"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.tickets.per_day",
+   "widget_code": "R-0042",
+   "type": "line_chart",
+   "title": "Tickets created per day",
+   "description": "Daily ticket volume for the selected period.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "tickets.summary",
+    "params": {
+     "group_by": "day"
+    },
+    "filter_params": {
+     "status": "status",
+     "priority": "priority",
+     "category": "category",
+     "customer_state": "customer_state"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "day",
+      "title": "Day",
+      "type": "date",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "tickets",
+      "title": "Tickets",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "day",
+     "y": [
+      "tickets"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.tickets.by_priority",
+   "widget_code": "R-0043",
+   "type": "bar_chart",
+   "title": "Tickets by priority",
+   "description": "How urgent the tickets are.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "tickets.summary",
+    "params": {
+     "group_by": "priority"
+    },
+    "filter_params": {
+     "status": "status",
+     "priority": "priority",
+     "category": "category",
+     "customer_state": "customer_state"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "priority",
+      "title": "Priority",
+      "type": "badge",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "tickets",
+      "title": "Tickets",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "priority",
+     "y": [
+      "tickets"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.reviews.strip",
+   "widget_code": "R-0044",
+   "type": "kpi_strip",
+   "title": "Customer sentiment at a glance",
+   "description": "Reviews in the period: count, average score, negative share, reviews with comments and replied reviews.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "reviews.summary",
+    "params": {},
+    "filter_params": {
+     "review_score_max": "score_max",
+     "customer_state": "customer_state",
+     "has_reply": "has_reply"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "reviews",
+      "title": "Reviews",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "avg_score",
+      "title": "Avg score",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "negative_share",
+      "title": "Negative (1-2★)",
+      "type": "ratio",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "with_comment",
+      "title": "With comment",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "replied",
+      "title": "Replied",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": null,
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.reviews.score_dist",
+   "widget_code": "R-0045",
+   "type": "bar_chart",
+   "title": "Score distribution",
+   "description": "How many reviews gave each score from 1 to 5.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "reviews.summary",
+    "params": {
+     "group_by": "score"
+    },
+    "filter_params": {
+     "review_score_max": "score_max",
+     "customer_state": "customer_state",
+     "has_reply": "has_reply"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "score",
+      "title": "Score",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "reviews",
+      "title": "Reviews",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "score",
+     "y": [
+      "reviews"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.reviews.monthly",
+   "widget_code": "R-0046",
+   "type": "line_chart",
+   "title": "Average score by month",
+   "description": "How the average review score moved month by month.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "reviews.summary",
+    "params": {
+     "group_by": "month"
+    },
+    "filter_params": {
+     "review_score_max": "score_max",
+     "customer_state": "customer_state",
+     "has_reply": "has_reply"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "month",
+      "title": "Month",
+      "type": "date",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "avg_score",
+      "title": "Avg score",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "month",
+     "y": [
+      "avg_score"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.reviews.neg_by_state",
+   "widget_code": "R-0047",
+   "type": "bar_chart",
+   "title": "Negative reviews by state",
+   "description": "Where the 1-2 star reviews come from.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "reviews.summary",
+    "params": {
+     "group_by": "customer_state"
+    },
+    "filter_params": {
+     "review_score_max": "score_max",
+     "customer_state": "customer_state",
+     "has_reply": "has_reply"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "customer_state",
+      "title": "State",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "negative_reviews",
+      "title": "Negative reviews",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "customer_state",
+     "y": [
+      "negative_reviews"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.products.strip",
+   "widget_code": "R-0048",
+   "type": "kpi_strip",
+   "title": "Stock at a glance",
+   "description": "Listed products, units, inventory value at cost, products below their reorder point and average days of cover.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "inventory.summary",
+    "params": {},
+    "filter_params": {
+     "product_category": "product_category",
+     "below_reorder_point": "below_reorder_point"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "products",
+      "title": "Listed products",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "stock_units",
+      "title": "Units in stock",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "inventory_value",
+      "title": "Inventory value",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "below_reorder",
+      "title": "Below reorder point",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "needs_restock",
+      "title": "Need restock",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "avg_days_of_cover",
+      "title": "Avg days of cover",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": null,
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.products.value_by_cat",
+   "widget_code": "R-0049",
+   "type": "bar_chart",
+   "title": "Inventory value by category",
+   "description": "Where the money tied up in stock is.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "inventory.summary",
+    "params": {
+     "group_by": "category",
+     "limit": 12
+    },
+    "filter_params": {
+     "product_category": "product_category",
+     "below_reorder_point": "below_reorder_point"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "category",
+      "title": "Category",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "inventory_value",
+      "title": "Inventory value",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "category",
+     "y": [
+      "inventory_value"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.products.low_by_cat",
+   "widget_code": "R-0050",
+   "type": "bar_chart",
+   "title": "Low-stock products by category",
+   "description": "Categories with the most products at or below their reorder point.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "inventory.summary",
+    "params": {
+     "group_by": "category",
+     "sort": "-below_reorder",
+     "limit": 12
+    },
+    "filter_params": {
+     "product_category": "product_category",
+     "below_reorder_point": "below_reorder_point"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "category",
+      "title": "Category",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "below_reorder",
+      "title": "Below reorder point",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "needs_restock",
+      "title": "Need restock",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "category",
+     "y": [
+      "below_reorder",
+      "needs_restock"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.alerts.strip",
+   "widget_code": "R-0051",
+   "type": "kpi_strip",
+   "title": "Restock need at a glance",
+   "description": "How many products are low, how much is tied up in stock and how many days of cover remain.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "inventory.summary",
+    "params": {},
+    "filter_params": {
+     "product_category": "product_category"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "products",
+      "title": "Listed products",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "stock_units",
+      "title": "Units in stock",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "inventory_value",
+      "title": "Inventory value",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "below_reorder",
+      "title": "Below reorder point",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "needs_restock",
+      "title": "Need restock",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "avg_days_of_cover",
+      "title": "Avg days of cover",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": null,
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.alerts.by_cat",
+   "widget_code": "R-0052",
+   "type": "bar_chart",
+   "title": "Restock need by category",
+   "description": "Categories with the most products to restock now.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "inventory.summary",
+    "params": {
+     "group_by": "category",
+     "sort": "-needs_restock",
+     "limit": 12
+    },
+    "filter_params": {
+     "product_category": "product_category"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "category",
+      "title": "Category",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "needs_restock",
+      "title": "Need restock",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "category",
+     "y": [
+      "needs_restock"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.restock.strip",
+   "widget_code": "R-0053",
+   "type": "kpi_strip",
+   "title": "Restocking at a glance",
+   "description": "Restock orders, how many are open, units on order and units received.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "restock_orders.summary",
+    "params": {},
+    "filter_params": {
+     "status": "status"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "orders",
+      "title": "Orders",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "open_orders",
+      "title": "Open orders",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "open_units",
+      "title": "Units on order",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "received_units",
+      "title": "Units received",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": null,
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.restock.by_status",
+   "widget_code": "R-0054",
+   "type": "pie_chart",
+   "title": "Restock orders by status",
+   "description": "How many restock orders are placed, in transit, received or canceled.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "restock_orders.summary",
+    "params": {
+     "group_by": "status"
+    },
+    "filter_params": {
+     "status": "status"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "status",
+      "title": "Status",
+      "type": "badge",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "orders",
+      "title": "Orders",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "status",
+     "y": [
+      "orders"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.restock.per_month",
+   "widget_code": "R-0055",
+   "type": "bar_chart",
+   "title": "Units ordered per month",
+   "description": "How many units were ordered each month.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "restock_orders.summary",
+    "params": {
+     "group_by": "month"
+    },
+    "filter_params": {
+     "status": "status"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "month",
+      "title": "Month",
+      "type": "date",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "units",
+      "title": "Units",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "month",
+     "y": [
+      "units"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.sellers.strip",
+   "widget_code": "R-0056",
+   "type": "kpi_strip",
+   "title": "Sellers at a glance",
+   "description": "Selling sellers, flagged sellers, revenue, late rate and review score for the period.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "sellers.summary",
+    "params": {},
+    "filter_params": {
+     "seller_state": "seller_state",
+     "flagged": "flagged"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "active_sellers",
+      "title": "Selling sellers",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "flagged_sellers",
+      "title": "Flagged",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "revenue",
+      "title": "Revenue",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "avg_late_rate",
+      "title": "Late rate",
+      "type": "ratio",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "avg_review_score",
+      "title": "Avg review",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": null,
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.sellers.top10",
+   "widget_code": "R-0057",
+   "type": "bar_chart",
+   "title": "Top 10 sellers by revenue",
+   "description": "The ten sellers with the highest revenue in the period.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "sellers.search",
+    "params": {
+     "limit": 10,
+     "sort": "-revenue"
+    },
+    "filter_params": {
+     "seller_state": "seller_state",
+     "flagged": "flagged"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "seller_ref",
+      "title": "Seller",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "revenue",
+      "title": "Revenue",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "seller_ref",
+     "y": [
+      "revenue"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.sellers.by_state",
+   "widget_code": "R-0058",
+   "type": "bar_chart",
+   "title": "Revenue by seller state",
+   "description": "Where the revenue-earning sellers are based.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "sellers.summary",
+    "params": {
+     "group_by": "seller_state"
+    },
+    "filter_params": {
+     "seller_state": "seller_state",
+     "flagged": "flagged"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "seller_state",
+      "title": "State",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "revenue",
+      "title": "Revenue",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "seller_state",
+     "y": [
+      "revenue"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.flags.strip",
+   "widget_code": "R-0059",
+   "type": "kpi_strip",
+   "title": "Flags at a glance",
+   "description": "Seller performance flags: total, open and high severity.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "seller_flags.summary",
+    "params": {},
+    "filter_params": {
+     "status": "status",
+     "severity": "severity"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "flags",
+      "title": "Flags",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "open_flags",
+      "title": "Open",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "high_severity",
+      "title": "High severity",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": null,
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.flags.by_reason",
+   "widget_code": "R-0060",
+   "type": "pie_chart",
+   "title": "Flags by reason",
+   "description": "Why sellers were flagged.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "seller_flags.summary",
+    "params": {
+     "group_by": "reason"
+    },
+    "filter_params": {
+     "status": "status",
+     "severity": "severity"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "reason",
+      "title": "Reason",
+      "type": "badge",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "flags",
+      "title": "Flags",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "reason",
+     "y": [
+      "flags"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.flags.by_severity",
+   "widget_code": "R-0061",
+   "type": "bar_chart",
+   "title": "Flags by severity",
+   "description": "How serious the flags are.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "seller_flags.summary",
+    "params": {
+     "group_by": "severity"
+    },
+    "filter_params": {
+     "status": "status",
+     "severity": "severity"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "severity",
+      "title": "Severity",
+      "type": "badge",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "flags",
+      "title": "Flags",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "severity",
+     "y": [
+      "flags"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.funnel.conversion",
+   "widget_code": "R-0062",
+   "type": "bar_chart",
+   "title": "Conversion rate by channel",
+   "description": "Share of leads that became sellers, per channel.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "funnel.channels",
+    "params": {},
+    "filter_params": {
+     "origin": "origin"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "origin",
+      "title": "Channel",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "leads",
+      "title": "Leads",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "won_deals",
+      "title": "Won",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "conversion_pct",
+      "title": "Conversion %",
+      "type": "percent",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "seller_revenue",
+      "title": "Seller revenue",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "origin",
+     "y": [
+      "conversion_pct"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.funnel.revenue_share",
+   "widget_code": "R-0063",
+   "type": "pie_chart",
+   "title": "Seller revenue by acquisition channel",
+   "description": "How much the sellers won through each channel have sold since joining.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "funnel.channels",
+    "params": {},
+    "filter_params": {
+     "origin": "origin"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "origin",
+      "title": "Channel",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "leads",
+      "title": "Leads",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "won_deals",
+      "title": "Won",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "conversion_pct",
+      "title": "Conversion %",
+      "type": "percent",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "seller_revenue",
+      "title": "Seller revenue",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "origin",
+     "y": [
+      "seller_revenue"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.targets.strip",
+   "widget_code": "R-0064",
+   "type": "kpi_strip",
+   "title": "Target attainment at a glance",
+   "description": "Actual versus target revenue and orders for the period.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "targets.performance",
+    "params": {
+     "group_by": "none"
+    },
+    "filter_params": {
+     "customer_state": "customer_state",
+     "below_target": "below_target"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "revenue_actual",
+      "title": "Actual revenue",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "revenue_target",
+      "title": "Target revenue",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "attainment_pct",
+      "title": "Attainment",
+      "type": "percent",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "variance",
+      "title": "Variance",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "orders_actual",
+      "title": "Orders",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "order_target",
+      "title": "Order target",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": null,
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.targets.monthly",
+   "widget_code": "R-0065",
+   "type": "line_chart",
+   "title": "Actual vs target by month",
+   "description": "Monthly revenue next to its target.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "targets.performance",
+    "params": {
+     "group_by": "month"
+    },
+    "filter_params": {
+     "customer_state": "customer_state",
+     "below_target": "below_target"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "month",
+      "title": "Month",
+      "type": "date",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "revenue_actual",
+      "title": "Actual",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "revenue_target",
+      "title": "Target",
+      "type": "money",
+      "unit": "BRL",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "month",
+     "y": [
+      "revenue_actual",
+      "revenue_target"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.sla.strip",
+   "widget_code": "R-0066",
+   "type": "kpi_strip",
+   "title": "Delivery SLA at a glance",
+   "description": "Deliveries, SLA breaches and breach rate next to Olist's own late rate.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "sla.performance",
+    "params": {
+     "group_by": "none"
+    },
+    "filter_params": {
+     "customer_region": "customer_region"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "delivered_orders",
+      "title": "Delivered",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "breaches",
+      "title": "SLA breaches",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "breach_rate_pct",
+      "title": "Breach rate",
+      "type": "percent",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "olist_late_rate_pct",
+      "title": "Olist late rate",
+      "type": "percent",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "avg_delivery_days",
+      "title": "Avg delivery days",
+      "type": "number",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": null,
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.sla.monthly",
+   "widget_code": "R-0067",
+   "type": "line_chart",
+   "title": "SLA breach rate by month",
+   "description": "How the share of slow deliveries moved month by month.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter",
+    "date_range"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "sla.performance",
+    "params": {
+     "group_by": "month"
+    },
+    "filter_params": {
+     "customer_region": "customer_region"
+    },
+    "date_params": {
+     "from": "date_from",
+     "to": "date_to"
+    },
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "month",
+      "title": "Month",
+      "type": "date",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "breach_rate_pct",
+      "title": "SLA breach %",
+      "type": "percent",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "olist_late_rate_pct",
+      "title": "Olist late %",
+      "type": "percent",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "month",
+     "y": [
+      "breach_rate_pct",
+      "olist_late_rate_pct"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.forecast.error_by_state",
+   "widget_code": "R-0068",
+   "type": "bar_chart",
+   "title": "Forecast error by state (Jan-Aug 2018)",
+   "description": "How far the forecast was from actual revenue in each state; positive means the forecast was too high.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "forecasts.comparison",
+    "params": {
+     "group_by": "customer_state",
+     "date_from": "2018-01-01",
+     "date_to": "2018-08-31",
+     "limit": 27
+    },
+    "filter_params": {
+     "scenario": "scenario",
+     "customer_state": "customer_state"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "customer_state",
+      "title": "State",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "error_pct",
+      "title": "Forecast error %",
+      "type": "percent",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "customer_state",
+     "y": [
+      "error_pct"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "ops.promotions.discounts",
+   "widget_code": "R-0069",
+   "type": "bar_chart",
+   "title": "Discount by promotion",
+   "description": "How deep each campaign's discount is.",
+   "dataset_id": null,
+   "metrics": [],
+   "dimensions": [],
+   "supports": [
+    "filter"
+   ],
+   "render": {
+    "query_metrics": [],
+    "query_dimensions": [],
+    "ack_fields": [
+     "applied_filters",
+     "row_count",
+     "series_hash"
+    ]
+   },
+   "source": {
+    "api_id": "promotions.search",
+    "params": {
+     "limit": 14
+    },
+    "filter_params": {
+     "status": "status",
+     "product_category": "product_category"
+    },
+    "date_params": null,
+    "sort_param": null,
+    "items_path": "items",
+    "columns": [
+     {
+      "name": "name",
+      "title": "Promotion",
+      "type": "text",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     },
+     {
+      "name": "discount_pct",
+      "title": "Discount %",
+      "type": "percent",
+      "unit": "",
+      "description": "",
+      "hidden": false
+     }
+    ],
+    "chart": {
+     "x": "name",
+     "y": [
+      "discount_pct"
+     ],
+     "stacked": false
+    },
+    "row_actions": []
+   }
+  },
+  {
+   "widget_id": "sales.overview.kpi_revenue",
+   "widget_code": "R-0070",
    "type": "kpi_card",
    "title": "Revenue",
    "description": "Headline revenue for the selected period (total item price of valid sales (excludes canceled and unavailable orders)).",
@@ -49396,7 +52354,7 @@
   },
   {
    "widget_id": "sales.overview.kpi_orders",
-   "widget_code": "R-0030",
+   "widget_code": "R-0071",
    "type": "kpi_card",
    "title": "Orders",
    "description": "Headline orders for the selected period (number of distinct orders with at least one item (valid sales)).",
@@ -49424,7 +52382,7 @@
   },
   {
    "widget_id": "sales.overview.kpi_items_sold",
-   "widget_code": "R-0031",
+   "widget_code": "R-0072",
    "type": "kpi_card",
    "title": "Items sold",
    "description": "Headline items sold for the selected period (number of order lines in valid sales).",
@@ -49452,7 +52410,7 @@
   },
   {
    "widget_id": "sales.overview.kpi_aov",
-   "widget_code": "R-0032",
+   "widget_code": "R-0073",
    "type": "kpi_card",
    "title": "Average order value",
    "description": "Headline average order value for the selected period (revenue divided by the number of orders (valid sales)).",
@@ -49480,7 +52438,7 @@
   },
   {
    "widget_id": "sales.overview.trend",
-   "widget_code": "R-0033",
+   "widget_code": "R-0074",
    "type": "line_chart",
    "title": "Revenue by month",
    "description": "Monthly revenue for the selected period.",
@@ -49512,7 +52470,7 @@
   },
   {
    "widget_id": "sales.revenue_by_customer_state.chart",
-   "widget_code": "R-0034",
+   "widget_code": "R-0075",
    "type": "bar_chart",
    "title": "Revenue by customer state",
    "description": "Bar chart of revenue (BRL) per customer state. Which customer states have the highest and lowest revenue?",
@@ -49545,7 +52503,7 @@
   },
   {
    "widget_id": "sales.revenue_by_customer_state.grid",
-   "widget_code": "R-0035",
+   "widget_code": "R-0076",
    "type": "grid",
    "title": "Revenue by customer state (table)",
    "description": "Sortable table of revenue, orders per customer state.",
@@ -49580,7 +52538,7 @@
   },
   {
    "widget_id": "sales.revenue_by_customer_region.chart",
-   "widget_code": "R-0036",
+   "widget_code": "R-0077",
    "type": "bar_chart",
    "title": "Revenue by customer region",
    "description": "Bar chart of revenue (BRL) per customer region. Which customer regions have the highest and lowest revenue?",
@@ -49613,7 +52571,7 @@
   },
   {
    "widget_id": "sales.revenue_by_customer_region.grid",
-   "widget_code": "R-0037",
+   "widget_code": "R-0078",
    "type": "grid",
    "title": "Revenue by customer region (table)",
    "description": "Sortable table of revenue, orders per customer region.",
@@ -49648,7 +52606,7 @@
   },
   {
    "widget_id": "sales.revenue_by_product_category.chart",
-   "widget_code": "R-0038",
+   "widget_code": "R-0079",
    "type": "bar_chart",
    "title": "Revenue by product category",
    "description": "Bar chart of revenue (BRL) per product category. Which product categorys have the highest and lowest revenue?",
@@ -49681,7 +52639,7 @@
   },
   {
    "widget_id": "sales.revenue_by_product_category.grid",
-   "widget_code": "R-0039",
+   "widget_code": "R-0080",
    "type": "grid",
    "title": "Revenue by product category (table)",
    "description": "Sortable table of revenue, orders per product category.",
@@ -49716,7 +52674,7 @@
   },
   {
    "widget_id": "sales.revenue_by_seller_state.chart",
-   "widget_code": "R-0040",
+   "widget_code": "R-0081",
    "type": "bar_chart",
    "title": "Revenue by seller state",
    "description": "Bar chart of revenue (BRL) per seller state. Which seller states have the highest and lowest revenue?",
@@ -49749,7 +52707,7 @@
   },
   {
    "widget_id": "sales.revenue_by_seller_state.grid",
-   "widget_code": "R-0041",
+   "widget_code": "R-0082",
    "type": "grid",
    "title": "Revenue by seller state (table)",
    "description": "Sortable table of revenue, orders per seller state.",
@@ -49784,7 +52742,7 @@
   },
   {
    "widget_id": "sales.revenue_by_order_status.chart",
-   "widget_code": "R-0042",
+   "widget_code": "R-0083",
    "type": "bar_chart",
    "title": "Revenue by order status",
    "description": "Bar chart of revenue (BRL) per order status. How does revenue split across order statuses?",
@@ -49817,7 +52775,7 @@
   },
   {
    "widget_id": "sales.revenue_by_order_status.grid",
-   "widget_code": "R-0043",
+   "widget_code": "R-0084",
    "type": "grid",
    "title": "Revenue by order status (table)",
    "description": "Sortable table of revenue, orders per order status.",
@@ -49852,7 +52810,7 @@
   },
   {
    "widget_id": "sales.orders_by_customer_state.chart",
-   "widget_code": "R-0044",
+   "widget_code": "R-0085",
    "type": "bar_chart",
    "title": "Orders by customer state",
    "description": "Bar chart of orders (count) per customer state. Which customer states have the highest and lowest orders?",
@@ -49885,7 +52843,7 @@
   },
   {
    "widget_id": "sales.orders_by_customer_state.grid",
-   "widget_code": "R-0045",
+   "widget_code": "R-0086",
    "type": "grid",
    "title": "Orders by customer state (table)",
    "description": "Sortable table of orders per customer state.",
@@ -49918,7 +52876,7 @@
   },
   {
    "widget_id": "sales.orders_by_customer_region.chart",
-   "widget_code": "R-0046",
+   "widget_code": "R-0087",
    "type": "bar_chart",
    "title": "Orders by customer region",
    "description": "Bar chart of orders (count) per customer region. Which customer regions have the highest and lowest orders?",
@@ -49951,7 +52909,7 @@
   },
   {
    "widget_id": "sales.orders_by_customer_region.grid",
-   "widget_code": "R-0047",
+   "widget_code": "R-0088",
    "type": "grid",
    "title": "Orders by customer region (table)",
    "description": "Sortable table of orders per customer region.",
@@ -49984,7 +52942,7 @@
   },
   {
    "widget_id": "sales.orders_by_product_category.chart",
-   "widget_code": "R-0048",
+   "widget_code": "R-0089",
    "type": "bar_chart",
    "title": "Orders by product category",
    "description": "Bar chart of orders (count) per product category. Which product categorys have the highest and lowest orders?",
@@ -50017,7 +52975,7 @@
   },
   {
    "widget_id": "sales.orders_by_product_category.grid",
-   "widget_code": "R-0049",
+   "widget_code": "R-0090",
    "type": "grid",
    "title": "Orders by product category (table)",
    "description": "Sortable table of orders per product category.",
@@ -50050,7 +53008,7 @@
   },
   {
    "widget_id": "sales.orders_by_seller_state.chart",
-   "widget_code": "R-0050",
+   "widget_code": "R-0091",
    "type": "bar_chart",
    "title": "Orders by seller state",
    "description": "Bar chart of orders (count) per seller state. Which seller states have the highest and lowest orders?",
@@ -50083,7 +53041,7 @@
   },
   {
    "widget_id": "sales.orders_by_seller_state.grid",
-   "widget_code": "R-0051",
+   "widget_code": "R-0092",
    "type": "grid",
    "title": "Orders by seller state (table)",
    "description": "Sortable table of orders per seller state.",
@@ -50116,7 +53074,7 @@
   },
   {
    "widget_id": "sales.orders_by_order_status.chart",
-   "widget_code": "R-0052",
+   "widget_code": "R-0093",
    "type": "bar_chart",
    "title": "Orders by order status",
    "description": "Bar chart of orders (count) per order status. How does orders split across order statuses?",
@@ -50149,7 +53107,7 @@
   },
   {
    "widget_id": "sales.orders_by_order_status.grid",
-   "widget_code": "R-0053",
+   "widget_code": "R-0094",
    "type": "grid",
    "title": "Orders by order status (table)",
    "description": "Sortable table of orders per order status.",
@@ -50182,7 +53140,7 @@
   },
   {
    "widget_id": "sales.items_sold_by_customer_state.chart",
-   "widget_code": "R-0054",
+   "widget_code": "R-0095",
    "type": "bar_chart",
    "title": "Items sold by customer state",
    "description": "Bar chart of items sold (count) per customer state. Which customer states have the highest and lowest items sold?",
@@ -50215,7 +53173,7 @@
   },
   {
    "widget_id": "sales.items_sold_by_customer_state.grid",
-   "widget_code": "R-0055",
+   "widget_code": "R-0096",
    "type": "grid",
    "title": "Items sold by customer state (table)",
    "description": "Sortable table of items sold, orders per customer state.",
@@ -50250,7 +53208,7 @@
   },
   {
    "widget_id": "sales.items_sold_by_customer_region.chart",
-   "widget_code": "R-0056",
+   "widget_code": "R-0097",
    "type": "bar_chart",
    "title": "Items sold by customer region",
    "description": "Bar chart of items sold (count) per customer region. Which customer regions have the highest and lowest items sold?",
@@ -50283,7 +53241,7 @@
   },
   {
    "widget_id": "sales.items_sold_by_customer_region.grid",
-   "widget_code": "R-0057",
+   "widget_code": "R-0098",
    "type": "grid",
    "title": "Items sold by customer region (table)",
    "description": "Sortable table of items sold, orders per customer region.",
@@ -50318,7 +53276,7 @@
   },
   {
    "widget_id": "sales.items_sold_by_product_category.chart",
-   "widget_code": "R-0058",
+   "widget_code": "R-0099",
    "type": "bar_chart",
    "title": "Items sold by product category",
    "description": "Bar chart of items sold (count) per product category. Which product categorys have the highest and lowest items sold?",
@@ -50351,7 +53309,7 @@
   },
   {
    "widget_id": "sales.items_sold_by_product_category.grid",
-   "widget_code": "R-0059",
+   "widget_code": "R-0100",
    "type": "grid",
    "title": "Items sold by product category (table)",
    "description": "Sortable table of items sold, orders per product category.",
@@ -50386,7 +53344,7 @@
   },
   {
    "widget_id": "sales.items_sold_by_seller_state.chart",
-   "widget_code": "R-0060",
+   "widget_code": "R-0101",
    "type": "bar_chart",
    "title": "Items sold by seller state",
    "description": "Bar chart of items sold (count) per seller state. Which seller states have the highest and lowest items sold?",
@@ -50419,7 +53377,7 @@
   },
   {
    "widget_id": "sales.items_sold_by_seller_state.grid",
-   "widget_code": "R-0061",
+   "widget_code": "R-0102",
    "type": "grid",
    "title": "Items sold by seller state (table)",
    "description": "Sortable table of items sold, orders per seller state.",
@@ -50454,7 +53412,7 @@
   },
   {
    "widget_id": "sales.items_sold_by_order_status.chart",
-   "widget_code": "R-0062",
+   "widget_code": "R-0103",
    "type": "bar_chart",
    "title": "Items sold by order status",
    "description": "Bar chart of items sold (count) per order status. How does items sold split across order statuses?",
@@ -50487,7 +53445,7 @@
   },
   {
    "widget_id": "sales.items_sold_by_order_status.grid",
-   "widget_code": "R-0063",
+   "widget_code": "R-0104",
    "type": "grid",
    "title": "Items sold by order status (table)",
    "description": "Sortable table of items sold, orders per order status.",
@@ -50522,7 +53480,7 @@
   },
   {
    "widget_id": "sales.aov_by_customer_state.chart",
-   "widget_code": "R-0064",
+   "widget_code": "R-0105",
    "type": "bar_chart",
    "title": "Average order value by customer state",
    "description": "Bar chart of average order value (BRL) per customer state. Which customer states have the highest and lowest average order value?",
@@ -50555,7 +53513,7 @@
   },
   {
    "widget_id": "sales.aov_by_customer_state.grid",
-   "widget_code": "R-0065",
+   "widget_code": "R-0106",
    "type": "grid",
    "title": "Average order value by customer state (table)",
    "description": "Sortable table of average order value, orders per customer state.",
@@ -50590,7 +53548,7 @@
   },
   {
    "widget_id": "sales.aov_by_customer_region.chart",
-   "widget_code": "R-0066",
+   "widget_code": "R-0107",
    "type": "bar_chart",
    "title": "Average order value by customer region",
    "description": "Bar chart of average order value (BRL) per customer region. Which customer regions have the highest and lowest average order value?",
@@ -50623,7 +53581,7 @@
   },
   {
    "widget_id": "sales.aov_by_customer_region.grid",
-   "widget_code": "R-0067",
+   "widget_code": "R-0108",
    "type": "grid",
    "title": "Average order value by customer region (table)",
    "description": "Sortable table of average order value, orders per customer region.",
@@ -50658,7 +53616,7 @@
   },
   {
    "widget_id": "sales.aov_by_product_category.chart",
-   "widget_code": "R-0068",
+   "widget_code": "R-0109",
    "type": "bar_chart",
    "title": "Average order value by product category",
    "description": "Bar chart of average order value (BRL) per product category. Which product categorys have the highest and lowest average order value?",
@@ -50691,7 +53649,7 @@
   },
   {
    "widget_id": "sales.aov_by_product_category.grid",
-   "widget_code": "R-0069",
+   "widget_code": "R-0110",
    "type": "grid",
    "title": "Average order value by product category (table)",
    "description": "Sortable table of average order value, orders per product category.",
@@ -50726,7 +53684,7 @@
   },
   {
    "widget_id": "sales.aov_by_seller_state.chart",
-   "widget_code": "R-0070",
+   "widget_code": "R-0111",
    "type": "bar_chart",
    "title": "Average order value by seller state",
    "description": "Bar chart of average order value (BRL) per seller state. Which seller states have the highest and lowest average order value?",
@@ -50759,7 +53717,7 @@
   },
   {
    "widget_id": "sales.aov_by_seller_state.grid",
-   "widget_code": "R-0071",
+   "widget_code": "R-0112",
    "type": "grid",
    "title": "Average order value by seller state (table)",
    "description": "Sortable table of average order value, orders per seller state.",
@@ -50794,7 +53752,7 @@
   },
   {
    "widget_id": "sales.aov_by_order_status.chart",
-   "widget_code": "R-0072",
+   "widget_code": "R-0113",
    "type": "bar_chart",
    "title": "Average order value by order status",
    "description": "Bar chart of average order value (BRL) per order status. How does average order value split across order statuses?",
@@ -50827,7 +53785,7 @@
   },
   {
    "widget_id": "sales.aov_by_order_status.grid",
-   "widget_code": "R-0073",
+   "widget_code": "R-0114",
    "type": "grid",
    "title": "Average order value by order status (table)",
    "description": "Sortable table of average order value, orders per order status.",
@@ -50862,7 +53820,7 @@
   },
   {
    "widget_id": "sales.revenue_by_customer_region_and_product_category.chart",
-   "widget_code": "R-0074",
+   "widget_code": "R-0115",
    "type": "bar_chart",
    "title": "Revenue by customer region",
    "description": "Bar chart of revenue (BRL) per customer region; use the product category filter to focus.",
@@ -50895,7 +53853,7 @@
   },
   {
    "widget_id": "sales.revenue_by_customer_region_and_product_category.grid",
-   "widget_code": "R-0075",
+   "widget_code": "R-0116",
    "type": "grid",
    "title": "Revenue by customer region and product category",
    "description": "Sortable table of revenue for every customer region and product category combination. Within each customer region, which product categorys drive revenue?",
@@ -50930,7 +53888,7 @@
   },
   {
    "widget_id": "sales.orders_by_customer_region_and_product_category.chart",
-   "widget_code": "R-0076",
+   "widget_code": "R-0117",
    "type": "bar_chart",
    "title": "Orders by customer region",
    "description": "Bar chart of orders (count) per customer region; use the product category filter to focus.",
@@ -50963,7 +53921,7 @@
   },
   {
    "widget_id": "sales.orders_by_customer_region_and_product_category.grid",
-   "widget_code": "R-0077",
+   "widget_code": "R-0118",
    "type": "grid",
    "title": "Orders by customer region and product category",
    "description": "Sortable table of orders for every customer region and product category combination. Within each customer region, which product categorys drive orders?",
@@ -50998,7 +53956,7 @@
   },
   {
    "widget_id": "sales.aov_by_customer_region_and_product_category.chart",
-   "widget_code": "R-0078",
+   "widget_code": "R-0119",
    "type": "bar_chart",
    "title": "Average order value by customer region",
    "description": "Bar chart of average order value (BRL) per customer region; use the product category filter to focus.",
@@ -51031,7 +53989,7 @@
   },
   {
    "widget_id": "sales.aov_by_customer_region_and_product_category.grid",
-   "widget_code": "R-0079",
+   "widget_code": "R-0120",
    "type": "grid",
    "title": "Average order value by customer region and product category",
    "description": "Sortable table of average order value for every customer region and product category combination. Within each customer region, which product categorys drive average order value?",
@@ -51066,7 +54024,7 @@
   },
   {
    "widget_id": "sales.revenue_by_customer_state_and_product_category.chart",
-   "widget_code": "R-0080",
+   "widget_code": "R-0121",
    "type": "bar_chart",
    "title": "Revenue by customer state",
    "description": "Bar chart of revenue (BRL) per customer state; use the product category filter to focus.",
@@ -51099,7 +54057,7 @@
   },
   {
    "widget_id": "sales.revenue_by_customer_state_and_product_category.grid",
-   "widget_code": "R-0081",
+   "widget_code": "R-0122",
    "type": "grid",
    "title": "Revenue by customer state and product category",
    "description": "Sortable table of revenue for every customer state and product category combination. Within each customer state, which product categorys drive revenue?",
@@ -51134,7 +54092,7 @@
   },
   {
    "widget_id": "sales.revenue_by_seller_state_and_customer_region.chart",
-   "widget_code": "R-0082",
+   "widget_code": "R-0123",
    "type": "bar_chart",
    "title": "Revenue by seller state",
    "description": "Bar chart of revenue (BRL) per seller state; use the customer region filter to focus.",
@@ -51167,7 +54125,7 @@
   },
   {
    "widget_id": "sales.revenue_by_seller_state_and_customer_region.grid",
-   "widget_code": "R-0083",
+   "widget_code": "R-0124",
    "type": "grid",
    "title": "Revenue by seller state and customer region",
    "description": "Sortable table of revenue for every seller state and customer region combination. Within each seller state, which customer regions drive revenue?",
@@ -51202,7 +54160,7 @@
   },
   {
    "widget_id": "sales.revenue_by_customer_region_and_order_status.chart",
-   "widget_code": "R-0084",
+   "widget_code": "R-0125",
    "type": "bar_chart",
    "title": "Revenue by customer region",
    "description": "Bar chart of revenue (BRL) per customer region; use the order status filter to focus.",
@@ -51235,7 +54193,7 @@
   },
   {
    "widget_id": "sales.revenue_by_customer_region_and_order_status.grid",
-   "widget_code": "R-0085",
+   "widget_code": "R-0126",
    "type": "grid",
    "title": "Revenue by customer region and order status",
    "description": "Sortable table of revenue for every customer region and order status combination. Within each customer region, which order statuss drive revenue?",
@@ -51270,7 +54228,7 @@
   },
   {
    "widget_id": "sales.revenue_trend.chart",
-   "widget_code": "R-0086",
+   "widget_code": "R-0127",
    "type": "line_chart",
    "title": "Revenue by month",
    "description": "Line chart of monthly revenue (BRL). Is it growing or falling?",
@@ -51302,7 +54260,7 @@
   },
   {
    "widget_id": "sales.revenue_trend.grid",
-   "widget_code": "R-0087",
+   "widget_code": "R-0128",
    "type": "grid",
    "title": "Revenue by month (table)",
    "description": "Monthly table of revenue, sortable.",
@@ -51335,7 +54293,7 @@
   },
   {
    "widget_id": "sales.orders_trend.chart",
-   "widget_code": "R-0088",
+   "widget_code": "R-0129",
    "type": "line_chart",
    "title": "Orders by month",
    "description": "Line chart of monthly orders (count). Is it growing or falling?",
@@ -51367,7 +54325,7 @@
   },
   {
    "widget_id": "sales.orders_trend.grid",
-   "widget_code": "R-0089",
+   "widget_code": "R-0130",
    "type": "grid",
    "title": "Orders by month (table)",
    "description": "Monthly table of orders, sortable.",
@@ -51400,7 +54358,7 @@
   },
   {
    "widget_id": "sales.aov_trend.chart",
-   "widget_code": "R-0090",
+   "widget_code": "R-0131",
    "type": "line_chart",
    "title": "Average order value by month",
    "description": "Line chart of monthly average order value (BRL). Is it growing or falling?",
@@ -51432,7 +54390,7 @@
   },
   {
    "widget_id": "sales.aov_trend.grid",
-   "widget_code": "R-0091",
+   "widget_code": "R-0132",
    "type": "grid",
    "title": "Average order value by month (table)",
    "description": "Monthly table of average order value, sortable.",
@@ -51465,7 +54423,7 @@
   },
   {
    "widget_id": "customers.overview.kpi_order_count",
-   "widget_code": "R-0092",
+   "widget_code": "R-0133",
    "type": "kpi_card",
    "title": "Order count",
    "description": "Headline order count for the selected period (number of orders of any status).",
@@ -51493,7 +54451,7 @@
   },
   {
    "widget_id": "customers.overview.kpi_cancel_rate",
-   "widget_code": "R-0093",
+   "widget_code": "R-0134",
    "type": "kpi_card",
    "title": "Cancellation rate",
    "description": "Headline cancellation rate for the selected period (share of orders that were canceled).",
@@ -51521,7 +54479,7 @@
   },
   {
    "widget_id": "customers.overview.trend",
-   "widget_code": "R-0094",
+   "widget_code": "R-0135",
    "type": "line_chart",
    "title": "Order count by month",
    "description": "Monthly order count for the selected period.",
@@ -51553,7 +54511,7 @@
   },
   {
    "widget_id": "customers.order_count_by_customer_state.chart",
-   "widget_code": "R-0095",
+   "widget_code": "R-0136",
    "type": "bar_chart",
    "title": "Order count by customer state",
    "description": "Bar chart of order count (count) per customer state. Which customer states have the highest and lowest order count?",
@@ -51586,7 +54544,7 @@
   },
   {
    "widget_id": "customers.order_count_by_customer_state.grid",
-   "widget_code": "R-0096",
+   "widget_code": "R-0137",
    "type": "grid",
    "title": "Order count by customer state (table)",
    "description": "Sortable table of order count per customer state.",
@@ -51619,7 +54577,7 @@
   },
   {
    "widget_id": "customers.order_count_by_customer_region.chart",
-   "widget_code": "R-0097",
+   "widget_code": "R-0138",
    "type": "bar_chart",
    "title": "Order count by customer region",
    "description": "Bar chart of order count (count) per customer region. Which customer regions have the highest and lowest order count?",
@@ -51652,7 +54610,7 @@
   },
   {
    "widget_id": "customers.order_count_by_customer_region.grid",
-   "widget_code": "R-0098",
+   "widget_code": "R-0139",
    "type": "grid",
    "title": "Order count by customer region (table)",
    "description": "Sortable table of order count per customer region.",
@@ -51685,7 +54643,7 @@
   },
   {
    "widget_id": "customers.order_count_by_order_status.chart",
-   "widget_code": "R-0099",
+   "widget_code": "R-0140",
    "type": "bar_chart",
    "title": "Order count by order status",
    "description": "Bar chart of order count (count) per order status. How does order count split across order statuses?",
@@ -51718,7 +54676,7 @@
   },
   {
    "widget_id": "customers.order_count_by_order_status.grid",
-   "widget_code": "R-0100",
+   "widget_code": "R-0141",
    "type": "grid",
    "title": "Order count by order status (table)",
    "description": "Sortable table of order count per order status.",
@@ -51751,7 +54709,7 @@
   },
   {
    "widget_id": "customers.cancel_rate_by_customer_state.chart",
-   "widget_code": "R-0101",
+   "widget_code": "R-0142",
    "type": "bar_chart",
    "title": "Cancellation rate by customer state",
    "description": "Bar chart of cancellation rate (ratio) per customer state. Which customer states have the highest and lowest cancellation rate?",
@@ -51784,7 +54742,7 @@
   },
   {
    "widget_id": "customers.cancel_rate_by_customer_state.grid",
-   "widget_code": "R-0102",
+   "widget_code": "R-0143",
    "type": "grid",
    "title": "Cancellation rate by customer state (table)",
    "description": "Sortable table of cancellation rate, order count per customer state.",
@@ -51819,7 +54777,7 @@
   },
   {
    "widget_id": "customers.cancel_rate_by_customer_region.chart",
-   "widget_code": "R-0103",
+   "widget_code": "R-0144",
    "type": "bar_chart",
    "title": "Cancellation rate by customer region",
    "description": "Bar chart of cancellation rate (ratio) per customer region. Which customer regions have the highest and lowest cancellation rate?",
@@ -51852,7 +54810,7 @@
   },
   {
    "widget_id": "customers.cancel_rate_by_customer_region.grid",
-   "widget_code": "R-0104",
+   "widget_code": "R-0145",
    "type": "grid",
    "title": "Cancellation rate by customer region (table)",
    "description": "Sortable table of cancellation rate, order count per customer region.",
@@ -51887,7 +54845,7 @@
   },
   {
    "widget_id": "customers.cancel_rate_by_order_status.chart",
-   "widget_code": "R-0105",
+   "widget_code": "R-0146",
    "type": "bar_chart",
    "title": "Cancellation rate by order status",
    "description": "Bar chart of cancellation rate (ratio) per order status. How does cancellation rate split across order statuses?",
@@ -51920,7 +54878,7 @@
   },
   {
    "widget_id": "customers.cancel_rate_by_order_status.grid",
-   "widget_code": "R-0106",
+   "widget_code": "R-0147",
    "type": "grid",
    "title": "Cancellation rate by order status (table)",
    "description": "Sortable table of cancellation rate, order count per order status.",
@@ -51955,7 +54913,7 @@
   },
   {
    "widget_id": "customers.order_count_by_customer_region_and_order_status.chart",
-   "widget_code": "R-0107",
+   "widget_code": "R-0148",
    "type": "bar_chart",
    "title": "Order count by customer region",
    "description": "Bar chart of order count (count) per customer region; use the order status filter to focus.",
@@ -51988,7 +54946,7 @@
   },
   {
    "widget_id": "customers.order_count_by_customer_region_and_order_status.grid",
-   "widget_code": "R-0108",
+   "widget_code": "R-0149",
    "type": "grid",
    "title": "Order count by customer region and order status",
    "description": "Sortable table of order count for every customer region and order status combination. Within each customer region, which order statuss drive order count?",
@@ -52023,7 +54981,7 @@
   },
   {
    "widget_id": "customers.order_count_by_customer_state_and_order_status.chart",
-   "widget_code": "R-0109",
+   "widget_code": "R-0150",
    "type": "bar_chart",
    "title": "Order count by customer state",
    "description": "Bar chart of order count (count) per customer state; use the order status filter to focus.",
@@ -52056,7 +55014,7 @@
   },
   {
    "widget_id": "customers.order_count_by_customer_state_and_order_status.grid",
-   "widget_code": "R-0110",
+   "widget_code": "R-0151",
    "type": "grid",
    "title": "Order count by customer state and order status",
    "description": "Sortable table of order count for every customer state and order status combination. Within each customer state, which order statuss drive order count?",
@@ -52091,7 +55049,7 @@
   },
   {
    "widget_id": "customers.order_count_trend.chart",
-   "widget_code": "R-0111",
+   "widget_code": "R-0152",
    "type": "line_chart",
    "title": "Order count by month",
    "description": "Line chart of monthly order count (count). Is it growing or falling?",
@@ -52123,7 +55081,7 @@
   },
   {
    "widget_id": "customers.order_count_trend.grid",
-   "widget_code": "R-0112",
+   "widget_code": "R-0153",
    "type": "grid",
    "title": "Order count by month (table)",
    "description": "Monthly table of order count, sortable.",
@@ -52156,7 +55114,7 @@
   },
   {
    "widget_id": "customers.cancel_rate_trend.chart",
-   "widget_code": "R-0113",
+   "widget_code": "R-0154",
    "type": "line_chart",
    "title": "Cancellation rate by month",
    "description": "Line chart of monthly cancellation rate (ratio). Is it growing or falling?",
@@ -52188,7 +55146,7 @@
   },
   {
    "widget_id": "customers.cancel_rate_trend.grid",
-   "widget_code": "R-0114",
+   "widget_code": "R-0155",
    "type": "grid",
    "title": "Cancellation rate by month (table)",
    "description": "Monthly table of cancellation rate, sortable.",
@@ -52221,7 +55179,7 @@
   },
   {
    "widget_id": "sellers.overview.kpi_revenue",
-   "widget_code": "R-0115",
+   "widget_code": "R-0156",
    "type": "kpi_card",
    "title": "Revenue",
    "description": "Headline revenue for the selected period (total item price of valid sales (excludes canceled and unavailable orders)).",
@@ -52249,7 +55207,7 @@
   },
   {
    "widget_id": "sellers.overview.kpi_items_sold",
-   "widget_code": "R-0116",
+   "widget_code": "R-0157",
    "type": "kpi_card",
    "title": "Items sold",
    "description": "Headline items sold for the selected period (number of order lines in valid sales).",
@@ -52277,7 +55235,7 @@
   },
   {
    "widget_id": "sellers.overview.kpi_late_rate",
-   "widget_code": "R-0117",
+   "widget_code": "R-0158",
    "type": "kpi_card",
    "title": "Late delivery rate",
    "description": "Headline late delivery rate for the selected period (share of delivered items that arrived after the estimated date).",
@@ -52305,7 +55263,7 @@
   },
   {
    "widget_id": "sellers.overview.kpi_avg_delivery_days",
-   "widget_code": "R-0118",
+   "widget_code": "R-0159",
    "type": "kpi_card",
    "title": "Average delivery time",
    "description": "Headline average delivery time for the selected period (average days from purchase to delivery for delivered items).",
@@ -52333,7 +55291,7 @@
   },
   {
    "widget_id": "sellers.overview.trend",
-   "widget_code": "R-0119",
+   "widget_code": "R-0160",
    "type": "line_chart",
    "title": "Revenue by month",
    "description": "Monthly revenue for the selected period.",
@@ -52365,7 +55323,7 @@
   },
   {
    "widget_id": "sellers.revenue_by_seller_state.chart",
-   "widget_code": "R-0120",
+   "widget_code": "R-0161",
    "type": "bar_chart",
    "title": "Revenue by seller state",
    "description": "Bar chart of revenue (BRL) per seller state. Which seller states have the highest and lowest revenue?",
@@ -52398,7 +55356,7 @@
   },
   {
    "widget_id": "sellers.revenue_by_seller_state.grid",
-   "widget_code": "R-0121",
+   "widget_code": "R-0162",
    "type": "grid",
    "title": "Revenue by seller state (table)",
    "description": "Sortable table of revenue, orders per seller state.",
@@ -52433,7 +55391,7 @@
   },
   {
    "widget_id": "sellers.items_sold_by_seller_state.chart",
-   "widget_code": "R-0122",
+   "widget_code": "R-0163",
    "type": "bar_chart",
    "title": "Items sold by seller state",
    "description": "Bar chart of items sold (count) per seller state. Which seller states have the highest and lowest items sold?",
@@ -52466,7 +55424,7 @@
   },
   {
    "widget_id": "sellers.items_sold_by_seller_state.grid",
-   "widget_code": "R-0123",
+   "widget_code": "R-0164",
    "type": "grid",
    "title": "Items sold by seller state (table)",
    "description": "Sortable table of items sold, orders per seller state.",
@@ -52501,7 +55459,7 @@
   },
   {
    "widget_id": "sellers.late_rate_by_seller_state.chart",
-   "widget_code": "R-0124",
+   "widget_code": "R-0165",
    "type": "bar_chart",
    "title": "Late delivery rate by seller state",
    "description": "Bar chart of late delivery rate (ratio) per seller state. Which seller states have the highest and lowest late delivery rate?",
@@ -52534,7 +55492,7 @@
   },
   {
    "widget_id": "sellers.late_rate_by_seller_state.grid",
-   "widget_code": "R-0125",
+   "widget_code": "R-0166",
    "type": "grid",
    "title": "Late delivery rate by seller state (table)",
    "description": "Sortable table of late delivery rate, orders per seller state.",
@@ -52569,7 +55527,7 @@
   },
   {
    "widget_id": "sellers.avg_delivery_days_by_seller_state.chart",
-   "widget_code": "R-0126",
+   "widget_code": "R-0167",
    "type": "bar_chart",
    "title": "Average delivery time by seller state",
    "description": "Bar chart of average delivery time (days) per seller state. Which seller states have the highest and lowest average delivery time?",
@@ -52602,7 +55560,7 @@
   },
   {
    "widget_id": "sellers.avg_delivery_days_by_seller_state.grid",
-   "widget_code": "R-0127",
+   "widget_code": "R-0168",
    "type": "grid",
    "title": "Average delivery time by seller state (table)",
    "description": "Sortable table of average delivery time, orders per seller state.",
@@ -52637,7 +55595,7 @@
   },
   {
    "widget_id": "sellers.freight_by_seller_state.chart",
-   "widget_code": "R-0128",
+   "widget_code": "R-0169",
    "type": "bar_chart",
    "title": "Freight by seller state",
    "description": "Bar chart of freight (BRL) per seller state. Which seller states have the highest and lowest freight?",
@@ -52670,7 +55628,7 @@
   },
   {
    "widget_id": "sellers.freight_by_seller_state.grid",
-   "widget_code": "R-0129",
+   "widget_code": "R-0170",
    "type": "grid",
    "title": "Freight by seller state (table)",
    "description": "Sortable table of freight, orders per seller state.",
@@ -52705,7 +55663,7 @@
   },
   {
    "widget_id": "logistics.overview.kpi_avg_delivery_days",
-   "widget_code": "R-0130",
+   "widget_code": "R-0171",
    "type": "kpi_card",
    "title": "Average delivery time",
    "description": "Headline average delivery time for the selected period (average days from purchase to delivery for delivered items).",
@@ -52733,7 +55691,7 @@
   },
   {
    "widget_id": "logistics.overview.kpi_late_rate",
-   "widget_code": "R-0131",
+   "widget_code": "R-0172",
    "type": "kpi_card",
    "title": "Late delivery rate",
    "description": "Headline late delivery rate for the selected period (share of delivered items that arrived after the estimated date).",
@@ -52761,7 +55719,7 @@
   },
   {
    "widget_id": "logistics.overview.kpi_freight",
-   "widget_code": "R-0132",
+   "widget_code": "R-0173",
    "type": "kpi_card",
    "title": "Freight",
    "description": "Headline freight for the selected period (total freight charged on valid sales).",
@@ -52789,7 +55747,7 @@
   },
   {
    "widget_id": "logistics.overview.trend",
-   "widget_code": "R-0133",
+   "widget_code": "R-0174",
    "type": "line_chart",
    "title": "Average delivery time by month",
    "description": "Monthly average delivery time for the selected period.",
@@ -52821,7 +55779,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_by_customer_state.chart",
-   "widget_code": "R-0134",
+   "widget_code": "R-0175",
    "type": "bar_chart",
    "title": "Average delivery time by customer state",
    "description": "Bar chart of average delivery time (days) per customer state. Which customer states have the highest and lowest average delivery time?",
@@ -52854,7 +55812,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_by_customer_state.grid",
-   "widget_code": "R-0135",
+   "widget_code": "R-0176",
    "type": "grid",
    "title": "Average delivery time by customer state (table)",
    "description": "Sortable table of average delivery time, orders per customer state.",
@@ -52889,7 +55847,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_by_customer_region.chart",
-   "widget_code": "R-0136",
+   "widget_code": "R-0177",
    "type": "bar_chart",
    "title": "Average delivery time by customer region",
    "description": "Bar chart of average delivery time (days) per customer region. Which customer regions have the highest and lowest average delivery time?",
@@ -52922,7 +55880,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_by_customer_region.grid",
-   "widget_code": "R-0137",
+   "widget_code": "R-0178",
    "type": "grid",
    "title": "Average delivery time by customer region (table)",
    "description": "Sortable table of average delivery time, orders per customer region.",
@@ -52957,7 +55915,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_by_product_category.chart",
-   "widget_code": "R-0138",
+   "widget_code": "R-0179",
    "type": "bar_chart",
    "title": "Average delivery time by product category",
    "description": "Bar chart of average delivery time (days) per product category. Which product categorys have the highest and lowest average delivery time?",
@@ -52990,7 +55948,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_by_product_category.grid",
-   "widget_code": "R-0139",
+   "widget_code": "R-0180",
    "type": "grid",
    "title": "Average delivery time by product category (table)",
    "description": "Sortable table of average delivery time, orders per product category.",
@@ -53025,7 +55983,7 @@
   },
   {
    "widget_id": "logistics.late_rate_by_customer_state.chart",
-   "widget_code": "R-0140",
+   "widget_code": "R-0181",
    "type": "bar_chart",
    "title": "Late delivery rate by customer state",
    "description": "Bar chart of late delivery rate (ratio) per customer state. Which customer states have the highest and lowest late delivery rate?",
@@ -53058,7 +56016,7 @@
   },
   {
    "widget_id": "logistics.late_rate_by_customer_state.grid",
-   "widget_code": "R-0141",
+   "widget_code": "R-0182",
    "type": "grid",
    "title": "Late delivery rate by customer state (table)",
    "description": "Sortable table of late delivery rate, orders per customer state.",
@@ -53093,7 +56051,7 @@
   },
   {
    "widget_id": "logistics.late_rate_by_customer_region.chart",
-   "widget_code": "R-0142",
+   "widget_code": "R-0183",
    "type": "bar_chart",
    "title": "Late delivery rate by customer region",
    "description": "Bar chart of late delivery rate (ratio) per customer region. Which customer regions have the highest and lowest late delivery rate?",
@@ -53126,7 +56084,7 @@
   },
   {
    "widget_id": "logistics.late_rate_by_customer_region.grid",
-   "widget_code": "R-0143",
+   "widget_code": "R-0184",
    "type": "grid",
    "title": "Late delivery rate by customer region (table)",
    "description": "Sortable table of late delivery rate, orders per customer region.",
@@ -53161,7 +56119,7 @@
   },
   {
    "widget_id": "logistics.late_rate_by_product_category.chart",
-   "widget_code": "R-0144",
+   "widget_code": "R-0185",
    "type": "bar_chart",
    "title": "Late delivery rate by product category",
    "description": "Bar chart of late delivery rate (ratio) per product category. Which product categorys have the highest and lowest late delivery rate?",
@@ -53194,7 +56152,7 @@
   },
   {
    "widget_id": "logistics.late_rate_by_product_category.grid",
-   "widget_code": "R-0145",
+   "widget_code": "R-0186",
    "type": "grid",
    "title": "Late delivery rate by product category (table)",
    "description": "Sortable table of late delivery rate, orders per product category.",
@@ -53229,7 +56187,7 @@
   },
   {
    "widget_id": "logistics.freight_by_customer_state.chart",
-   "widget_code": "R-0146",
+   "widget_code": "R-0187",
    "type": "bar_chart",
    "title": "Freight by customer state",
    "description": "Bar chart of freight (BRL) per customer state. Which customer states have the highest and lowest freight?",
@@ -53262,7 +56220,7 @@
   },
   {
    "widget_id": "logistics.freight_by_customer_state.grid",
-   "widget_code": "R-0147",
+   "widget_code": "R-0188",
    "type": "grid",
    "title": "Freight by customer state (table)",
    "description": "Sortable table of freight, orders per customer state.",
@@ -53297,7 +56255,7 @@
   },
   {
    "widget_id": "logistics.freight_by_customer_region.chart",
-   "widget_code": "R-0148",
+   "widget_code": "R-0189",
    "type": "bar_chart",
    "title": "Freight by customer region",
    "description": "Bar chart of freight (BRL) per customer region. Which customer regions have the highest and lowest freight?",
@@ -53330,7 +56288,7 @@
   },
   {
    "widget_id": "logistics.freight_by_customer_region.grid",
-   "widget_code": "R-0149",
+   "widget_code": "R-0190",
    "type": "grid",
    "title": "Freight by customer region (table)",
    "description": "Sortable table of freight, orders per customer region.",
@@ -53365,7 +56323,7 @@
   },
   {
    "widget_id": "logistics.freight_by_product_category.chart",
-   "widget_code": "R-0150",
+   "widget_code": "R-0191",
    "type": "bar_chart",
    "title": "Freight by product category",
    "description": "Bar chart of freight (BRL) per product category. Which product categorys have the highest and lowest freight?",
@@ -53398,7 +56356,7 @@
   },
   {
    "widget_id": "logistics.freight_by_product_category.grid",
-   "widget_code": "R-0151",
+   "widget_code": "R-0192",
    "type": "grid",
    "title": "Freight by product category (table)",
    "description": "Sortable table of freight, orders per product category.",
@@ -53433,7 +56391,7 @@
   },
   {
    "widget_id": "logistics.order_late_rate_by_customer_state.chart",
-   "widget_code": "R-0152",
+   "widget_code": "R-0193",
    "type": "bar_chart",
    "title": "Late order rate by customer state",
    "description": "Bar chart of late order rate (ratio) per customer state. Which customer states have the highest and lowest late order rate?",
@@ -53466,7 +56424,7 @@
   },
   {
    "widget_id": "logistics.order_late_rate_by_customer_state.grid",
-   "widget_code": "R-0153",
+   "widget_code": "R-0194",
    "type": "grid",
    "title": "Late order rate by customer state (table)",
    "description": "Sortable table of late order rate, order count per customer state.",
@@ -53501,7 +56459,7 @@
   },
   {
    "widget_id": "logistics.order_late_rate_by_customer_region.chart",
-   "widget_code": "R-0154",
+   "widget_code": "R-0195",
    "type": "bar_chart",
    "title": "Late order rate by customer region",
    "description": "Bar chart of late order rate (ratio) per customer region. Which customer regions have the highest and lowest late order rate?",
@@ -53534,7 +56492,7 @@
   },
   {
    "widget_id": "logistics.order_late_rate_by_customer_region.grid",
-   "widget_code": "R-0155",
+   "widget_code": "R-0196",
    "type": "grid",
    "title": "Late order rate by customer region (table)",
    "description": "Sortable table of late order rate, order count per customer region.",
@@ -53569,7 +56527,7 @@
   },
   {
    "widget_id": "logistics.late_rate_by_customer_region_and_product_category.chart",
-   "widget_code": "R-0156",
+   "widget_code": "R-0197",
    "type": "bar_chart",
    "title": "Late delivery rate by customer region",
    "description": "Bar chart of late delivery rate (ratio) per customer region; use the product category filter to focus.",
@@ -53602,7 +56560,7 @@
   },
   {
    "widget_id": "logistics.late_rate_by_customer_region_and_product_category.grid",
-   "widget_code": "R-0157",
+   "widget_code": "R-0198",
    "type": "grid",
    "title": "Late delivery rate by customer region and product category",
    "description": "Sortable table of late delivery rate for every customer region and product category combination. Within each customer region, which product categorys drive late delivery rate?",
@@ -53637,7 +56595,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_by_customer_region_and_product_category.chart",
-   "widget_code": "R-0158",
+   "widget_code": "R-0199",
    "type": "bar_chart",
    "title": "Average delivery time by customer region",
    "description": "Bar chart of average delivery time (days) per customer region; use the product category filter to focus.",
@@ -53670,7 +56628,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_by_customer_region_and_product_category.grid",
-   "widget_code": "R-0159",
+   "widget_code": "R-0200",
    "type": "grid",
    "title": "Average delivery time by customer region and product category",
    "description": "Sortable table of average delivery time for every customer region and product category combination. Within each customer region, which product categorys drive average delivery time?",
@@ -53705,7 +56663,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_by_seller_state_and_customer_region.chart",
-   "widget_code": "R-0160",
+   "widget_code": "R-0201",
    "type": "bar_chart",
    "title": "Average delivery time by seller state",
    "description": "Bar chart of average delivery time (days) per seller state; use the customer region filter to focus.",
@@ -53738,7 +56696,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_by_seller_state_and_customer_region.grid",
-   "widget_code": "R-0161",
+   "widget_code": "R-0202",
    "type": "grid",
    "title": "Average delivery time by seller state and customer region",
    "description": "Sortable table of average delivery time for every seller state and customer region combination. Within each seller state, which customer regions drive average delivery time?",
@@ -53773,7 +56731,7 @@
   },
   {
    "widget_id": "logistics.late_rate_by_seller_state_and_customer_region.chart",
-   "widget_code": "R-0162",
+   "widget_code": "R-0203",
    "type": "bar_chart",
    "title": "Late delivery rate by seller state",
    "description": "Bar chart of late delivery rate (ratio) per seller state; use the customer region filter to focus.",
@@ -53806,7 +56764,7 @@
   },
   {
    "widget_id": "logistics.late_rate_by_seller_state_and_customer_region.grid",
-   "widget_code": "R-0163",
+   "widget_code": "R-0204",
    "type": "grid",
    "title": "Late delivery rate by seller state and customer region",
    "description": "Sortable table of late delivery rate for every seller state and customer region combination. Within each seller state, which customer regions drive late delivery rate?",
@@ -53841,7 +56799,7 @@
   },
   {
    "widget_id": "logistics.freight_by_customer_region_and_product_category.chart",
-   "widget_code": "R-0164",
+   "widget_code": "R-0205",
    "type": "bar_chart",
    "title": "Freight by customer region",
    "description": "Bar chart of freight (BRL) per customer region; use the product category filter to focus.",
@@ -53874,7 +56832,7 @@
   },
   {
    "widget_id": "logistics.freight_by_customer_region_and_product_category.grid",
-   "widget_code": "R-0165",
+   "widget_code": "R-0206",
    "type": "grid",
    "title": "Freight by customer region and product category",
    "description": "Sortable table of freight for every customer region and product category combination. Within each customer region, which product categorys drive freight?",
@@ -53909,7 +56867,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_trend.chart",
-   "widget_code": "R-0166",
+   "widget_code": "R-0207",
    "type": "line_chart",
    "title": "Average delivery time by month",
    "description": "Line chart of monthly average delivery time (days). Is it growing or falling?",
@@ -53941,7 +56899,7 @@
   },
   {
    "widget_id": "logistics.avg_delivery_days_trend.grid",
-   "widget_code": "R-0167",
+   "widget_code": "R-0208",
    "type": "grid",
    "title": "Average delivery time by month (table)",
    "description": "Monthly table of average delivery time, sortable.",
@@ -53974,7 +56932,7 @@
   },
   {
    "widget_id": "logistics.late_rate_trend.chart",
-   "widget_code": "R-0168",
+   "widget_code": "R-0209",
    "type": "line_chart",
    "title": "Late delivery rate by month",
    "description": "Line chart of monthly late delivery rate (ratio). Is it growing or falling?",
@@ -54006,7 +56964,7 @@
   },
   {
    "widget_id": "logistics.late_rate_trend.grid",
-   "widget_code": "R-0169",
+   "widget_code": "R-0210",
    "type": "grid",
    "title": "Late delivery rate by month (table)",
    "description": "Monthly table of late delivery rate, sortable.",
@@ -54039,7 +56997,7 @@
   },
   {
    "widget_id": "logistics.freight_trend.chart",
-   "widget_code": "R-0170",
+   "widget_code": "R-0211",
    "type": "line_chart",
    "title": "Freight by month",
    "description": "Line chart of monthly freight (BRL). Is it growing or falling?",
@@ -54071,7 +57029,7 @@
   },
   {
    "widget_id": "logistics.freight_trend.grid",
-   "widget_code": "R-0171",
+   "widget_code": "R-0212",
    "type": "grid",
    "title": "Freight by month (table)",
    "description": "Monthly table of freight, sortable.",
@@ -54104,7 +57062,7 @@
   },
   {
    "widget_id": "payments.overview.kpi_payment_value",
-   "widget_code": "R-0172",
+   "widget_code": "R-0213",
    "type": "kpi_card",
    "title": "Payments received",
    "description": "Headline payments received for the selected period (total amount paid).",
@@ -54132,7 +57090,7 @@
   },
   {
    "widget_id": "payments.overview.kpi_payment_count",
-   "widget_code": "R-0173",
+   "widget_code": "R-0214",
    "type": "kpi_card",
    "title": "Number of payments",
    "description": "Headline number of payments for the selected period (number of payment records).",
@@ -54160,7 +57118,7 @@
   },
   {
    "widget_id": "payments.overview.kpi_avg_installments",
-   "widget_code": "R-0174",
+   "widget_code": "R-0215",
    "type": "kpi_card",
    "title": "Average installments",
    "description": "Headline average installments for the selected period (average number of installments per payment).",
@@ -54188,7 +57146,7 @@
   },
   {
    "widget_id": "payments.overview.trend",
-   "widget_code": "R-0175",
+   "widget_code": "R-0216",
    "type": "line_chart",
    "title": "Payments received by month",
    "description": "Monthly payments received for the selected period.",
@@ -54220,7 +57178,7 @@
   },
   {
    "widget_id": "payments.payment_value_by_payment_type.chart",
-   "widget_code": "R-0176",
+   "widget_code": "R-0217",
    "type": "bar_chart",
    "title": "Payments received by payment method",
    "description": "Bar chart of payments received (BRL) per payment method. Which payment methods have the highest and lowest payments received?",
@@ -54253,7 +57211,7 @@
   },
   {
    "widget_id": "payments.payment_value_by_payment_type.grid",
-   "widget_code": "R-0177",
+   "widget_code": "R-0218",
    "type": "grid",
    "title": "Payments received by payment method (table)",
    "description": "Sortable table of payments received, number of payments per payment method.",
@@ -54288,7 +57246,7 @@
   },
   {
    "widget_id": "payments.payment_value_by_customer_state.chart",
-   "widget_code": "R-0178",
+   "widget_code": "R-0219",
    "type": "bar_chart",
    "title": "Payments received by customer state",
    "description": "Bar chart of payments received (BRL) per customer state. Which customer states have the highest and lowest payments received?",
@@ -54321,7 +57279,7 @@
   },
   {
    "widget_id": "payments.payment_value_by_customer_state.grid",
-   "widget_code": "R-0179",
+   "widget_code": "R-0220",
    "type": "grid",
    "title": "Payments received by customer state (table)",
    "description": "Sortable table of payments received, number of payments per customer state.",
@@ -54356,7 +57314,7 @@
   },
   {
    "widget_id": "payments.payment_value_by_customer_region.chart",
-   "widget_code": "R-0180",
+   "widget_code": "R-0221",
    "type": "bar_chart",
    "title": "Payments received by customer region",
    "description": "Bar chart of payments received (BRL) per customer region. Which customer regions have the highest and lowest payments received?",
@@ -54389,7 +57347,7 @@
   },
   {
    "widget_id": "payments.payment_value_by_customer_region.grid",
-   "widget_code": "R-0181",
+   "widget_code": "R-0222",
    "type": "grid",
    "title": "Payments received by customer region (table)",
    "description": "Sortable table of payments received, number of payments per customer region.",
@@ -54424,7 +57382,7 @@
   },
   {
    "widget_id": "payments.payment_count_by_payment_type.chart",
-   "widget_code": "R-0182",
+   "widget_code": "R-0223",
    "type": "bar_chart",
    "title": "Number of payments by payment method",
    "description": "Bar chart of number of payments (count) per payment method. Which payment methods have the highest and lowest number of payments?",
@@ -54457,7 +57415,7 @@
   },
   {
    "widget_id": "payments.payment_count_by_payment_type.grid",
-   "widget_code": "R-0183",
+   "widget_code": "R-0224",
    "type": "grid",
    "title": "Number of payments by payment method (table)",
    "description": "Sortable table of number of payments per payment method.",
@@ -54490,7 +57448,7 @@
   },
   {
    "widget_id": "payments.payment_count_by_customer_state.chart",
-   "widget_code": "R-0184",
+   "widget_code": "R-0225",
    "type": "bar_chart",
    "title": "Number of payments by customer state",
    "description": "Bar chart of number of payments (count) per customer state. Which customer states have the highest and lowest number of payments?",
@@ -54523,7 +57481,7 @@
   },
   {
    "widget_id": "payments.payment_count_by_customer_state.grid",
-   "widget_code": "R-0185",
+   "widget_code": "R-0226",
    "type": "grid",
    "title": "Number of payments by customer state (table)",
    "description": "Sortable table of number of payments per customer state.",
@@ -54556,7 +57514,7 @@
   },
   {
    "widget_id": "payments.payment_count_by_customer_region.chart",
-   "widget_code": "R-0186",
+   "widget_code": "R-0227",
    "type": "bar_chart",
    "title": "Number of payments by customer region",
    "description": "Bar chart of number of payments (count) per customer region. Which customer regions have the highest and lowest number of payments?",
@@ -54589,7 +57547,7 @@
   },
   {
    "widget_id": "payments.payment_count_by_customer_region.grid",
-   "widget_code": "R-0187",
+   "widget_code": "R-0228",
    "type": "grid",
    "title": "Number of payments by customer region (table)",
    "description": "Sortable table of number of payments per customer region.",
@@ -54622,7 +57580,7 @@
   },
   {
    "widget_id": "payments.avg_installments_by_payment_type.chart",
-   "widget_code": "R-0188",
+   "widget_code": "R-0229",
    "type": "bar_chart",
    "title": "Average installments by payment method",
    "description": "Bar chart of average installments (count) per payment method. Which payment methods have the highest and lowest average installments?",
@@ -54655,7 +57613,7 @@
   },
   {
    "widget_id": "payments.avg_installments_by_payment_type.grid",
-   "widget_code": "R-0189",
+   "widget_code": "R-0230",
    "type": "grid",
    "title": "Average installments by payment method (table)",
    "description": "Sortable table of average installments, number of payments per payment method.",
@@ -54690,7 +57648,7 @@
   },
   {
    "widget_id": "payments.avg_installments_by_customer_state.chart",
-   "widget_code": "R-0190",
+   "widget_code": "R-0231",
    "type": "bar_chart",
    "title": "Average installments by customer state",
    "description": "Bar chart of average installments (count) per customer state. Which customer states have the highest and lowest average installments?",
@@ -54723,7 +57681,7 @@
   },
   {
    "widget_id": "payments.avg_installments_by_customer_state.grid",
-   "widget_code": "R-0191",
+   "widget_code": "R-0232",
    "type": "grid",
    "title": "Average installments by customer state (table)",
    "description": "Sortable table of average installments, number of payments per customer state.",
@@ -54758,7 +57716,7 @@
   },
   {
    "widget_id": "payments.avg_installments_by_customer_region.chart",
-   "widget_code": "R-0192",
+   "widget_code": "R-0233",
    "type": "bar_chart",
    "title": "Average installments by customer region",
    "description": "Bar chart of average installments (count) per customer region. Which customer regions have the highest and lowest average installments?",
@@ -54791,7 +57749,7 @@
   },
   {
    "widget_id": "payments.avg_installments_by_customer_region.grid",
-   "widget_code": "R-0193",
+   "widget_code": "R-0234",
    "type": "grid",
    "title": "Average installments by customer region (table)",
    "description": "Sortable table of average installments, number of payments per customer region.",
@@ -54826,7 +57784,7 @@
   },
   {
    "widget_id": "payments.payment_value_by_payment_type_and_customer_region.chart",
-   "widget_code": "R-0194",
+   "widget_code": "R-0235",
    "type": "bar_chart",
    "title": "Payments received by payment method",
    "description": "Bar chart of payments received (BRL) per payment method; use the customer region filter to focus.",
@@ -54859,7 +57817,7 @@
   },
   {
    "widget_id": "payments.payment_value_by_payment_type_and_customer_region.grid",
-   "widget_code": "R-0195",
+   "widget_code": "R-0236",
    "type": "grid",
    "title": "Payments received by payment method and customer region",
    "description": "Sortable table of payments received for every payment method and customer region combination. Within each payment method, which customer regions drive payments received?",
@@ -54894,7 +57852,7 @@
   },
   {
    "widget_id": "payments.avg_installments_by_payment_type_and_customer_region.chart",
-   "widget_code": "R-0196",
+   "widget_code": "R-0237",
    "type": "bar_chart",
    "title": "Average installments by payment method",
    "description": "Bar chart of average installments (count) per payment method; use the customer region filter to focus.",
@@ -54927,7 +57885,7 @@
   },
   {
    "widget_id": "payments.avg_installments_by_payment_type_and_customer_region.grid",
-   "widget_code": "R-0197",
+   "widget_code": "R-0238",
    "type": "grid",
    "title": "Average installments by payment method and customer region",
    "description": "Sortable table of average installments for every payment method and customer region combination. Within each payment method, which customer regions drive average installments?",
@@ -54962,7 +57920,7 @@
   },
   {
    "widget_id": "payments.payment_count_by_payment_type_and_customer_state.chart",
-   "widget_code": "R-0198",
+   "widget_code": "R-0239",
    "type": "bar_chart",
    "title": "Number of payments by payment method",
    "description": "Bar chart of number of payments (count) per payment method; use the customer state filter to focus.",
@@ -54995,7 +57953,7 @@
   },
   {
    "widget_id": "payments.payment_count_by_payment_type_and_customer_state.grid",
-   "widget_code": "R-0199",
+   "widget_code": "R-0240",
    "type": "grid",
    "title": "Number of payments by payment method and customer state",
    "description": "Sortable table of number of payments for every payment method and customer state combination. Within each payment method, which customer states drive number of payments?",
@@ -55030,7 +57988,7 @@
   },
   {
    "widget_id": "payments.payment_value_trend.chart",
-   "widget_code": "R-0200",
+   "widget_code": "R-0241",
    "type": "line_chart",
    "title": "Payments received by month",
    "description": "Line chart of monthly payments received (BRL). Is it growing or falling?",
@@ -55062,7 +58020,7 @@
   },
   {
    "widget_id": "payments.payment_value_trend.grid",
-   "widget_code": "R-0201",
+   "widget_code": "R-0242",
    "type": "grid",
    "title": "Payments received by month (table)",
    "description": "Monthly table of payments received, sortable.",
@@ -55095,7 +58053,7 @@
   },
   {
    "widget_id": "payments.payment_count_trend.chart",
-   "widget_code": "R-0202",
+   "widget_code": "R-0243",
    "type": "line_chart",
    "title": "Number of payments by month",
    "description": "Line chart of monthly number of payments (count). Is it growing or falling?",
@@ -55127,7 +58085,7 @@
   },
   {
    "widget_id": "payments.payment_count_trend.grid",
-   "widget_code": "R-0203",
+   "widget_code": "R-0244",
    "type": "grid",
    "title": "Number of payments by month (table)",
    "description": "Monthly table of number of payments, sortable.",
@@ -55160,7 +58118,7 @@
   },
   {
    "widget_id": "payments.avg_installments_trend.chart",
-   "widget_code": "R-0204",
+   "widget_code": "R-0245",
    "type": "line_chart",
    "title": "Average installments by month",
    "description": "Line chart of monthly average installments (count). Is it growing or falling?",
@@ -55192,7 +58150,7 @@
   },
   {
    "widget_id": "payments.avg_installments_trend.grid",
-   "widget_code": "R-0205",
+   "widget_code": "R-0246",
    "type": "grid",
    "title": "Average installments by month (table)",
    "description": "Monthly table of average installments, sortable.",
@@ -55225,7 +58183,7 @@
   },
   {
    "widget_id": "reviews.overview.kpi_avg_review_score",
-   "widget_code": "R-0206",
+   "widget_code": "R-0247",
    "type": "kpi_card",
    "title": "Average review score",
    "description": "Headline average review score for the selected period (average customer review score (1 to 5)).",
@@ -55253,7 +58211,7 @@
   },
   {
    "widget_id": "reviews.overview.kpi_review_count",
-   "widget_code": "R-0207",
+   "widget_code": "R-0248",
    "type": "kpi_card",
    "title": "Number of reviews",
    "description": "Headline number of reviews for the selected period (number of reviews submitted).",
@@ -55281,7 +58239,7 @@
   },
   {
    "widget_id": "reviews.overview.trend",
-   "widget_code": "R-0208",
+   "widget_code": "R-0249",
    "type": "line_chart",
    "title": "Average review score by month",
    "description": "Monthly average review score for the selected period.",
@@ -55313,7 +58271,7 @@
   },
   {
    "widget_id": "reviews.avg_review_score_by_customer_state.chart",
-   "widget_code": "R-0209",
+   "widget_code": "R-0250",
    "type": "bar_chart",
    "title": "Average review score by customer state",
    "description": "Bar chart of average review score (score) per customer state. Which customer states have the highest and lowest average review score?",
@@ -55346,7 +58304,7 @@
   },
   {
    "widget_id": "reviews.avg_review_score_by_customer_state.grid",
-   "widget_code": "R-0210",
+   "widget_code": "R-0251",
    "type": "grid",
    "title": "Average review score by customer state (table)",
    "description": "Sortable table of average review score, number of reviews per customer state.",
@@ -55381,7 +58339,7 @@
   },
   {
    "widget_id": "reviews.avg_review_score_by_customer_region.chart",
-   "widget_code": "R-0211",
+   "widget_code": "R-0252",
    "type": "bar_chart",
    "title": "Average review score by customer region",
    "description": "Bar chart of average review score (score) per customer region. Which customer regions have the highest and lowest average review score?",
@@ -55414,7 +58372,7 @@
   },
   {
    "widget_id": "reviews.avg_review_score_by_customer_region.grid",
-   "widget_code": "R-0212",
+   "widget_code": "R-0253",
    "type": "grid",
    "title": "Average review score by customer region (table)",
    "description": "Sortable table of average review score, number of reviews per customer region.",
@@ -55449,7 +58407,7 @@
   },
   {
    "widget_id": "reviews.review_count_by_customer_state.chart",
-   "widget_code": "R-0213",
+   "widget_code": "R-0254",
    "type": "bar_chart",
    "title": "Number of reviews by customer state",
    "description": "Bar chart of number of reviews (count) per customer state. Which customer states have the highest and lowest number of reviews?",
@@ -55482,7 +58440,7 @@
   },
   {
    "widget_id": "reviews.review_count_by_customer_state.grid",
-   "widget_code": "R-0214",
+   "widget_code": "R-0255",
    "type": "grid",
    "title": "Number of reviews by customer state (table)",
    "description": "Sortable table of number of reviews per customer state.",
@@ -55515,7 +58473,7 @@
   },
   {
    "widget_id": "reviews.review_count_by_customer_region.chart",
-   "widget_code": "R-0215",
+   "widget_code": "R-0256",
    "type": "bar_chart",
    "title": "Number of reviews by customer region",
    "description": "Bar chart of number of reviews (count) per customer region. Which customer regions have the highest and lowest number of reviews?",
@@ -55548,7 +58506,7 @@
   },
   {
    "widget_id": "reviews.review_count_by_customer_region.grid",
-   "widget_code": "R-0216",
+   "widget_code": "R-0257",
    "type": "grid",
    "title": "Number of reviews by customer region (table)",
    "description": "Sortable table of number of reviews per customer region.",
@@ -55581,7 +58539,7 @@
   },
   {
    "widget_id": "reviews.avg_review_score_trend.chart",
-   "widget_code": "R-0217",
+   "widget_code": "R-0258",
    "type": "line_chart",
    "title": "Average review score by month",
    "description": "Line chart of monthly average review score (score). Is it growing or falling?",
@@ -55613,7 +58571,7 @@
   },
   {
    "widget_id": "reviews.avg_review_score_trend.grid",
-   "widget_code": "R-0218",
+   "widget_code": "R-0259",
    "type": "grid",
    "title": "Average review score by month (table)",
    "description": "Monthly table of average review score, sortable.",
@@ -55646,7 +58604,7 @@
   },
   {
    "widget_id": "reviews.review_count_trend.chart",
-   "widget_code": "R-0219",
+   "widget_code": "R-0260",
    "type": "line_chart",
    "title": "Number of reviews by month",
    "description": "Line chart of monthly number of reviews (count). Is it growing or falling?",
@@ -55678,7 +58636,7 @@
   },
   {
    "widget_id": "reviews.review_count_trend.grid",
-   "widget_code": "R-0220",
+   "widget_code": "R-0261",
    "type": "grid",
    "title": "Number of reviews by month (table)",
    "description": "Monthly table of number of reviews, sortable.",
@@ -55711,7 +58669,7 @@
   },
   {
    "widget_id": "catalog.overview.kpi_revenue",
-   "widget_code": "R-0221",
+   "widget_code": "R-0262",
    "type": "kpi_card",
    "title": "Revenue",
    "description": "Headline revenue for the selected period (total item price of valid sales (excludes canceled and unavailable orders)).",
@@ -55739,7 +58697,7 @@
   },
   {
    "widget_id": "catalog.overview.kpi_items_sold",
-   "widget_code": "R-0222",
+   "widget_code": "R-0263",
    "type": "kpi_card",
    "title": "Items sold",
    "description": "Headline items sold for the selected period (number of order lines in valid sales).",
@@ -55767,7 +58725,7 @@
   },
   {
    "widget_id": "catalog.overview.kpi_aov",
-   "widget_code": "R-0223",
+   "widget_code": "R-0264",
    "type": "kpi_card",
    "title": "Average order value",
    "description": "Headline average order value for the selected period (revenue divided by the number of orders (valid sales)).",
@@ -55795,7 +58753,7 @@
   },
   {
    "widget_id": "catalog.overview.kpi_freight",
-   "widget_code": "R-0224",
+   "widget_code": "R-0265",
    "type": "kpi_card",
    "title": "Freight",
    "description": "Headline freight for the selected period (total freight charged on valid sales).",
@@ -55823,7 +58781,7 @@
   },
   {
    "widget_id": "catalog.overview.trend",
-   "widget_code": "R-0225",
+   "widget_code": "R-0266",
    "type": "line_chart",
    "title": "Revenue by month",
    "description": "Monthly revenue for the selected period.",
@@ -55855,7 +58813,7 @@
   },
   {
    "widget_id": "catalog.revenue_by_product_category.chart",
-   "widget_code": "R-0226",
+   "widget_code": "R-0267",
    "type": "bar_chart",
    "title": "Revenue by product category",
    "description": "Bar chart of revenue (BRL) per product category. Which product categorys have the highest and lowest revenue?",
@@ -55888,7 +58846,7 @@
   },
   {
    "widget_id": "catalog.revenue_by_product_category.grid",
-   "widget_code": "R-0227",
+   "widget_code": "R-0268",
    "type": "grid",
    "title": "Revenue by product category (table)",
    "description": "Sortable table of revenue, orders per product category.",
@@ -55923,7 +58881,7 @@
   },
   {
    "widget_id": "catalog.items_sold_by_product_category.chart",
-   "widget_code": "R-0228",
+   "widget_code": "R-0269",
    "type": "bar_chart",
    "title": "Items sold by product category",
    "description": "Bar chart of items sold (count) per product category. Which product categorys have the highest and lowest items sold?",
@@ -55956,7 +58914,7 @@
   },
   {
    "widget_id": "catalog.items_sold_by_product_category.grid",
-   "widget_code": "R-0229",
+   "widget_code": "R-0270",
    "type": "grid",
    "title": "Items sold by product category (table)",
    "description": "Sortable table of items sold, orders per product category.",
@@ -55991,7 +58949,7 @@
   },
   {
    "widget_id": "catalog.aov_by_product_category.chart",
-   "widget_code": "R-0230",
+   "widget_code": "R-0271",
    "type": "bar_chart",
    "title": "Average order value by product category",
    "description": "Bar chart of average order value (BRL) per product category. Which product categorys have the highest and lowest average order value?",
@@ -56024,7 +58982,7 @@
   },
   {
    "widget_id": "catalog.aov_by_product_category.grid",
-   "widget_code": "R-0231",
+   "widget_code": "R-0272",
    "type": "grid",
    "title": "Average order value by product category (table)",
    "description": "Sortable table of average order value, orders per product category.",
@@ -56059,7 +59017,7 @@
   },
   {
    "widget_id": "catalog.freight_by_product_category.chart",
-   "widget_code": "R-0232",
+   "widget_code": "R-0273",
    "type": "bar_chart",
    "title": "Freight by product category",
    "description": "Bar chart of freight (BRL) per product category. Which product categorys have the highest and lowest freight?",
@@ -56092,7 +59050,7 @@
   },
   {
    "widget_id": "catalog.freight_by_product_category.grid",
-   "widget_code": "R-0233",
+   "widget_code": "R-0274",
    "type": "grid",
    "title": "Freight by product category (table)",
    "description": "Sortable table of freight, orders per product category.",
@@ -56127,7 +59085,7 @@
   },
   {
    "widget_id": "catalog.late_rate_by_product_category.chart",
-   "widget_code": "R-0234",
+   "widget_code": "R-0275",
    "type": "bar_chart",
    "title": "Late delivery rate by product category",
    "description": "Bar chart of late delivery rate (ratio) per product category. Which product categorys have the highest and lowest late delivery rate?",
@@ -56160,7 +59118,7 @@
   },
   {
    "widget_id": "catalog.late_rate_by_product_category.grid",
-   "widget_code": "R-0235",
+   "widget_code": "R-0276",
    "type": "grid",
    "title": "Late delivery rate by product category (table)",
    "description": "Sortable table of late delivery rate, orders per product category.",
@@ -56195,7 +59153,7 @@
   },
   {
    "widget_id": "catalog.avg_delivery_days_by_product_category.chart",
-   "widget_code": "R-0236",
+   "widget_code": "R-0277",
    "type": "bar_chart",
    "title": "Average delivery time by product category",
    "description": "Bar chart of average delivery time (days) per product category. Which product categorys have the highest and lowest average delivery time?",
@@ -56228,7 +59186,7 @@
   },
   {
    "widget_id": "catalog.avg_delivery_days_by_product_category.grid",
-   "widget_code": "R-0237",
+   "widget_code": "R-0278",
    "type": "grid",
    "title": "Average delivery time by product category (table)",
    "description": "Sortable table of average delivery time, orders per product category.",
@@ -56263,7 +59221,7 @@
   },
   {
    "widget_id": "catalog.items_sold_by_product_category_and_customer_region.chart",
-   "widget_code": "R-0238",
+   "widget_code": "R-0279",
    "type": "bar_chart",
    "title": "Items sold by product category",
    "description": "Bar chart of items sold (count) per product category; use the customer region filter to focus.",
@@ -56296,7 +59254,7 @@
   },
   {
    "widget_id": "catalog.items_sold_by_product_category_and_customer_region.grid",
-   "widget_code": "R-0239",
+   "widget_code": "R-0280",
    "type": "grid",
    "title": "Items sold by product category and customer region",
    "description": "Sortable table of items sold for every product category and customer region combination. Within each product category, which customer regions drive items sold?",
@@ -56331,7 +59289,7 @@
   },
   {
    "widget_id": "catalog.late_rate_by_product_category_and_seller_state.chart",
-   "widget_code": "R-0240",
+   "widget_code": "R-0281",
    "type": "bar_chart",
    "title": "Late delivery rate by product category",
    "description": "Bar chart of late delivery rate (ratio) per product category; use the seller state filter to focus.",
@@ -56364,7 +59322,7 @@
   },
   {
    "widget_id": "catalog.late_rate_by_product_category_and_seller_state.grid",
-   "widget_code": "R-0241",
+   "widget_code": "R-0282",
    "type": "grid",
    "title": "Late delivery rate by product category and seller state",
    "description": "Sortable table of late delivery rate for every product category and seller state combination. Within each product category, which seller states drive late delivery rate?",
@@ -56399,7 +59357,7 @@
   },
   {
    "widget_id": "catalog.items_sold_trend.chart",
-   "widget_code": "R-0242",
+   "widget_code": "R-0283",
    "type": "line_chart",
    "title": "Items sold by month",
    "description": "Line chart of monthly items sold (count). Is it growing or falling?",
@@ -56431,7 +59389,7 @@
   },
   {
    "widget_id": "catalog.items_sold_trend.grid",
-   "widget_code": "R-0243",
+   "widget_code": "R-0284",
    "type": "grid",
    "title": "Items sold by month (table)",
    "description": "Monthly table of items sold, sortable.",

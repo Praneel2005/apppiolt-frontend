@@ -474,4 +474,7 @@ def build_ops(conn: psycopg.Connection, datasets: dict, synonyms: Callable[[str,
              filters=[_select("status", "Status", PROMO_STATUS), f_cat()],
              actions=[_act("new_promotion", "promotions.create", "New promotion", form=True)]), [promos])
 
+    from generator.ops_visuals import enrich
+
+    enrich(pages, widgets)  # KPI strips, donuts, bars and lines next to the tables
     return modules, directories, pages, widgets

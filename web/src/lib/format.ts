@@ -7,6 +7,12 @@ export function formatMonth(raw: string): string {
   return m ? `${MONTHS[parseInt(m[2], 10) - 1] ?? m[2]} ${m[1]}` : raw
 }
 
+/** "2018-08-25" -> "Aug 25" */
+export function formatDay(raw: string): string {
+  const m = /^\d{4}-(\d{2})-(\d{2})/.exec(raw)
+  return m ? `${MONTHS[parseInt(m[1], 10) - 1] ?? m[1]} ${parseInt(m[2], 10)}` : raw
+}
+
 export function formatMoney(n: number): string {
   const abs = Math.abs(n)
   const body = abs >= 1000 ? abs.toLocaleString('en-US', { maximumFractionDigits: 0 })

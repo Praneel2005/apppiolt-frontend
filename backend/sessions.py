@@ -41,6 +41,13 @@ class Session:
     evidence: dict[str, Evidence] = field(default_factory=dict)
     canvases: dict[str, dict] = field(default_factory=dict)
     writes: list[str] = field(default_factory=list)  # action ids applied in this session (newest last)
+    # ---- measurement for the KPIs (see docs/KPI_PLAN.md): manual vs agent work, safety gates, latency, usefulness
+    stats: dict = field(default_factory=lambda: {
+        "manual_changes": 0, "agent_steps": 0, "plan_runs": 0, "validation_failures": 0, "verify_passes": 0,
+        "verify_failures": 0, "confirmations_approved": 0, "confirmations_declined": 0, "writes_undone": 0})
+    issue_counts: dict = field(default_factory=dict)  # validator issue code -> count (references the planner invented)
+    runs: list[dict] = field(default_factory=list)  # one record per plan run: elapsed_ms, steps, ok, stage
+    feedback: list[dict] = field(default_factory=list)
     confirms: dict[str, asyncio.Future] = field(default_factory=dict)
     fault: str = "none"
     config: AgentConfig = field(default_factory=AgentConfig)
@@ -158,6 +165,7 @@ async def push_state(s: Session, new: UiState, cause: str) -> dict:
         ack = await simulated_ack(s, new, nonce)
     s.last_ack = ack
     s.last_verify = await verifier.verify(app, new, ack)
+    s.stats["verify_passes" if s.last_verify.ok else "verify_failures"] += 1
     return {"verify": s.last_verify, "ack": ack, "source": source}
 
 
@@ -184,6 +192,7 @@ async def handle_ws_message(s: Session, msg: dict) -> None:
             s.last_ack = ack
     elif t == "user_state_change":
         st = UiState.model_validate(msg["state"])
+        s.stats["manual_changes"] += 1  # K7: how much the user navigates by hand
         s.history.append(s.state)
         s.state = st.model_copy(update={"version": s.state.version + 1})
     else:
@@ -207,10 +216,13 @@ async def ask_confirmation(s: Session, summary: str, payload: dict, auto: bool =
     await emit(s, "confirm_request", {"action_id": action_id, "summary": summary, "auto_confirmed": auto, **payload})
     if auto:
         s.confirms.pop(action_id, None)
+        s.stats["confirmations_approved"] += 1
         return True
     try:
-        return await asyncio.wait_for(fut, CONFIRM_TIMEOUT_S)
+        ok = await asyncio.wait_for(fut, CONFIRM_TIMEOUT_S)
     except asyncio.TimeoutError:
-        return False
+        ok = False
     finally:
         s.confirms.pop(action_id, None)
+    s.stats["confirmations_approved" if ok else "confirmations_declined"] += 1
+    return ok

@@ -154,7 +154,9 @@ class WidgetSource(_Model):
 class Widget(_Model):
     widget_id: IdStr
     widget_code: str | None = None  # short human id shown in the UI, e.g. "R-201"
-    type: Literal["grid", "bar_chart", "line_chart", "pie_chart", "kpi_card", "filter_bar"]
+    # kpi_strip: a row of headline numbers read from the first row of an API (one tile per visible column)
+    # pie_chart: a donut of shares; x = category, y[0] = value
+    type: Literal["grid", "bar_chart", "line_chart", "pie_chart", "kpi_card", "kpi_strip", "filter_bar"]
     title: str
     description: str  # written for retrieval: say what question this widget answers
     dataset_id: IdStr | None = None  # metric widgets; None when `source` is set
@@ -168,8 +170,10 @@ class Widget(_Model):
     def _one_binding(self) -> "Widget":
         if (self.dataset_id is None) == (self.source is None):
             raise ValueError(f"{self.widget_id}: set exactly one of dataset_id (metric widget) or source (API widget)")
-        if self.source is not None and self.type in ("bar_chart", "line_chart") and self.source.chart is None:
+        if self.source is not None and self.type in ("bar_chart", "line_chart", "pie_chart") and self.source.chart is None:
             raise ValueError(f"{self.widget_id}: chart widgets bound to an API need source.chart")
+        if self.type == "kpi_strip" and (self.source is None or not [c for c in self.source.columns if not c.hidden]):
+            raise ValueError(f"{self.widget_id}: a kpi_strip needs an API source with at least one visible column")
         return self
 
 

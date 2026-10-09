@@ -19,6 +19,18 @@ Tests: `python -m pytest -q` (needs the database loaded and `python -m generator
 | Executor | `backend/executor.py` | runs a validated plan: UI steps (verified), reads, analysis, writes (always confirmed), canvas |
 | Retrieval | `backend/retrieval.py` | BM25 + synonym expansion over pages, APIs, entities (`GET /api/search`) |
 
+## Summary APIs, trends and decompositions
+
+- `*/summary` APIs (orders, tickets, reviews, inventory, restock orders, seller flags, sellers) return counts, totals and
+  distributions with the same filters as the entity's search API plus `group_by`; they feed the KPI strips and charts of the
+  operations pages and answer "how many ... by ..." questions.
+- `POST /api/metrics/trend`: direction, slope, peak/trough, MoM, YoY, volatility and gaps, computed in code.
+- `POST /api/metrics/compare`: period comparison; for additive metrics a contribution split, for ratio metrics
+  (late rate, review score, AOV, delivery days) an exact mix/rate decomposition (`ratio_decomposition`).
+- Deep links: `backend/deeplinks.py` (twin: `web/src/lib/url.ts`, vectors in `contracts/deeplink_vectors.json`).
+- Per-session measurements for the KPIs: `GET /api/session/{sid}/stats`, `POST /api/session/{sid}/feedback`
+  (see `docs/KPI_PLAN.md`).
+
 ## The agent contract (what the LLM agent will call)
 
 1. `GET /api/session/{sid}/context` - what the user sees (page, filters, widget rows, available actions).

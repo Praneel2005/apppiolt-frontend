@@ -8,7 +8,7 @@ import { openUrl } from '../state/session'
 import { toast, useStore } from '../state/store'
 import { highlightWidget } from '../widgets/widgetBase'
 
-type Tab = 'chat' | 'runner' | 'context'
+type Tab = 'chat' | 'runner' | 'context' | 'metrics'
 
 const short = (v: unknown, n = 90) => { const s = typeof v === 'string' ? v : JSON.stringify(v); return s.length > n ? s.slice(0, n) + '…' : s }
 
@@ -73,7 +73,12 @@ function ChatTab() {
   const [confirmMode, setConfirmMode] = useState(false)
   const [msgs, setMsgs] = useState<{ text: string; at: number; note?: boolean }[]>([])
   const [answered, setAnswered] = useState<Record<string, 'approved' | 'declined'>>({})
+  const [rated, setRated] = useState<Record<number, 'up' | 'down'>>({})
   const end = useRef<HTMLDivElement>(null)
+  const rate = async (seq: number, r: 'up' | 'down') => {
+    if (!sid) return
+    try { await api.feedback(sid, r, seq); setRated((x) => ({ ...x, [seq]: r })) } catch (e) { toast('error', String(e)) }
+  }
   useEffect(() => { end.current?.scrollIntoView({ block: 'end' }) }, [events.length, msgs.length])
 
   const send = async () => {
@@ -116,7 +121,18 @@ function ChatTab() {
             {it.e!.data.text}
             <div className="mt-1 flex flex-wrap gap-1">{(it.e!.data.citations ?? []).map((c: string) => <span key={c} className="text-[10px] font-mono bg-primary-soft text-primary rounded px-1.5 py-0.5">{c}</span>)}</div>
           </div>
-        ) : it.e!.type === 'answer_delta' ? null : (
+        ) : it.e!.type === 'answer_delta' ? null : it.e!.type === 'done' ? (
+          <div key={i} className="bg-slate-900 text-slate-100 font-mono text-[11px] leading-5 rounded-lg px-3 py-1 flex items-center justify-between">
+            <Trace e={it.e!} />
+            <span className="flex gap-1 font-sans">
+              {rated[it.e!.seq] ? <span className="text-slate-400">{rated[it.e!.seq] === 'up' ? '👍 thanks' : '👎 noted'}</span> : (
+                <><span className="text-slate-500 mr-1">useful?</span>
+                  <button title="Useful" onClick={() => void rate(it.e!.seq, 'up')}>👍</button>
+                  <button title="Not useful" onClick={() => void rate(it.e!.seq, 'down')}>👎</button></>
+              )}
+            </span>
+          </div>
+        ) : (
           <div key={i} className="bg-slate-900 text-slate-100 font-mono text-[11px] leading-5 rounded-lg px-3 py-1"><Trace e={it.e!} /></div>
         ))}
         <div ref={end} />
@@ -230,21 +246,64 @@ function ContextTab() {
   )
 }
 
+const pct = (v: number | null | undefined) => (v == null ? '—' : `${Math.round(v * 100)}%`)
+const num = (v: number | null | undefined, d = 0) => (v == null ? '—' : v.toFixed(d))
+
+/** Live figures for the KPIs: effort saved (K7), speed and steps (K3), safety gates (K6), usefulness (K7). */
+function MetricsTab() {
+  const sid = useStore((s) => s.sessionId)
+  const version = useStore((s) => s.events.length)
+  const [m, setM] = useState<any>(null)
+  useEffect(() => {
+    if (!sid) return
+    const t = setTimeout(() => { api.stats(sid).then(setM).catch(() => {}) }, 400)
+    return () => clearTimeout(t)
+  }, [sid, version])
+  if (!m) return <div className="p-3 text-sm text-muted">Loading…</div>
+  const Tile = ({ k, v, hint }: { k: string; v: string; hint?: string }) => (
+    <div className="border border-border rounded-lg p-2.5" title={hint}><div className="text-[11px] text-muted">{k}</div><div className="text-lg font-semibold tabular-nums">{v}</div></div>
+  )
+  return (
+    <div className="p-3 space-y-4 overflow-auto scroll-thin h-full">
+      <p className="text-xs text-muted">Measured live for this session. These are the quantities behind the project KPIs.</p>
+      <section><h4 className="text-xs font-semibold uppercase tracking-wide text-muted mb-1.5">Task success and speed (K3)</h4>
+        <div className="grid grid-cols-2 gap-2">
+          <Tile k="Plan runs" v={String(m.runs)} /><Tile k="Run success rate" v={pct(m.run_success_rate)} />
+          <Tile k="Avg steps per run" v={num(m.avg_steps_per_run, 1)} /><Tile k="Latency p50 / p90" v={`${num(m.latency_ms.p50)} / ${num(m.latency_ms.p90)} ms`} />
+        </div></section>
+      <section><h4 className="text-xs font-semibold uppercase tracking-wide text-muted mb-1.5">Reliability and safety (K6)</h4>
+        <div className="grid grid-cols-2 gap-2">
+          <Tile k="Screen verification pass rate" v={pct(m.verify_pass_rate)} hint="Share of screen changes where the browser's acknowledgement matched the expected state" />
+          <Tile k="Plans stopped by validator" v={String(m.validation_failures)} hint="Invented pages, filters, values or APIs caught before running" />
+          <Tile k="Changes confirmed / declined" v={`${m.confirmations_approved} / ${m.confirmations_declined}`} />
+          <Tile k="Data changes undone" v={`${m.writes_undone} of ${m.writes_applied}`} />
+        </div>
+        {Object.keys(m.issues_caught_by_validator).length > 0 && <div className="text-xs text-muted mt-2">Caught: {Object.entries(m.issues_caught_by_validator).map(([k, v]) => `${k} ×${v}`).join(', ')}</div>}
+      </section>
+      <section><h4 className="text-xs font-semibold uppercase tracking-wide text-muted mb-1.5">Usefulness (K7)</h4>
+        <div className="grid grid-cols-2 gap-2">
+          <Tile k="Agent steps vs manual changes" v={`${m.agent_steps} vs ${m.manual_changes}`} hint="How much navigation the assistant did instead of the user" />
+          <Tile k="Share done by the assistant" v={pct(m.agent_share_of_actions)} />
+          <Tile k="Helpful 👍 / 👎" v={`${m.feedback.up} / ${m.feedback.down}`} />
+        </div></section>
+    </div>
+  )
+}
+
 export function AgentPanel({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<Tab>('chat')
+  const names: Record<Tab, string> = { chat: 'Assistant', runner: 'Plan runner', context: 'Context', metrics: 'Metrics' }
   return (
-    <aside className="w-[420px] shrink-0 bg-surface border-l border-border flex flex-col h-full">
+    <aside className="w-[440px] shrink-0 bg-surface border-l border-border flex flex-col h-full">
       <div className="flex items-center justify-between px-3 h-12 border-b border-border shrink-0">
         <div className="flex gap-1">
-          {(['chat', 'runner', 'context'] as Tab[]).map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`px-3 py-1.5 text-sm rounded-lg ${tab === t ? 'bg-primary-soft text-primary font-medium' : 'text-muted hover:bg-page'}`}>
-              {t === 'chat' ? 'Assistant' : t === 'runner' ? 'Plan runner' : 'Page context'}
-            </button>
+          {(['chat', 'runner', 'context', 'metrics'] as Tab[]).map((t) => (
+            <button key={t} onClick={() => setTab(t)} className={`px-2.5 py-1.5 text-sm rounded-lg ${tab === t ? 'bg-primary-soft text-primary font-medium' : 'text-muted hover:bg-page'}`}>{names[t]}</button>
           ))}
         </div>
         <button onClick={onClose} className="text-muted hover:text-ink">✕</button>
       </div>
-      <div className="flex-1 min-h-0">{tab === 'chat' ? <ChatTab /> : tab === 'runner' ? <RunnerTab /> : <ContextTab />}</div>
+      <div className="flex-1 min-h-0">{tab === 'chat' ? <ChatTab /> : tab === 'runner' ? <RunnerTab /> : tab === 'context' ? <ContextTab /> : <MetricsTab />}</div>
     </aside>
   )
 }

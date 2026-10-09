@@ -212,6 +212,49 @@ def get_canvases(sid: str):
     return {"canvases": list(get_session(sid).canvases.values())}
 
 
+@router.get("/api/session/{sid}/stats")
+def get_stats(sid: str):
+    """Per-session measurements for the KPIs (docs/KPI_PLAN.md): effort, safety gates, latency, usefulness."""
+    s = get_session(sid)
+    st, runs = s.stats, s.runs
+    ms = sorted(r["elapsed_ms"] for r in runs)
+    pick = lambda p: ms[min(len(ms) - 1, int(p * len(ms)))] if ms else None  # noqa: E731
+    ver = st["verify_passes"] + st["verify_failures"]
+    acts = st["agent_steps"] + st["manual_changes"]
+    return {
+        **st, "runs": len(runs), "run_success_rate": (sum(r["ok"] for r in runs) / len(runs)) if runs else None,
+        "avg_steps_per_run": (sum(r["steps"] for r in runs) / len(runs)) if runs else None,
+        "latency_ms": {"p50": pick(0.5), "p90": pick(0.9), "mean": (sum(ms) / len(ms)) if ms else None},
+        "verify_pass_rate": (st["verify_passes"] / ver) if ver else None,
+        "agent_share_of_actions": (st["agent_steps"] / acts) if acts else None,
+        "issues_caught_by_validator": s.issue_counts, "writes_applied": len(s.writes) + st["writes_undone"],
+        "feedback": {"up": sum(f["rating"] == "up" for f in s.feedback), "down": sum(f["rating"] == "down" for f in s.feedback)},
+    }
+
+
+class FeedbackRequest(_Body):
+    rating: Literal["up", "down"]
+    comment: str | None = Field(None, max_length=500)
+    event_seq: int | None = Field(None, description="The agent event (answer) the rating is about")
+
+
+@router.post("/api/session/{sid}/feedback", status_code=201)
+def post_feedback(sid: str, req: FeedbackRequest):
+    """Perceived usefulness of the assistant (K7): a thumbs up/down, optionally with a comment."""
+    import time
+    from backend.config import ROOT
+
+    s = get_session(sid)
+    rec = {"session": sid, "ts": time.time(), "rating": req.rating, "comment": req.comment, "event_seq": req.event_seq,
+           "page_id": s.state.page_id}
+    s.feedback.append(rec)
+    d = ROOT / "logs"
+    d.mkdir(exist_ok=True)
+    with (d / "feedback.jsonl").open("a", encoding="utf-8") as f:
+        f.write(json.dumps(rec) + "\n")
+    return {"ok": True, "total": len(s.feedback)}
+
+
 @router.post("/api/session/{sid}/fault")
 def post_fault(sid: str, req: FaultRequest):
     if req.kind not in FAULTS:

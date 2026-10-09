@@ -65,6 +65,9 @@ export const api = {
     request<{ ok: boolean }>('POST', `/api/session/${sid}/confirm`, { action_id: actionId, approve }),
   message: (sid: string, text: string, confirmMode: boolean) =>
     request<{ accepted: boolean }>('POST', `/api/session/${sid}/message`, { text, config: { confirm_mode: confirmMode } }),
+  stats: (sid: string) => request<any>('GET', `/api/session/${sid}/stats`),
+  feedback: (sid: string, rating: 'up' | 'down', eventSeq?: number, comment?: string) =>
+    request<{ ok: boolean }>('POST', `/api/session/${sid}/feedback`, { rating, event_seq: eventSeq ?? null, comment: comment ?? null }),
   setFault: (sid: string, kind: string) => request<{ fault: string }>('POST', `/api/session/${sid}/fault`, { kind }),
   search: (q: string) => request<{ results: any[] }>('GET', '/api/search' + qs({ q, k: 6 })),
 

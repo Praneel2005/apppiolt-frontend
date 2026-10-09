@@ -16,8 +16,8 @@ from fastapi.responses import JSONResponse
 from backend import db
 from backend.common import ApiError
 from backend.config import CORS_ORIGINS, as_of_date, sim_now
-from backend.routes import (funnel, metrics, orders, plan, products, promotions, reviews, sellers, session, system,
-                            tickets)
+from backend.routes import (funnel, metrics, orders, plan, products, promotions, reviews, sellers, session, summaries,
+                            system, tickets)
 
 
 @asynccontextmanager
@@ -30,7 +30,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="AppPilot - Olist Seller Operations API", version="0.2.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
 
-for r in (metrics, plan, funnel, orders, products, sellers, reviews, tickets, promotions, system, session):
+for r in (metrics, plan, funnel, summaries, orders, products, sellers, reviews, tickets, promotions, system, session):
     app.include_router(r.router)
 
 
