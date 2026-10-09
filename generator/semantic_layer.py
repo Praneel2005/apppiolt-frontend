@@ -19,6 +19,7 @@ _ITEM_FIELDS = [
     ("order_item_id", "integer", "id", "Line number within the order"),
     ("product_id", "string", "id", "Product identifier"),
     ("seller_id", "string", "id", "Seller identifier"),
+    ("customer_unique_id", "string", "id", "Customer identifier (one per person; customer_id is one per order)"),
     ("price", "decimal", "attribute", "Item price in BRL"),
     ("freight_value", "decimal", "attribute", "Freight charged for the item in BRL"),
     ("order_status", "enum", "dimension", "Order status (delivered, shipped, canceled, ...)"),
@@ -34,6 +35,7 @@ _ITEM_FIELDS = [
 ]
 _ORDER_FIELDS = [
     ("order_id", "string", "id", "Order identifier"),
+    ("customer_unique_id", "string", "id", "Customer identifier (one per person)"),
     ("order_status", "enum", "dimension", "Order status"),
     ("is_valid_sale", "boolean", "attribute", "False for canceled or unavailable orders"),
     ("order_date", "date", "time", "Date the order was placed"),
@@ -76,6 +78,9 @@ _SPEC = [
           f"COUNT(*) {VALID}", "count", True, True),
          ("orders", "Orders", "Number of distinct orders with at least one item (valid sales)",
           f"COUNT(DISTINCT order_id) {VALID}", "count", True, True),
+         # distinct counts do not add up across groups (one customer can buy in two categories)
+         ("customers", "Customers", "Number of distinct customers (customer_unique_id) with a valid sale",
+          f"COUNT(DISTINCT customer_unique_id) {VALID}", "count", False, True),
          ("aov", "Average order value", "Revenue divided by the number of orders (valid sales)",
           f"SUM(price) {VALID} / NULLIF(COUNT(DISTINCT order_id) {VALID}, 0)", "BRL", False, True),
          ("avg_delivery_days", "Average delivery time", "Average days from purchase to delivery for delivered items",

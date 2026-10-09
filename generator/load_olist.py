@@ -1,7 +1,9 @@
 """Load the Olist CSVs into Postgres (raw_* tables) and build the fact tables.
 
-    python generator/load_olist.py            # reset raw tables, load CSVs, build facts
-    python generator/load_olist.py --facts-only
+    python -m generator.load_olist            # reset raw tables, load CSVs, build derived tables
+    python -m generator.load_olist --facts-only
+
+Original CSVs are loaded 1:1 into raw_* and never modified; everything else is derived from them.
 
 Reads DATABASE_URL from the environment or .env (default: local docker compose DB).
 The geolocation CSV is not loaded (not used by the semantic layer).
@@ -29,6 +31,12 @@ TABLES = [
     ("raw_sellers", "olist_sellers_dataset.csv"),
     ("raw_category_translation", "product_category_name_translation.csv"),
 ]
+# "Marketing Funnel by Olist" (optional second dataset, unzipped into data/olist_funnel/)
+FUNNEL = ROOT / "data" / "olist_funnel"
+FUNNEL_TABLES = [
+    ("raw_marketing_qualified_leads", "olist_marketing_qualified_leads_dataset.csv"),
+    ("raw_closed_deals", "olist_closed_deals_dataset.csv"),
+]
 
 
 def load_env() -> None:
@@ -45,8 +53,7 @@ def run_sql(conn: psycopg.Connection, path: Path) -> None:
     conn.execute(path.read_text())
 
 
-def copy_csv(conn: psycopg.Connection, table: str, csv_name: str) -> None:
-    path = DATA / csv_name
+def copy_csv(conn: psycopg.Connection, table: str, path: Path) -> None:
     # utf-8-sig: product_category_name_translation.csv starts with a byte-order mark
     header = path.open(encoding="utf-8-sig").readline().strip()
     cols = ", ".join(h.strip().strip('"') for h in header.split(","))
@@ -65,14 +72,23 @@ def main() -> None:
     url = os.environ.get("DATABASE_URL", "postgresql://app:app@localhost:5432/appdb")
     t0 = time.time()
     with psycopg.connect(url) as conn:
+        loaded = [t for t, _ in TABLES]
         if not args.facts_only:
             run_sql(conn, SQL / "05_raw_schema.sql")
             for table, csv_name in TABLES:
-                copy_csv(conn, table, csv_name)
-            run_sql(conn, SQL / "06_category_fixes.sql")
+                copy_csv(conn, table, DATA / csv_name)
+            if all((FUNNEL / c).exists() for _, c in FUNNEL_TABLES):
+                for table, csv_name in FUNNEL_TABLES:
+                    copy_csv(conn, table, FUNNEL / csv_name)
+                loaded += [t for t, _ in FUNNEL_TABLES]
+            else:
+                print(f"note: marketing funnel CSVs not found in {FUNNEL}; raw_closed_deals left empty")
+        run_sql(conn, SQL / "06_category_fixes.sql")
         run_sql(conn, SQL / "10_facts.sql")
+        run_sql(conn, SQL / "30_roles_and_grants.sql")
         conn.commit()
-        for table in [t for t, _ in TABLES] + ["fact_order_items", "fact_orders", "fact_payments", "fact_reviews"]:
+        for table in loaded + ["core_category_map", "core_order_summary", "fact_order_items", "fact_orders",
+                               "fact_payments", "fact_reviews"]:
             n = conn.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
             print(f"{table:28s} {n:>9,}")
     print(f"done in {time.time() - t0:.1f}s")

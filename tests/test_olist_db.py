@@ -82,10 +82,12 @@ def test_late_and_delivery_null_iff_undelivered(conn):
 
 
 def test_all_categories_translated_or_unknown(conn):
-    # every non-null category must have an English name (2 added by sql/06_category_fixes.sql)
+    # every non-null category must have an English name in core_category_map (Olist's 71 rows + our 2);
+    # the original raw_category_translation table itself stays untouched
     assert q(conn, """
-        SELECT count(*) FROM raw_products p LEFT JOIN raw_category_translation t USING (product_category_name)
+        SELECT count(*) FROM raw_products p LEFT JOIN core_category_map t USING (product_category_name)
         WHERE p.product_category_name IS NOT NULL AND t.product_category_name_english IS NULL""") == 0
+    assert q(conn, "SELECT count(*) FROM raw_category_translation") == 71
 
 
 def test_read_only_role():

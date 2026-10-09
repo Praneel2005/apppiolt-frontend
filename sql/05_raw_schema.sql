@@ -1,7 +1,8 @@
--- DRAFT: column names/types are from memory of the Olist CSVs. Verify against the real CSV headers
--- (head -1 each file) before loading, and fix this file if anything differs.
+-- LAYER: original. Olist source tables, loaded 1:1 from the CSVs and never modified afterwards.
+-- Column names match the CSV headers exactly (verified 2026-10-08), including the source's spelling.
 DROP TABLE IF EXISTS raw_customers, raw_orders, raw_order_items, raw_payments, raw_reviews,
-                     raw_products, raw_sellers, raw_category_translation CASCADE;
+                     raw_products, raw_sellers, raw_category_translation,
+                     raw_marketing_qualified_leads, raw_closed_deals CASCADE;
 
 CREATE TABLE raw_customers (
   customer_id text PRIMARY KEY, customer_unique_id text,
@@ -21,7 +22,7 @@ CREATE TABLE raw_payments (
   order_id text, payment_sequential int, payment_type text,
   payment_installments int, payment_value numeric(12,2));
 
--- review_id is not unique in the source data (do not add a primary key)
+-- review_id is not unique in the source data; (review_id, order_id) is (checked 2026-10-09)
 CREATE TABLE raw_reviews (
   review_id text, order_id text, review_score int, review_comment_title text,
   review_comment_message text, review_creation_date timestamp, review_answer_timestamp timestamp);
@@ -36,3 +37,14 @@ CREATE TABLE raw_sellers (
 
 CREATE TABLE raw_category_translation (
   product_category_name text PRIMARY KEY, product_category_name_english text);
+
+-- "Marketing Funnel by Olist" (second Olist dataset, same source): 8,000 leads, 842 closed deals.
+-- Closed deals join to raw_sellers on seller_id.
+CREATE TABLE raw_marketing_qualified_leads (
+  mql_id text PRIMARY KEY, first_contact_date date, landing_page_id text, origin text);
+
+CREATE TABLE raw_closed_deals (
+  mql_id text PRIMARY KEY, seller_id text, sdr_id text, sr_id text, won_date timestamp,
+  business_segment text, lead_type text, lead_behaviour_profile text, has_company text,
+  has_gtin text, average_stock text, business_type text,
+  declared_product_catalog_size numeric, declared_monthly_revenue numeric);

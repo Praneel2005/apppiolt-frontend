@@ -5,7 +5,7 @@ fastapi
 uvicorn[standard]
 websockets
 httpx
-psycopg[binary]
+psycopg[binary,pool]
 sqlglot
 networkx
 rank-bm25

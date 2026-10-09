@@ -49385,6 +49385,13 @@
      "values": null
     },
     {
+     "name": "customer_unique_id",
+     "type": "string",
+     "role": "id",
+     "description": "Customer identifier (one per person; customer_id is one per order)",
+     "values": null
+    },
+    {
      "name": "price",
      "type": "decimal",
      "role": "attribute",
@@ -49648,6 +49655,15 @@
      "additive": true
     },
     {
+     "metric_id": "customers",
+     "title": "Customers",
+     "description": "Number of distinct customers (customer_unique_id) with a valid sale",
+     "sql": "COUNT(DISTINCT customer_unique_id) FILTER (WHERE is_valid_sale)",
+     "unit": "count",
+     "higher_is_better": true,
+     "additive": false
+    },
+    {
      "metric_id": "aov",
      "title": "Average order value",
      "description": "Revenue divided by the number of orders (valid sales)",
@@ -49687,6 +49703,13 @@
      "type": "string",
      "role": "id",
      "description": "Order identifier",
+     "values": null
+    },
+    {
+     "name": "customer_unique_id",
+     "type": "string",
+     "role": "id",
+     "description": "Customer identifier (one per person)",
      "values": null
     },
     {
