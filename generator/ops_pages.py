@@ -159,12 +159,13 @@ def build_ops(conn: psycopg.Connection, datasets: dict, synonyms: Callable[[str,
                    metrics=["revenue"], dimensions=["order_month"], supports=["filter", "date_range"],
                    render=RenderContract(query_metrics=["revenue"], query_dimensions=["order_month"]))
     open_tickets = _grid("ops.dashboard.open_tickets", "Open tickets, newest first",
-                         "The latest open or in-progress customer support tickets.", "tickets.search", TICKET_COLS[:8],
+                         "The latest open or in-progress customer support tickets.", "tickets.search",
+                         [TICKET_COLS[i] for i in (0, 1, 2, 3, 4, 7)],
                          params={"open_only": True, "limit": 8}, sort=False,
                          actions=[_act("resolve", "tickets.update", "Resolve", {"code": "code"}, {"status": "resolved"})])
     alerts = _grid("ops.dashboard.low_stock", "Products to restock",
                    "Products at or below their reorder point with nothing on order, most urgent first.",
-                   "inventory.alerts", PRODUCT_COLS[:1] + PRODUCT_COLS[3:4] + PRODUCT_COLS[5:10],
+                   "inventory.alerts", [PRODUCT_COLS[i] for i in (0, 5, 6, 8, 9)],
                    params={"limit": 8}, sort=False,
                    actions=[_act("restock", "restock_orders.create", "Restock", {"product_id": "product_ref"})])
     add(Page(page_id="ops.dashboard", page_code="P-100", kind="operations", title="Operations dashboard",

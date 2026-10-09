@@ -30,6 +30,7 @@ ToolName = Literal[
     "run_metric_query",
     "compare_periods",
     "explain_change",
+    "analyze_trend",  # deterministic monthly trend statistics (slope, peak, MoM, YoY) for a metric
     "open_deep_link",
     "call_api",       # read a catalogue API (orders.search, tickets.search, ...)
     "write_api",      # change data through a catalogue write API: ALWAYS preview + user confirmation
@@ -49,6 +50,7 @@ SIDE_EFFECT: dict[str, Literal["none", "ui_state", "write", "canvas"]] = {
     "run_metric_query": "none",
     "compare_periods": "none",
     "explain_change": "none",
+    "analyze_trend": "none",
     "open_deep_link": "ui_state",
     "call_api": "none",
     "write_api": "write",
@@ -106,7 +108,7 @@ class Evidence(_Model):
     """Every number shown to the user must map to one of these (provenance)."""
 
     evidence_id: str
-    kind: Literal["widget_read", "metric_query", "comparison", "contribution", "api_read", "api_write", "search"]
+    kind: Literal["widget_read", "metric_query", "comparison", "contribution", "trend", "api_read", "api_write", "search"]
     source: str  # widget_id or metric id
     query: str | None = None  # the validated SQL that produced it
     values: dict  # machine-readable numbers, e.g. {"current": 1.8e6, "previous": 1.99e6, "delta_pct": -7.4}

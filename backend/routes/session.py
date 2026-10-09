@@ -92,6 +92,20 @@ async def post_widget_data(req: WidgetDataRequest):
             "total": d.get("total"), "kind": d["kind"]}
 
 
+@router.post("/api/deeplink/build")
+def deeplink_build(state: UiState):
+    from backend import deeplinks
+
+    return {"url": deeplinks.state_to_url(app_model(), state)}
+
+
+@router.get("/api/deeplink/parse")
+def deeplink_parse(url: str):
+    from backend import deeplinks
+
+    return {"state": deeplinks.parse_url(app_model(), url).model_dump(by_alias=True)}
+
+
 @router.get("/api/date-presets")
 def date_presets():
     a = app_model().as_of_date

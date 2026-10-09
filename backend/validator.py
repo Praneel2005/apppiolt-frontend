@@ -220,6 +220,15 @@ def _h_search(c: _Ctx, a: dict) -> dict | None:
 
 
 def _h_navigate(c: _Ctx, a: dict) -> dict | None:
+    if a.get("url"):  # open_deep_link with a full link: parse and validate it like a navigate step
+        from backend.deeplinks import nav_args_from_url
+
+        try:
+            a = nav_args_from_url(c.app, str(a["url"]))
+        except ApiError as e:
+            c.bad("invalid_reference" if e.status == 404 else "invalid_value", e.message,
+                  (e.extra.get("routes_like") or [None])[0])
+            return None
     p = _page(c, a)
     if p is None:
         return None
@@ -295,9 +304,9 @@ def _metric_args(c: _Ctx, a: dict, compare: bool, explain: bool) -> dict | None:
             raise ApiError(422, "period_required", "A period (preset or dates) is required.")
         out = {"metric": m["metric_id"], "group_by": (dims[0] if dims else None) if compare else dims, "filters": flt,
                "date_from": f.isoformat() if f else None, "date_to": t.isoformat() if t else None}
-        if explain and (not dims or not m["additive"]):
+        if explain and (not dims or not (m["additive"] or m.get("weight_sql"))):
             raise ApiError(422, "not_explainable", "explain_change needs group_by and an additive metric "
-                                                   "(ratios/averages do not decompose into group contributions).")
+                                                   "(or a ratio metric with a defined weight).")
         if compare:
             cf, ct = date_range(date.fromisoformat(a["compare_from"]) if a.get("compare_from") else None,
                                 date.fromisoformat(a["compare_to"]) if a.get("compare_to") else None,
@@ -311,6 +320,22 @@ def _metric_args(c: _Ctx, a: dict, compare: bool, explain: bool) -> dict | None:
         c.bad("invalid_value" if e.code != "unknown_metric" else "invalid_reference", e.message,
               (e.extra.get("did_you_mean") or [None])[0] if e.extra.get("did_you_mean") else None)
     except (ValueError, TypeError, KeyError) as e:
+        c.bad("invalid_date", f"Invalid date: {e}")
+    return None
+
+
+def _h_trend(c: _Ctx, a: dict) -> dict | None:
+    try:
+        ds, m = _metric(str(a.get("metric")))
+        flt = _check_filters(ds, {k: _as_list(v) for k, v in (a.get("filters") or {}).items()})
+        f, t = date_range(date.fromisoformat(a["date_from"]) if a.get("date_from") else None,
+                          date.fromisoformat(a["date_to"]) if a.get("date_to") else None, a.get("preset"))
+        return {"metric": m["metric_id"], "filters": flt, "date_from": f.isoformat() if f else None,
+                "date_to": t.isoformat() if t else None}
+    except ApiError as e:
+        c.bad("invalid_value" if e.code != "unknown_metric" else "invalid_reference", e.message,
+              (e.extra.get("did_you_mean") or [None])[0])
+    except (ValueError, TypeError) as e:
         c.bad("invalid_date", f"Invalid date: {e}")
     return None
 
@@ -367,6 +392,8 @@ def validate(app: Application, plan: Plan, state: UiState | None, catalog: dict[
             norm = _metric_args(c, a, compare=True, explain=False)
         elif t == "explain_change":
             norm = _metric_args(c, a, compare=True, explain=True)
+        elif t == "analyze_trend":
+            norm = _h_trend(c, a)
         elif t == "call_api":
             norm = _check_api_call(c, a, "read")
         elif t == "write_api":

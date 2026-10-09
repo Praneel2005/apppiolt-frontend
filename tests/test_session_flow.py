@@ -111,7 +111,7 @@ def test_validator_blocks_bad_plans_with_suggestions(api, sid):
     assert v["issues"][0]["code"] == "disallowed_tool"
     v = run(api, sid, ("write_api", {"api_id": "tickets.create", "body": {"order_id": "abcdef12"}}))
     assert not v["ok"] and any("category" in i["message"] for i in v["issues"])
-    v = run(api, sid, ("explain_change", {"metric": "late_rate", "group_by": "customer_region", "preset": "last_quarter"}))
+    v = run(api, sid, ("explain_change", {"metric": "customers", "group_by": "customer_region", "preset": "last_quarter"}))
     assert "additive" in v["issues"][0]["message"]
     v = run(api, sid, *[("write_api", {"api_id": "tickets.update", "params": {"code": "TCK-1"}, "body": {"priority": "low"}})] * 6)
     assert any(i["code"] == "unsafe" for i in v["issues"])

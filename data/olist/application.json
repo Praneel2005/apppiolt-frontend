@@ -46855,22 +46855,6 @@
       "hidden": false
      },
      {
-      "name": "assignee",
-      "title": "Assignee",
-      "type": "text",
-      "unit": "",
-      "description": "",
-      "hidden": false
-     },
-     {
-      "name": "customer_state",
-      "title": "State",
-      "type": "text",
-      "unit": "",
-      "description": "",
-      "hidden": false
-     },
-     {
       "name": "created_at",
       "title": "Created",
       "type": "datetime",
@@ -46938,14 +46922,6 @@
       "hidden": false
      },
      {
-      "name": "unit_cost",
-      "title": "Cost",
-      "type": "money",
-      "unit": "BRL",
-      "description": "",
-      "hidden": false
-     },
-     {
       "name": "stock_quantity",
       "title": "Stock",
       "type": "number",
@@ -46956,14 +46932,6 @@
      {
       "name": "reorder_point",
       "title": "Reorder at",
-      "type": "number",
-      "unit": "",
-      "description": "",
-      "hidden": false
-     },
-     {
-      "name": "on_order_qty",
-      "title": "On order",
       "type": "number",
       "unit": "",
       "description": "",
@@ -56771,7 +56739,8 @@
      "sql": "SUM(price) FILTER (WHERE is_valid_sale)",
      "unit": "BRL",
      "higher_is_better": true,
-     "additive": true
+     "additive": true,
+     "weight_sql": null
     },
     {
      "metric_id": "freight",
@@ -56780,7 +56749,8 @@
      "sql": "SUM(freight_value) FILTER (WHERE is_valid_sale)",
      "unit": "BRL",
      "higher_is_better": false,
-     "additive": true
+     "additive": true,
+     "weight_sql": null
     },
     {
      "metric_id": "items_sold",
@@ -56789,7 +56759,8 @@
      "sql": "COUNT(*) FILTER (WHERE is_valid_sale)",
      "unit": "count",
      "higher_is_better": true,
-     "additive": true
+     "additive": true,
+     "weight_sql": null
     },
     {
      "metric_id": "orders",
@@ -56798,7 +56769,8 @@
      "sql": "COUNT(DISTINCT order_id) FILTER (WHERE is_valid_sale)",
      "unit": "count",
      "higher_is_better": true,
-     "additive": true
+     "additive": true,
+     "weight_sql": null
     },
     {
      "metric_id": "customers",
@@ -56807,7 +56779,8 @@
      "sql": "COUNT(DISTINCT customer_unique_id) FILTER (WHERE is_valid_sale)",
      "unit": "count",
      "higher_is_better": true,
-     "additive": false
+     "additive": false,
+     "weight_sql": null
     },
     {
      "metric_id": "aov",
@@ -56816,7 +56789,8 @@
      "sql": "SUM(price) FILTER (WHERE is_valid_sale) / NULLIF(COUNT(DISTINCT order_id) FILTER (WHERE is_valid_sale), 0)",
      "unit": "BRL",
      "higher_is_better": true,
-     "additive": false
+     "additive": false,
+     "weight_sql": "COUNT(DISTINCT order_id) FILTER (WHERE is_valid_sale)"
     },
     {
      "metric_id": "avg_delivery_days",
@@ -56825,7 +56799,8 @@
      "sql": "AVG(delivery_days)",
      "unit": "days",
      "higher_is_better": false,
-     "additive": false
+     "additive": false,
+     "weight_sql": "COUNT(delivery_days)"
     },
     {
      "metric_id": "late_rate",
@@ -56834,7 +56809,8 @@
      "sql": "AVG(is_late)",
      "unit": "ratio",
      "higher_is_better": false,
-     "additive": false
+     "additive": false,
+     "weight_sql": "COUNT(is_late)"
     }
    ]
   },
@@ -56966,7 +56942,8 @@
      "sql": "COUNT(*)",
      "unit": "count",
      "higher_is_better": true,
-     "additive": true
+     "additive": true,
+     "weight_sql": null
     },
     {
      "metric_id": "cancel_rate",
@@ -56975,7 +56952,8 @@
      "sql": "AVG(CASE WHEN order_status = 'canceled' THEN 1.0 ELSE 0 END)",
      "unit": "ratio",
      "higher_is_better": false,
-     "additive": false
+     "additive": false,
+     "weight_sql": "COUNT(*)"
     },
     {
      "metric_id": "order_late_rate",
@@ -56984,7 +56962,8 @@
      "sql": "AVG(is_late)",
      "unit": "ratio",
      "higher_is_better": false,
-     "additive": false
+     "additive": false,
+     "weight_sql": "COUNT(is_late)"
     }
    ]
   },
@@ -57099,7 +57078,8 @@
      "sql": "SUM(payment_value)",
      "unit": "BRL",
      "higher_is_better": true,
-     "additive": true
+     "additive": true,
+     "weight_sql": null
     },
     {
      "metric_id": "payment_count",
@@ -57108,7 +57088,8 @@
      "sql": "COUNT(*)",
      "unit": "count",
      "higher_is_better": true,
-     "additive": true
+     "additive": true,
+     "weight_sql": null
     },
     {
      "metric_id": "avg_installments",
@@ -57117,7 +57098,8 @@
      "sql": "AVG(payment_installments)",
      "unit": "count",
      "higher_is_better": false,
-     "additive": false
+     "additive": false,
+     "weight_sql": "COUNT(*)"
     }
    ]
   },
@@ -57219,7 +57201,8 @@
      "sql": "COUNT(*)",
      "unit": "count",
      "higher_is_better": true,
-     "additive": true
+     "additive": true,
+     "weight_sql": null
     },
     {
      "metric_id": "avg_review_score",
@@ -57228,7 +57211,8 @@
      "sql": "AVG(review_score)",
      "unit": "score",
      "higher_is_better": true,
-     "additive": false
+     "additive": false,
+     "weight_sql": "COUNT(*)"
     }
    ]
   }

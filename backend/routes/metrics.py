@@ -230,6 +230,10 @@ def metrics_compare(body: MetricCompare):
         return None if a is None or not b else round(100 * (a - b) / abs(b), 2)
 
     delta = None if tot_cur is None or tot_prev is None else tot_cur - tot_prev
+    decomposition = None
+    if dims and not m["additive"] and m.get("weight_sql"):
+        with ro() as conn:
+            decomposition = _mix_rate(conn, ds, m, dims[0], filters, (f, t), (cf, ct))
     drivers = []
     if dims:
         c = {r[dims[0]]: _val(r["value"]) for r in cur}
@@ -249,6 +253,126 @@ def metrics_compare(body: MetricCompare):
             "previous": {"from": cf.isoformat(), "to": ct.isoformat(), "value": tot_prev},
             "delta": None if delta is None else round(delta, 6), "pct_change": pct(tot_cur, tot_prev),
             "drivers": drivers,
-            "note": None if m["additive"] or not dims else
+            "ratio_decomposition": decomposition,
+            "note": None if m["additive"] or not dims or decomposition else
             "this metric is a ratio/average, so group changes do not add up to the total change",
             "source": source([ds["table"]], ["derived"])}
+
+
+def _weighted(conn, ds: dict, m: dict, dim: str, filters: dict, f: date | None, t: date | None) -> dict:
+    """{group: (ratio, weight)} for one period."""
+    where, params = _where(ds, filters, f, t)
+    q = sql.SQL("SELECT {d} AS g, ({v}) AS value, ({w}) AS weight FROM {t}").format(
+        d=sql.Identifier(dim), v=sql.SQL(m["sql"]), w=sql.SQL(m["weight_sql"]), t=sql.Identifier(ds["table"])) + where
+    q += sql.SQL(" GROUP BY {}").format(sql.Identifier(dim))
+    return {r["g"]: (_val(r["value"]), float(r["weight"] or 0)) for r in conn.execute(q, params).fetchall()}
+
+
+def _mix_rate(conn, ds: dict, m: dict, dim: str, filters: dict, cur: tuple, prev: tuple) -> dict | None:
+    """Exact split of the change in a ratio metric into mix and rate effects per group.
+
+        M = sum_g s_g * m_g          (s_g = group share of the weight, m_g = group ratio)
+        M1 - M0 = sum_g s1_g (m1_g - m0_g)            <- rate effect: the group's own ratio changed
+                + sum_g (s1_g - s0_g)(m0_g - M0)      <- mix effect: more/less of the population is in the group
+    A group missing in the earlier period takes the earlier overall ratio M0 as its m0 (so it has no mix effect).
+    """
+    c, p = _weighted(conn, ds, m, dim, filters, *cur), _weighted(conn, ds, m, dim, filters, *prev)
+    wc, wp = sum(w for _, w in c.values()), sum(w for _, w in p.values())
+    if not wc or not wp:
+        return None
+    m1 = sum(v * w for v, w in c.values() if v is not None) / wc
+    m0 = sum(v * w for v, w in p.values() if v is not None) / wp
+    rows = []
+    for g in sorted(set(c) | set(p), key=str):
+        v1, w1 = c.get(g, (None, 0.0))
+        v0, w0 = p.get(g, (None, 0.0))
+        s1, s0 = w1 / wc, w0 / wp
+        v0n = m0 if v0 is None else v0
+        rate = s1 * ((v1 if v1 is not None else v0n) - v0n)
+        mix = (s1 - s0) * (v0n - m0)
+        rows.append({"group": jsonable(g), "share_previous": round(s0, 6), "share_current": round(s1, 6),
+                     "value_previous": v0, "value_current": v1, "rate_effect": round(rate, 8),
+                     "mix_effect": round(mix, 8), "total_effect": round(rate + mix, 8)})
+    total = m1 - m0
+    for r in rows:
+        r["contribution_pct"] = round(100 * r["total_effect"] / total, 1) if total else None
+    rows.sort(key=lambda r: -abs(r["total_effect"]))
+    return {"overall_previous": round(m0, 8), "overall_current": round(m1, 8), "delta": round(total, 8),
+            "rate_effect_total": round(sum(r["rate_effect"] for r in rows), 8),
+            "mix_effect_total": round(sum(r["mix_effect"] for r in rows), 8), "groups": rows[:30],
+            "method": "mix/rate decomposition: rate = current share x change in the group's ratio; "
+                      "mix = change in share x (group's previous ratio - overall previous ratio)"}
+
+
+# ------------------------------------------------------------------------------------ trend
+class TrendQuery(Body):
+    metric: str = Field(..., description="Metric id, e.g. revenue, late_rate")
+    filters: dict[str, list[str]] = Field(default_factory=dict)
+    date_from: date | None = None
+    date_to: date | None = None
+    preset: str | None = Field(None, description="Period, e.g. last_12_months, year:2017 (default: all data)")
+
+
+def _month_index(d: date) -> int:
+    return d.year * 12 + d.month - 1
+
+
+@endpoint(router, "POST", "/api/metrics/trend", api_id="metrics.trend", entity="metric", kind="read",
+          title="Metric trend analysis",
+          description="Month-by-month series of a metric with computed trend statistics: direction, average "
+                      "monthly change, total change, peak and trough months, month-over-month and year-over-year "
+                      "changes, volatility and gaps. Use it for 'is X growing or falling', 'when did it peak', "
+                      "'how volatile is it'.",
+          data_layers=["derived"],
+          returns="rows[] {order_month, value, mom_pct, yoy_pct}, stats {trend, slope_per_month, change_pct, peak, trough, ...}",
+          examples=["is revenue growing", "when did late deliveries peak", "how has the review score moved this year"])
+def metrics_trend(body: TrendQuery):
+    import numpy as np
+
+    ds, m = _metric(body.metric)
+    if not any(f["name"] == "order_month" for f in ds["fields"]):
+        raise ApiError(422, "no_time_dimension", f"{body.metric} has no monthly time dimension.")
+    filters = _check_filters(ds, body.filters)
+    f, t = date_range(body.date_from, body.date_to, body.preset)
+    with ro() as conn:
+        raw = run_metric(conn, ds, m, ["order_month"], filters, f, t, sql.SQL("order_month ASC"))
+    pts = [(r["order_month"], _val(r["value"])) for r in raw if r["value"] is not None]
+    if len(pts) < 3:
+        raise ApiError(422, "not_enough_data", "A trend needs at least 3 months of data in the period.", months=len(pts))
+    idx = [_month_index(d) for d, _ in pts]
+    vals = np.array([v for _, v in pts], dtype=float)
+    x = np.array([i - idx[0] for i in idx], dtype=float)
+    slope, intercept = np.polyfit(x, vals, 1)
+    fit = slope * x + intercept
+    ss_tot = float(((vals - vals.mean()) ** 2).sum())
+    r2 = 1 - float(((vals - fit) ** 2).sum()) / ss_tot if ss_tot else 0.0
+    mean = float(vals.mean())
+    slope_pct = float(slope) / abs(mean) if mean else 0.0
+    trend = "flat" if (r2 < 0.25 or abs(slope_pct) < 0.01) else ("rising" if slope > 0 else "falling")
+    by_idx = {i: v for i, v in zip(idx, vals)}
+    rows, moms = [], []
+    for (d, v), i in zip(pts, idx):
+        prev, yago = by_idx.get(i - 1), by_idx.get(i - 12)
+        mom = round(100 * (v - prev) / abs(prev), 2) if prev else None
+        rows.append({"order_month": d.isoformat(), "value": v, "mom_pct": mom,
+                     "yoy_pct": round(100 * (v - yago) / abs(yago), 2) if yago else None})
+        if mom is not None:
+            moms.append((mom, d.isoformat()))
+    pk, tr = int(vals.argmax()), int(vals.argmin())
+    missing = [i for i in range(idx[0], idx[-1] + 1) if i not in by_idx]
+    first, last = float(vals[0]), float(vals[-1])
+    stats = {"months": len(pts), "first": {"month": pts[0][0].isoformat(), "value": first},
+             "last": {"month": pts[-1][0].isoformat(), "value": last},
+             "change_abs": round(last - first, 6), "change_pct": round(100 * (last - first) / abs(first), 2) if first else None,
+             "trend": trend, "slope_per_month": round(float(slope), 6), "slope_pct_of_mean": round(100 * slope_pct, 2),
+             "r_squared": round(r2, 3), "mean": round(mean, 6), "std": round(float(vals.std()), 6),
+             "coefficient_of_variation": round(float(vals.std()) / abs(mean), 3) if mean else None,
+             "peak": {"month": pts[pk][0].isoformat(), "value": float(vals[pk])},
+             "trough": {"month": pts[tr][0].isoformat(), "value": float(vals[tr])},
+             "largest_rise": max(moms)[::-1] if moms else None, "largest_fall": min(moms)[::-1] if moms else None,
+             "missing_months": [f"{i // 12}-{i % 12 + 1:02d}" for i in missing],
+             "definition": "trend = rising/falling when the least-squares line explains >= 25% of variance and moves "
+                           ">= 1% of the mean per month; otherwise flat"}
+    return {"metric": m["metric_id"], "title": m["title"], "unit": m["unit"], "filters": filters,
+            "period": {"from": f.isoformat() if f else None, "to": t.isoformat() if t else None, "preset": body.preset},
+            "rows": rows, "stats": stats, "source": source([ds["table"]], ["derived"])}

@@ -18,9 +18,11 @@ import time
 from typing import Any
 
 from backend import retrieval
-from backend.common import ApiError
+from backend.common import UNTRUSTED_NOTE, ApiError, sanitize_rows
 from backend.config import app_model
-from backend.routes.metrics import MetricCompare, MetricQuery, metrics_compare, metrics_query
+from backend.deeplinks import state_to_url, supporting_view
+from backend.routes.metrics import (MetricCompare, MetricQuery, TrendQuery, metrics_compare, metrics_query,
+                                    metrics_trend)
 from backend.routes.system import catalog_entries
 from backend.sessions import (Session, ask_confirmation, emit, push_state, state_for_page, undo_state)
 from backend.validator import validate
@@ -59,6 +61,10 @@ def _trim(body: Any) -> Any:
 
 
 async def _evidence(s: Session, kind: str, source: str, values: dict, query: str | None = None) -> Evidence:
+    if isinstance(values.get("rows"), list):
+        values["rows"], flagged = sanitize_rows(values["rows"])
+        if flagged:
+            values["untrusted_fields"], values["untrusted_note"] = flagged, UNTRUSTED_NOTE
     ev = Evidence(evidence_id=s.next_evidence_id(), kind=kind, source=source, query=query, values=values)
     s.evidence[ev.evidence_id] = ev
     await emit(s, "evidence", ev.model_dump())
@@ -143,20 +149,31 @@ async def _read_view(s: Session, step: ToolCall, i: int) -> StepResult:
         "rows": d["rows"][:n], "row_count": d["row_count"], "total": d.get("total"), "truncated": d["row_count"] > n,
         "applied_filters": {k: v.model_dump() for k, v in d["applied_filters"].items()},
         "date_range": st.date_range.model_dump(by_alias=True) if st.date_range else None,
-        "source": d.get("source")})
+        "source": d.get("source"), "view": {"page_id": st.page_id, "widget_id": a["widget_id"],
+                                            "widget_code": w.widget_code, "url": state_to_url(app_model(), st),
+                                            "exact": True, "dropped": []}})
     return StepResult(step_index=i, ok=True, evidence_id=ev.evidence_id)
 
 
 async def _analysis(s: Session, step: ToolCall, i: int) -> StepResult:
     a = {k: v for k, v in step.args.items() if v is not None}
+    app = app_model()
     try:
         if step.tool == "run_metric_query":
             res = await asyncio.to_thread(metrics_query, MetricQuery(**a))
-            ev = await _evidence(s, "metric_query", a["metric"], {**res, "rows": res["rows"]})
+            view = supporting_view(app, a["metric"], a.get("group_by"), a.get("filters"), a.get("date_from"), a.get("date_to"))
+            ev = await _evidence(s, "metric_query", a["metric"], {**res, "rows": res["rows"], "view": view})
+        elif step.tool == "analyze_trend":
+            res = await asyncio.to_thread(metrics_trend, TrendQuery(**a))
+            view = supporting_view(app, a["metric"], ["order_month"], a.get("filters"), a.get("date_from"), a.get("date_to"))
+            ev = await _evidence(s, "trend", a["metric"], {**res, "view": view})
         else:
             res = await asyncio.to_thread(metrics_compare, MetricCompare(**a))
             kind = "contribution" if step.tool == "explain_change" else "comparison"
-            ev = await _evidence(s, kind, a["metric"], {**res, "rows": res["drivers"]})
+            rows = res["ratio_decomposition"]["groups"] if res.get("ratio_decomposition") else res["drivers"]
+            view = supporting_view(app, a["metric"], [a["group_by"]] if a.get("group_by") else [], a.get("filters"),
+                                   a.get("date_from"), a.get("date_to"))
+            ev = await _evidence(s, kind, a["metric"], {**res, "rows": rows, "view": view})
     except ApiError as e:
         return StepResult(step_index=i, ok=False, error_code="query_failed", message=e.message)
     return StepResult(step_index=i, ok=True, evidence_id=ev.evidence_id)
@@ -279,7 +296,7 @@ async def _execute(s: Session, step: ToolCall, i: int, config: AgentConfig, auto
         return await _ui_step(s, step, i, config, auto)
     if t == "read_view":
         return await _read_view(s, step, i)
-    if t in ("run_metric_query", "compare_periods", "explain_change"):
+    if t in ("run_metric_query", "compare_periods", "explain_change", "analyze_trend"):
         return await _analysis(s, step, i)
     if t in ("search_pages", "search_apis"):
         return await _search(s, step, i)

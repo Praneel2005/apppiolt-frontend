@@ -16,7 +16,7 @@ from typing import Any
 import httpx
 from psycopg import sql
 
-from backend.common import jsonable
+from backend.common import jsonable, sanitize_rows
 from backend.config import app_model
 from backend.db import ro
 from contracts.metadata import Application, Page, Widget
@@ -198,9 +198,11 @@ async def page_context(state: UiState, app: Application | None = None, preview_r
         w = app.widget(wid)
         try:
             d = await widget_data(wid, state.filters, state.date_range, state.sort, state.page_id, app)
+            rows, flagged = sanitize_rows(d["rows"][:preview_rows])
             shown = {"columns": d["columns"], "row_count": d["row_count"], "total": d.get("total"),
-                     "rows": d["rows"][:preview_rows], "truncated": d["row_count"] > preview_rows,
-                     "applied_filters": _dump_filters(d["applied_filters"])}
+                     "rows": rows, "truncated": d["row_count"] > preview_rows,
+                     "applied_filters": _dump_filters(d["applied_filters"]),
+                     "untrusted_columns": flagged}
         except ViewError as e:
             shown = {"error": e.message}
         widgets.append({"widget_id": wid, "widget_code": w.widget_code, "type": w.type, "title": w.title,

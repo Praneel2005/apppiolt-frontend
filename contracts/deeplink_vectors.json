@@ -1,0 +1,40 @@
+{
+  "_doc": "UI state <-> deep link vectors (backend/deeplinks.py and web/src/lib/url.ts must both pass). Routes and filter ids come from data/olist/application.json.",
+  "cases": [
+    {
+      "name": "multiselect states with preset dates",
+      "state": {"route": "/ops/orders", "page_id": "ops.orders", "version": 0,
+                "filters": {"customer_state": {"op": "in", "value": ["RJ", "SP"]}},
+                "date_range": {"from": "2018-07-01", "to": "2018-07-31", "preset": "last_month"}, "sort": null, "selected_widget": null},
+      "url": "/ops/orders?from=2018-07-01&to=2018-07-31&preset=last_month&f.customer_state=RJ,SP"
+    },
+    {
+      "name": "two selects plus sort, filters written in id order",
+      "state": {"route": "/ops/support/tickets", "page_id": "ops.tickets", "version": 0,
+                "filters": {"status": {"op": "eq", "value": ["open"]}, "priority": {"op": "eq", "value": ["urgent"]}},
+                "date_range": {"from": "2018-08-25", "to": "2018-08-31", "preset": "last_7_days"},
+                "sort": {"field": "age_hours", "dir": "desc"}, "selected_widget": null},
+      "url": "/ops/support/tickets?from=2018-08-25&to=2018-08-31&preset=last_7_days&f.priority=urgent&f.status=open&sort=age_hours:desc"
+    },
+    {
+      "name": "non-default operator is written explicitly",
+      "state": {"route": "/ops/orders", "page_id": "ops.orders", "version": 0,
+                "filters": {"customer_state": {"op": "eq", "value": ["SP"]}},
+                "date_range": {"from": "2018-01-01", "to": "2018-03-31", "preset": null}, "sort": null, "selected_widget": null},
+      "url": "/ops/orders?from=2018-01-01&to=2018-03-31&f.customer_state=SP&op.customer_state=eq"
+    },
+    {
+      "name": "page without a date range and without filters",
+      "state": {"route": "/ops/inventory/restock-orders", "page_id": "ops.restock_orders", "version": 0,
+                "filters": {}, "date_range": null, "sort": null, "selected_widget": null},
+      "url": "/ops/inventory/restock-orders"
+    },
+    {
+      "name": "report page, category filter",
+      "state": {"route": "/sales/revenue-by-customer-state", "page_id": "sales.revenue_by_customer_state", "version": 0,
+                "filters": {"product_category": {"op": "in", "value": ["health_beauty", "toys"]}},
+                "date_range": {"from": "2018-04-01", "to": "2018-06-30", "preset": "last_quarter"}, "sort": null, "selected_widget": null},
+      "url": "/sales/revenue-by-customer-state?from=2018-04-01&to=2018-06-30&preset=last_quarter&f.product_category=health_beauty,toys"
+    }
+  ]
+}

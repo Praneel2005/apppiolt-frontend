@@ -45,8 +45,12 @@ class Metric(_Model):
     unit: str = ""  # "USD", "count", "%"
     higher_is_better: bool = True
     # True for sums/counts (revenue, orders); False for ratios/averages (aov, late_rate).
-    # explain_change only does contribution decomposition on additive metrics.
+    # explain_change does contribution decomposition on additive metrics, and a mix/rate decomposition on
+    # non-additive ratio metrics that define `weight_sql`.
     additive: bool = True
+    # SQL aggregate giving the denominator the ratio is averaged over (e.g. COUNT(is_late) for late_rate), so a
+    # change in the ratio can be split exactly into a mix effect (group weights moved) and a rate effect.
+    weight_sql: str | None = None
 
 
 class Dataset(_Model):

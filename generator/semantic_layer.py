@@ -115,6 +115,19 @@ _SPEC = [
 ]
 
 
+# denominator of each ratio metric, so changes can be split exactly into mix and rate effects
+# (ratio = sum over groups of weight share x group ratio). Additive metrics need none.
+WEIGHTS = {
+    "aov": f"COUNT(DISTINCT order_id) {VALID}",
+    "avg_delivery_days": "COUNT(delivery_days)",
+    "late_rate": "COUNT(is_late)",
+    "order_late_rate": "COUNT(is_late)",
+    "cancel_rate": "COUNT(*)",
+    "avg_installments": "COUNT(*)",
+    "avg_review_score": "COUNT(*)",
+}
+
+
 def _enum_values(conn: psycopg.Connection, table: str, column: str) -> list[str]:
     rows = conn.execute(
         f"SELECT DISTINCT {column} FROM {table} WHERE {column} IS NOT NULL ORDER BY 1"
@@ -137,7 +150,7 @@ def build_datasets(conn: psycopg.Connection) -> list[Dataset]:
             time_field="order_date",
             fields=defs,
             metrics=[Metric(metric_id=m, title=ti, description=de, sql=sq, unit=u,
-                            additive=ad, higher_is_better=hb)
+                            additive=ad, higher_is_better=hb, weight_sql=WEIGHTS.get(m))
                      for m, ti, de, sq, u, ad, hb in metrics],
         ))
     return datasets
