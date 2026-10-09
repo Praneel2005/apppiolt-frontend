@@ -1,7 +1,7 @@
 # Olist data notes (card T2) — measured on the real files, 2026-10-08
 
 Source: *Brazilian E-Commerce Public Dataset by Olist* (Kaggle), uploaded as `archive.zip` (9 CSVs, 126 MB unpacked), unpacked to `data/olist/` (gitignored).
-**License: NOT YET RECORDED** — copy the exact license sentence from the Kaggle dataset page here before the dataset is shown publicly.
+**License:** Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) — Olist / Kaggle.
 
 ## Files
 | File | Rows | Notes |

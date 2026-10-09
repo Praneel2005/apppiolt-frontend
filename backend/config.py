@@ -14,7 +14,7 @@ APP_FILE = ROOT / "data" / "olist" / "application.json"
 def _load_env() -> None:
     f = ROOT / ".env"
     if f.exists():
-        for line in f.read_text().splitlines():
+        for line in f.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)

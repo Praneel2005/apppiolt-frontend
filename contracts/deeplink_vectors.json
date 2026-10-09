@@ -31,10 +31,10 @@
     },
     {
       "name": "report page, category filter",
-      "state": {"route": "/sales/revenue-by-customer-state", "page_id": "sales.revenue_by_customer_state", "version": 0,
+      "state": {"route": "/sales/revenue", "page_id": "sales.revenue", "version": 0,
                 "filters": {"product_category": {"op": "in", "value": ["health_beauty", "toys"]}},
                 "date_range": {"from": "2018-04-01", "to": "2018-06-30", "preset": "last_quarter"}, "sort": null, "selected_widget": null},
-      "url": "/sales/revenue-by-customer-state?from=2018-04-01&to=2018-06-30&preset=last_quarter&f.product_category=health_beauty,toys"
+      "url": "/sales/revenue?from=2018-04-01&to=2018-06-30&preset=last_quarter&f.product_category=health_beauty,toys"
     }
   ]
 }

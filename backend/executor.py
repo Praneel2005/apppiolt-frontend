@@ -262,10 +262,14 @@ async def _canvas(s: Session, step: ToolCall, i: int) -> StepResult:
                                         title=entry["title"], body_schema=entry["body_schema"] or {},
                                         defaults=a["defaults"]))
     else:
-        ev = s.evidence.get(a["evidence_id"])
+        ev_id = a.get("evidence_id")
+        if ev_id == "@last":
+            ev = list(s.evidence.values())[-1] if s.evidence else None
+        else:
+            ev = s.evidence.get(ev_id)
         if ev is None:
             return StepResult(step_index=i, ok=False, error_code="invalid_reference",
-                              message=f"No evidence '{a['evidence_id']}' in this session.")
+                              message=f"No evidence '{ev_id}' in this session.")
         rows = [r for r in (ev.values.get("rows") or []) if isinstance(r, dict)][:MAX_EVIDENCE_ROWS]
         if not rows:
             return StepResult(step_index=i, ok=False, error_code="empty_result", message="The evidence has no rows to show.")

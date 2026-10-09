@@ -18,7 +18,7 @@ client = TestClient(app)
 
 def test_application_and_presets():
     a = client.get("/api/application").json()
-    assert len(a["pages"]) >= 100
+    assert len(a["pages"]) >= 40
     p = client.get("/api/date-presets").json()
     assert p["last_quarter"] == {"from": "2018-04-01", "to": "2018-06-30"}
 

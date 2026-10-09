@@ -151,7 +151,7 @@ during the load. If another PostgreSQL already listens on port 5432, stop it or 
 | browser says "Can't reach the backend" | start `uvicorn` (step 8); Vite proxies `/api` and `/ws` to port 8000 |
 | `npm ci` complains about the Node version | install Node 22 or newer (warnings only; tests may still run on Node 20) |
 | port 8000 or 5173 already in use | `netstat -ano \| findstr :8000`, then stop that process |
-| load fails with a BOM or encoding error | make sure the CSVs are the unmodified Olist files; do not re-save them in Excel |
+| `UnicodeEncodeError: 'charmap' codec can't encode ...` on Windows | `write_text()` and `read_text()` default to `cp1252` on Windows; explicitly passed `encoding="utf-8"` in `generator/build_application.py`, `generator/load_olist.py`, `backend/config.py`, `scripts/check_gemini.py`, and test files |
 
 ---
 

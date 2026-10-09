@@ -20,9 +20,17 @@ from backend.routes import (funnel, metrics, orders, plan, products, promotions,
                             system, tickets)
 
 
+import os
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     db.open_pools()
+    if os.environ.get("GROQ_API_KEY") or os.environ.get("GEMINI_API_KEY"):
+        try:
+            from agent import agent as agent_mod
+            session.set_agent(agent_mod._DEFAULT_AGENT)
+        except Exception:
+            pass
     yield
     db.close_pools()
 

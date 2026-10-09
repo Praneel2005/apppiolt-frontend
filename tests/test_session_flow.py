@@ -201,8 +201,10 @@ def test_call_api_normalises_params_and_records_evidence(api, sid):
 
 
 def test_canvas_from_evidence_and_from_write_schema(api, sid):
+    ctx_before = api.get(f"/api/session/{sid}/context").json()
+    assert "next_evidence_id" in ctx_before
     r = run(api, sid, ("run_metric_query", {"metric": "revenue", "group_by": ["customer_state"], "preset": "last_quarter", "limit": 6}),
-            ("render_canvas", {"kind": "chart", "evidence_id": "E1", "title": "Revenue by state", "x": "customer_state", "y": ["value"]}),
+            ("render_canvas", {"kind": "chart", "evidence_id": "@last", "title": "Revenue by state", "x": "customer_state", "y": ["value"]}),
             ("render_canvas", {"kind": "table", "evidence_id": "E1", "title": "Same data"}),
             ("render_canvas", {"kind": "form", "api_id": "tickets.create", "defaults": {"category": "late_delivery"}}))
     assert r["ok"], r
@@ -274,5 +276,11 @@ def test_api_errors_surface_as_failed_steps(api, sid):
 
 
 def test_message_endpoint_reports_missing_agent(api, sid):
-    r = api.post(f"/api/session/{sid}/message", json={"text": "hello"})
-    assert r.status_code == 501 and r.json()["error"]["code"] == "agent_not_configured"
+    from backend.routes.session import set_agent, _AGENT
+    prev = _AGENT.get("agent")
+    try:
+        set_agent(None)
+        r = api.post(f"/api/session/{sid}/message", json={"text": "hello"})
+        assert r.status_code == 501 and r.json()["error"]["code"] == "agent_not_configured"
+    finally:
+        set_agent(prev)

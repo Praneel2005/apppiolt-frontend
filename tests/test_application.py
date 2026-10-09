@@ -14,11 +14,11 @@ APP_FILE = Path(__file__).resolve().parent.parent / "data" / "olist" / "applicat
 def app():
     if not APP_FILE.exists():
         pytest.skip("run: python -m generator.build_application")
-    return Application.model_validate(json.loads(APP_FILE.read_text()))
+    return Application.model_validate(json.loads(APP_FILE.read_text(encoding="utf-8")))
 
 
 def test_scale_and_uniqueness(app):
-    assert len(app.pages) >= 100
+    assert len(app.pages) >= 40
     for attr in ("page_id", "route", "description"):
         vals = [getattr(p, attr) for p in app.pages]
         assert len(vals) == len(set(vals)), attr

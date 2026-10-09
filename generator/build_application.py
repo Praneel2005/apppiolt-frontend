@@ -70,13 +70,13 @@ DIM_WORDS = {
 MODULES = {
     "sales": ("Sales", "Revenue, orders and basket size of valid sales", "ds_order_items",
               ["revenue", "orders", "items_sold", "aov"],
-              ["customer_state", "customer_region", "product_category", "seller_state", "order_status"],
-              ["revenue", "orders", "aov"], ["customer_region", "customer_state", "product_category"]),
+              ["product_category", "customer_state", "customer_region", "seller_state"],
+              ["revenue", "orders", "aov"], ["product_category", "customer_state", "customer_region", "seller_state"]),
     "customers": ("Customers", "Where customers are, how much they buy and how often they cancel", "ds_orders",
                   ["order_count", "cancel_rate"], ["customer_state", "customer_region", "order_status"],
                   ["order_count", "cancel_rate"], ["customer_region", "customer_state", "order_status"]),
     "sellers": ("Sellers", "Seller locations, their sales and their delivery performance", "ds_order_items",
-                ["revenue", "items_sold", "late_rate", "avg_delivery_days", "freight"], ["seller_state"],
+                ["revenue", "items_sold", "late_rate", "avg_delivery_days", "freight"], ["seller_state", "product_category"],
                 [], ["seller_state", "customer_region", "product_category"]),
     "logistics": ("Logistics", "Delivery times, late deliveries and freight costs", "ds_order_items",
                   ["avg_delivery_days", "late_rate", "freight"], ["customer_state", "customer_region", "product_category"],
@@ -88,7 +88,7 @@ MODULES = {
                 ["avg_review_score", "review_count"], ["customer_state", "customer_region"],
                 ["avg_review_score", "review_count"], ["customer_region", "customer_state"]),
     "catalog": ("Catalog", "Product categories: what sells, what it costs to ship and how well it is delivered", "ds_order_items",
-                ["revenue", "items_sold", "aov", "freight", "late_rate", "avg_delivery_days"], ["product_category"],
+                ["revenue", "items_sold", "aov", "freight", "late_rate", "avg_delivery_days"], ["product_category", "customer_state"],
                 ["items_sold"], ["product_category", "customer_region", "customer_state"]),
 }
 # extra cross-module pages (orders-level logistics) to cover remaining questions
@@ -185,81 +185,93 @@ def build(conn: psycopg.Connection) -> Application:
                       widgets=[w.widget_id for w in kpis + [line]], filters=filters,
                       default_state={"date_range": {"preset": "last_12_months"}}), kpis + [line])
 
-        # metric-by-dimension pages
-        combos = [(ds_id, m, d) for m in bmetrics for d in bdims] + [
-            (e_ds, e_m, e_d) for e_mod, e_ds, e_m, e_d in EXTRA_BREAKDOWNS if e_mod == mod]
-        for c_ds_id, m, d in combos:
-            c_ds = datasets[c_ds_id]
+        # consolidated metric pages with multi-dimensional filtering
+        for m in bmetrics:
             mdef = metric[m][1]
-            dname, dwords = DIM_WORDS[d]
-            pid = f"{mod}.{m}_by_{d}"
-            question = (f"Which {dname}s have the highest and lowest {mdef.title.lower()}?" if d != "order_status"
-                        else f"How does {mdef.title.lower()} split across order statuses?")
-            bar = Widget(widget_id=f"{pid}.chart", type="bar_chart", title=f"{mdef.title} by {dname}",
-                         description=f"Bar chart of {mdef.title.lower()} ({mdef.unit}) per {dname}. {question}",
-                         dataset_id=c_ds_id, metrics=[m], dimensions=[d], supports=["sort", "filter", "date_range"],
-                         render=RenderContract(query_metrics=[m], query_dimensions=[d]))
-            extra = [x for x in ([mdef.metric_id] + [k for k in ("orders", "order_count", "payment_count", "review_count")
-                                                     if any(mm.metric_id == k for mm in c_ds.metrics)]) if x]
-            grid_metrics = list(dict.fromkeys(extra))[:2]
-            grid = Widget(widget_id=f"{pid}.grid", type="grid", title=f"{mdef.title} by {dname} (table)",
-                          description=f"Sortable table of {', '.join(metric[g][1].title.lower() for g in grid_metrics)} per {dname}.",
-                          dataset_id=c_ds_id, metrics=grid_metrics, dimensions=[d], supports=["sort", "filter", "date_range"],
-                          render=RenderContract(query_metrics=grid_metrics, query_dimensions=[d]))
-            add_page(Page(page_id=pid, title=f"{mdef.title} by {dname}",
-                          description=f"{mdef.title} by {dname} in the {title} module: {mdef.description.lower()}, "
-                                      f"split by {dname}. {question} Also answers questions about "
-                                      f"{', '.join(METRIC_WORDS[m][:3])} by {', '.join(dwords[:2])}.",
-                          directory=f"{mod}/breakdowns", route=f"/{mod}/{_slug(m)}-by-{_slug(d)}",
-                          keywords=[mod, m.replace("_", " "), dname] + METRIC_WORDS[m] + dwords,
-                          widgets=[bar.widget_id, grid.widget_id],
-                          filters=_filters(c_ds, fdims) if c_ds_id != ds_id else filters,
-                          default_state={"date_range": {"preset": "last_12_months"}}), [bar, grid])
+            pid = f"{mod}.{m}"
+            m_filters = _filters(ds, fdims)
 
-        # two-dimension breakdown pages
-        for m_mod, m, d1, d2 in [x for x in MATRIX if x[0] == mod]:
-            m_ds_id, mdef = metric[m][0].dataset_id, metric[m][1]
-            n1, n2 = DIM_WORDS[d1][0], DIM_WORDS[d2][0]
-            pid = f"{mod}.{m}_by_{d1}_and_{d2}"
-            question = f"Within each {n1}, which {n2}s drive {mdef.title.lower()}?"
-            bar = Widget(widget_id=f"{pid}.chart", type="bar_chart", title=f"{mdef.title} by {n1}",
-                         description=f"Bar chart of {mdef.title.lower()} ({mdef.unit}) per {n1}; use the {n2} filter to focus.",
-                         dataset_id=m_ds_id, metrics=[m], dimensions=[d1], supports=["sort", "filter", "date_range"],
-                         render=RenderContract(query_metrics=[m], query_dimensions=[d1]))
-            grid = Widget(widget_id=f"{pid}.grid", type="grid", title=f"{mdef.title} by {n1} and {n2}",
-                          description=f"Sortable table of {mdef.title.lower()} for every {n1} and {n2} combination. {question}",
-                          dataset_id=m_ds_id, metrics=[m], dimensions=[d1, d2], supports=["sort", "filter", "date_range"],
-                          render=RenderContract(query_metrics=[m], query_dimensions=[d1, d2]))
-            add_page(Page(page_id=pid, title=f"{mdef.title} by {n1} and {n2}",
-                          description=f"{mdef.title} by {n1} and {n2} in the {title} module: {mdef.description.lower()}, "
-                                      f"cross-tabulated by {n1} and {n2}. {question} Also answers questions about "
-                                      f"{', '.join(METRIC_WORDS[m][:2])} by {DIM_WORDS[d1][1][0]} and {DIM_WORDS[d2][1][0]}.",
-                          directory=f"{mod}/breakdowns", route=f"/{mod}/{_slug(m)}-by-{_slug(d1)}-and-{_slug(d2)}",
-                          keywords=[mod, m.replace("_", " "), n1, n2, "breakdown", "cross-tab", "matrix"] + METRIC_WORDS[m][:3],
-                          widgets=[bar.widget_id, grid.widget_id],
-                          filters=_filters(datasets[m_ds_id], list(dict.fromkeys([d1, d2] + fdims))[:3]),
-                          default_state={"date_range": {"preset": "last_12_months"}}), [bar, grid])
+            kpi_w = Widget(
+                widget_id=f"{pid}.kpi",
+                type="kpi_card",
+                title=f"Total {mdef.title}",
+                description=f"Total {mdef.title.lower()} for the selected filters and date range.",
+                dataset_id=ds_id,
+                metrics=[m],
+                supports=["filter", "date_range"],
+                render=RenderContract(query_metrics=[m]),
+            )
+            page_widgets = [kpi_w]
+            layout_rows = [[kpi_w.widget_id]]
 
-        # trend pages
-        for m in tmetrics:
-            mdef = metric[m][1]
-            pid = f"{mod}.{m}_trend"
-            line = Widget(widget_id=f"{pid}.chart", type="line_chart", title=f"{mdef.title} by month",
-                          description=f"Line chart of monthly {mdef.title.lower()} ({mdef.unit}). Is it growing or falling?",
-                          dataset_id=ds_id, metrics=[m], dimensions=["order_month"], supports=["filter", "date_range"],
-                          render=RenderContract(query_metrics=[m], query_dimensions=["order_month"]))
-            grid = Widget(widget_id=f"{pid}.grid", type="grid", title=f"{mdef.title} by month (table)",
-                          description=f"Monthly table of {mdef.title.lower()}, sortable.",
-                          dataset_id=ds_id, metrics=[m], dimensions=["order_month"], supports=["sort", "filter", "date_range"],
-                          render=RenderContract(query_metrics=[m], query_dimensions=["order_month"]))
-            add_page(Page(page_id=pid, title=f"{mdef.title} trend",
-                          description=f"Monthly {mdef.title.lower()} trend in the {title} module: {mdef.description.lower()}, "
-                                      f"month by month. Is {mdef.title.lower()} growing or falling, and when did it change? "
-                                      f"Also answers questions about {', '.join(METRIC_WORDS[m][:3])} over time.",
-                          directory=f"{mod}/trends", route=f"/{mod}/{_slug(m)}-trend",
-                          keywords=[mod, m.replace("_", " "), "trend", "monthly", "over time", "growth"] + METRIC_WORDS[m],
-                          widgets=[line.widget_id, grid.widget_id], filters=filters,
-                          default_state={"date_range": {"preset": "last_12_months"}}), [line, grid])
+            trend_w = Widget(
+                widget_id=f"{pid}.trend",
+                type="line_chart",
+                title=f"{mdef.title} over time",
+                description=f"Monthly {mdef.title.lower()} trend ({mdef.unit}) for the selected period.",
+                dataset_id=ds_id,
+                metrics=[m],
+                dimensions=["order_month"],
+                supports=["filter", "date_range"],
+                render=RenderContract(query_metrics=[m], query_dimensions=["order_month"]),
+            )
+            page_widgets.append(trend_w)
+            layout_rows.append([trend_w.widget_id])
+
+            breakdown_row = []
+            for d in bdims[:2]:
+                dname, _ = DIM_WORDS[d]
+                b_w = Widget(
+                    widget_id=f"{pid}.by_{d}",
+                    type="bar_chart",
+                    title=f"{mdef.title} by {dname.title()}",
+                    description=f"Bar chart of {mdef.title.lower()} per {dname}.",
+                    dataset_id=ds_id,
+                    metrics=[m],
+                    dimensions=[d],
+                    supports=["sort", "filter", "date_range"],
+                    render=RenderContract(query_metrics=[m], query_dimensions=[d]),
+                )
+                page_widgets.append(b_w)
+                breakdown_row.append(b_w.widget_id)
+            if breakdown_row:
+                layout_rows.append(breakdown_row)
+
+            primary_dim = bdims[0]
+            pname, _ = DIM_WORDS[primary_dim]
+            extra_m = [x for x in ([m] + [k for k in ("orders", "order_count", "payment_count", "review_count") if any(mm.metric_id == k for mm in ds.metrics)]) if x]
+            grid_metrics = list(dict.fromkeys(extra_m))[:2]
+            grid_w = Widget(
+                widget_id=f"{pid}.grid",
+                type="grid",
+                title=f"{mdef.title} by {pname.title()} (table)",
+                description=f"Sortable table of {mdef.title.lower()} per {pname}.",
+                dataset_id=ds_id,
+                metrics=grid_metrics,
+                dimensions=[primary_dim],
+                supports=["sort", "filter", "date_range"],
+                render=RenderContract(query_metrics=grid_metrics, query_dimensions=[primary_dim]),
+            )
+            page_widgets.append(grid_w)
+            layout_rows.append([grid_w.widget_id])
+
+            dim_names = [DIM_WORDS[d][0] for d in fdims]
+            add_page(
+                Page(
+                    page_id=pid,
+                    title=mdef.title,
+                    description=f"{mdef.title} analysis in the {title} module: {mdef.description.lower()}. "
+                                f"Includes trend and geographical/categorical breakdowns. Filter by {', '.join(dim_names)}.",
+                    directory=mod,
+                    route=f"/{mod}/{_slug(m)}",
+                    keywords=[mod, m.replace("_", " "), mdef.title.lower()] + METRIC_WORDS.get(m, []) + [w for d in fdims for w in DIM_WORDS[d][1][:2]],
+                    widgets=[w.widget_id for w in page_widgets],
+                    filters=m_filters,
+                    layout=layout_rows,
+                    default_state={"date_range": {"preset": "last_12_months"}},
+                ),
+                page_widgets,
+            )
 
     # codes for the generated report pages / widgets: P-1001.., R-2001.. (curated ops pages carry P-100..P-700)
     for i, p in enumerate(pages, start=1):
@@ -285,7 +297,7 @@ def main() -> None:
     with psycopg.connect(url) as conn:
         app = build(conn)
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(app.model_dump(mode="json", by_alias=True), indent=1, ensure_ascii=False))
+    OUT.write_text(json.dumps(app.model_dump(mode="json", by_alias=True), indent=1, ensure_ascii=False), encoding="utf-8")
     print(f"wrote {OUT.relative_to(ROOT)}: {len(app.modules)} modules, {len(app.pages)} pages, "
           f"{len(app.widgets)} widgets, {len(app.datasets)} datasets")
 

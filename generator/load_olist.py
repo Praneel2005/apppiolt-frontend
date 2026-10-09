@@ -42,7 +42,7 @@ FUNNEL_TABLES = [
 def load_env() -> None:
     f = ROOT / ".env"
     if f.exists():
-        for line in f.read_text().splitlines():
+        for line in f.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
@@ -50,7 +50,7 @@ def load_env() -> None:
 
 
 def run_sql(conn: psycopg.Connection, path: Path) -> None:
-    conn.execute(path.read_text())
+    conn.execute(path.read_text(encoding="utf-8"))
 
 
 def copy_csv(conn: psycopg.Connection, table: str, path: Path) -> None:

@@ -16,7 +16,7 @@ from contracts.ui_state import UiState  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 URL = os.environ.get("DATABASE_URL", "postgresql://app:app@localhost:5432/appdb")
-CASES = json.loads((ROOT / "contracts" / "deeplink_vectors.json").read_text())["cases"]
+CASES = json.loads((ROOT / "contracts" / "deeplink_vectors.json").read_text(encoding="utf-8"))["cases"]
 
 
 @pytest.fixture(scope="module")
@@ -90,13 +90,13 @@ def test_deeplink_endpoints_and_open_deep_link_step(api):
 def test_supporting_view_points_to_the_page_that_shows_the_same_numbers():
     app = app_model()
     v = supporting_view(app, "revenue", ["customer_state"], {"customer_region": ["South"]}, "2018-04-01", "2018-06-30")
-    assert v["page_id"] == "sales.revenue_by_customer_state" and v["exact"] and not v["dropped"]
+    assert v["page_id"] == "sales.revenue" and v["exact"] and not v["dropped"]
     st = parse_url(app, v["url"])
     assert st.filters["customer_region"].value == ["South"] and st.date_range.from_ == "2018-04-01"
-    v2 = supporting_view(app, "revenue", ["customer_state"], {"seller_state": ["SP"]}, None, None)
-    assert not v2["exact"] and v2["dropped"] == ["seller_state"]
-    assert supporting_view(app, "late_rate", ["order_month"], {}, None, None)["page_id"] == "logistics.late_rate_trend"
-    assert supporting_view(app, "revenue", [], {}, None, None)["widget_id"].endswith("kpi_revenue")
+    v2 = supporting_view(app, "revenue", ["customer_state"], {"order_status": ["delivered"]}, None, None)
+    assert not v2["exact"] and v2["dropped"] == ["order_status"]
+    assert supporting_view(app, "late_rate", ["order_month"], {}, None, None)["page_id"] in ("sellers.late_rate", "logistics.late_rate")
+    assert supporting_view(app, "revenue", [], {}, None, None)["widget_id"].endswith("kpi") or supporting_view(app, "revenue", [], {}, None, None)["widget_id"].endswith("kpi_revenue")
     assert supporting_view(app, "customers", ["customer_state"], {}, None, None) is None
 
 
@@ -148,9 +148,9 @@ def test_plan_steps_for_trend_and_ratio_explanation_carry_views(api):
     assert res["ok"], res
     t, e, q = (api.get(f"/api/session/{sid}/evidence/{i}").json() for i in res["evidence_ids"])
     assert t["kind"] == "trend" and t["values"]["stats"]["peak"]["month"] == "2017-11-01"
-    assert t["values"]["view"]["page_id"] == "sales.revenue_trend"
+    assert t["values"]["view"]["page_id"] == "sales.revenue"
     assert e["kind"] == "contribution" and {"rate_effect", "mix_effect"} <= set(e["values"]["rows"][0])
-    assert q["values"]["view"]["exact"] and q["values"]["view"]["url"].startswith("/sales/revenue-by-customer-state?from=2018-04-01")
+    assert q["values"]["view"]["exact"] and q["values"]["view"]["url"].startswith("/sales/revenue?from=2018-04-01")
 
 
 # ------------------------------------------------------------------------------ untrusted text

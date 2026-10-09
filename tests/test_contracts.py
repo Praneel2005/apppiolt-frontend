@@ -12,7 +12,7 @@ SAMPLE = Path(__file__).parent.parent / "examples" / "tenant_a_sample.json"
 
 
 def load():
-    return json.loads(SAMPLE.read_text())
+    return json.loads(SAMPLE.read_text(encoding="utf-8"))
 
 
 def test_sample_tenant_validates():
@@ -88,7 +88,7 @@ def test_plan_rejects_unknown_tool():
 
 def test_hash_vectors_stable():
     """Frozen vectors: the TypeScript port must reproduce every hash in this file."""
-    vec = json.loads((Path(__file__).parent.parent / "contracts" / "hash_vectors.json").read_text())
+    vec = json.loads((Path(__file__).parent.parent / "contracts" / "hash_vectors.json").read_text(encoding="utf-8"))
     for c in vec["cases"]:
         assert canonical_series_hash(c["rows"], c["columns"]) == c["hash"], c["name"]
     by = {c["name"]: c["hash"] for c in vec["cases"]}

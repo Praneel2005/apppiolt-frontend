@@ -137,6 +137,7 @@ async def get_context(sid: str):
     ctx = await page_context(s.state)
     ctx["recent_writes"] = s.writes[-5:]
     ctx["canvases"] = [{"canvas_id": k, "kind": v["kind"], "title": v["title"]} for k, v in s.canvases.items()]
+    ctx["next_evidence_id"] = f"E{s._ev + 1}"
     return ctx
 
 
@@ -185,7 +186,8 @@ async def post_message(sid: str, req: MessageRequest):
     async def run():
         try:
             async for ev in agent.handle(sid, req.text, cfg):
-                await sessions.emit(s, ev.type, ev.data)
+                if ev.type not in ("action", "verify", "evidence", "canvas", "confirm_request"):
+                    await sessions.emit(s, ev.type, ev.data)
         except Exception as e:  # noqa: BLE001
             await sessions.emit(s, "error", {"code": "agent_failed", "message": f"{type(e).__name__}: {e}", "recoverable": False})
 

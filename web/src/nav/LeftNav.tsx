@@ -78,16 +78,7 @@ export function LeftNav() {
                 </button>
                 {isOpen && (
                   <div className="ml-2 border-l border-border pl-1">
-                    {['', 'breakdowns', 'trends'].map((sub) => {
-                      const ps = pages.filter((p) => (p.directory.split('/')[1] ?? '') === sub)
-                      if (!ps.length) return null
-                      return (
-                        <div key={sub} className="mb-1">
-                          {sub && <div className="px-3 pt-1 text-[10px] uppercase tracking-wide text-muted">{dirTitle(app, `${m.module_id}/${sub}`, m)}</div>}
-                          {ps.map((p) => <PageLink key={p.page_id} page={p} active={p.page_id === activeId} />)}
-                        </div>
-                      )
-                    })}
+                    {pages.map((p) => <PageLink key={p.page_id} page={p} active={p.page_id === activeId} />)}
                   </div>
                 )}
               </div>

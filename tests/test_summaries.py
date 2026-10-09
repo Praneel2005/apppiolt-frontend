@@ -144,7 +144,7 @@ def test_sellers_summary_reconciles_with_revenue_metric(api):
 def test_every_operations_page_has_a_visual_not_just_a_table():
     from contracts.metadata import Application
 
-    app = Application.model_validate(json.loads(APP_FILE.read_text()))
+    app = Application.model_validate(json.loads(APP_FILE.read_text(encoding="utf-8")))
     visual = {"kpi_strip", "kpi_card", "bar_chart", "line_chart", "pie_chart"}
     for p in (p for p in app.pages if p.kind == "operations"):
         kinds = [app.widget(w).type for w in p.widgets]
