@@ -34,6 +34,14 @@ def application() -> dict:
     return json.loads(APP_FILE.read_text(encoding="utf-8"))
 
 
+@lru_cache(maxsize=1)
+def app_model():
+    """The application metadata as validated contracts.metadata.Application models."""
+    from contracts.metadata import Application
+
+    return Application.model_validate(application())
+
+
 def as_of_date() -> date:
     """The dataset's 'today'. Relative dates and the simulated clock resolve against it."""
     return date.fromisoformat(application().get("as_of_date") or "2018-08-31")

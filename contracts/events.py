@@ -23,6 +23,7 @@ class AgentEvent(BaseModel):
         "action",           # data: {tool, args, status}
         "verify",           # data: {ok, mismatches}
         "evidence",         # data: Evidence
+        "canvas",           # data: CanvasSpec (generated chart / table / form to show in the main area)
         "answer_delta",     # data: {text}
         "answer",           # data: {text, citations: [evidence_id], deep_links: [route]}
         "error",            # data: {code, message, recoverable}

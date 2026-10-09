@@ -20,8 +20,10 @@ class _Model(BaseModel):
 
 ToolName = Literal[
     "search_pages",
+    "search_apis",
     "navigate",
     "set_filter",
+    "clear_filter",
     "set_date_range",
     "set_sort",
     "read_view",
@@ -29,13 +31,18 @@ ToolName = Literal[
     "compare_periods",
     "explain_change",
     "open_deep_link",
+    "call_api",       # read a catalogue API (orders.search, tickets.search, ...)
+    "write_api",      # change data through a catalogue write API: ALWAYS preview + user confirmation
+    "render_canvas",  # show a generated chart / table / form when no page fits
 ]
 
-# side effect classes drive the confirmation policy
-SIDE_EFFECT: dict[str, Literal["none", "ui_state"]] = {
+# side effect classes drive the confirmation policy. "write" is confirmed even when confirm_mode is off.
+SIDE_EFFECT: dict[str, Literal["none", "ui_state", "write", "canvas"]] = {
     "search_pages": "none",
+    "search_apis": "none",
     "navigate": "ui_state",
     "set_filter": "ui_state",
+    "clear_filter": "ui_state",
     "set_date_range": "ui_state",
     "set_sort": "ui_state",
     "read_view": "none",
@@ -43,6 +50,9 @@ SIDE_EFFECT: dict[str, Literal["none", "ui_state"]] = {
     "compare_periods": "none",
     "explain_change": "none",
     "open_deep_link": "ui_state",
+    "call_api": "none",
+    "write_api": "write",
+    "render_canvas": "canvas",
 }
 
 
@@ -86,7 +96,7 @@ class StepResult(_Model):
     ok: bool
     error_code: Literal[
         "invalid_reference", "invalid_value", "state_mismatch", "query_failed",
-        "empty_result", "timeout", "denied", "none",
+        "empty_result", "timeout", "denied", "api_error", "none",
     ] = "none"
     message: str = ""
     evidence_id: str | None = None  # key into the evidence store for analytics results
@@ -96,7 +106,7 @@ class Evidence(_Model):
     """Every number shown to the user must map to one of these (provenance)."""
 
     evidence_id: str
-    kind: Literal["widget_read", "metric_query", "comparison", "contribution"]
+    kind: Literal["widget_read", "metric_query", "comparison", "contribution", "api_read", "api_write", "search"]
     source: str  # widget_id or metric id
     query: str | None = None  # the validated SQL that produced it
     values: dict  # machine-readable numbers, e.g. {"current": 1.8e6, "previous": 1.99e6, "delta_pct": -7.4}

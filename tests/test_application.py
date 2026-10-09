@@ -25,15 +25,19 @@ def test_scale_and_uniqueness(app):
     assert app.as_of_date == "2018-08-31"
 
 
+def reports(app):
+    return [p for p in app.pages if p.kind == "report"]
+
+
 def test_every_page_has_date_range_and_default_state(app):
-    for p in app.pages:
+    for p in reports(app):
         assert p.filters and p.filters[0].filter_id == "date_range", p.page_id
         assert p.default_state.get("date_range", {}).get("preset") == "last_12_months"
 
 
 def test_page_filters_apply_to_at_least_one_widget(app):
     # shared semantics S5: a filter applies to a widget iff its field is in the widget's dataset
-    for p in app.pages:
+    for p in reports(app):
         ds_fields = [{f.name for f in app.dataset(app.widget(w).dataset_id).fields} for w in p.widgets]
         for f in p.filters:
             assert any(f.field in fields for fields in ds_fields), (p.page_id, f.filter_id)
@@ -41,6 +45,9 @@ def test_page_filters_apply_to_at_least_one_widget(app):
 
 def test_routes_are_slugs(app):
     for p in app.pages:
+        if p.kind == "operations":
+            assert p.route.startswith("/ops/") and "_" not in p.route, p.route
+            continue
         assert p.route.startswith(f"/{p.directory.split('/')[0]}/") and "_" not in p.route, p.route
 
 
@@ -53,7 +60,7 @@ def test_filter_values_exist_in_database(app):
         pytest.skip(f"database not reachable: {e}")
     with conn:
         cache = {}
-        for p in app.pages:
+        for p in reports(app):
             table = app.dataset(app.widget(p.widgets[0]).dataset_id).table
             for f in p.filters:
                 if not f.allowed_values:

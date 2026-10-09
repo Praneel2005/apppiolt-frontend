@@ -150,6 +150,7 @@ def build(conn: psycopg.Connection) -> Application:
     datasets = {d.dataset_id: d for d in build_datasets(conn)}
     metric = {m.metric_id: (d, m) for d in datasets.values() for m in d.metrics}
     modules, directories, pages, widgets = [], [], [], []
+    title_of = {mod: spec[0] for mod, spec in MODULES.items()}
 
     def add_page(page: Page, ws: list[Widget]):
         pages.append(page)
@@ -260,7 +261,21 @@ def build(conn: psycopg.Connection) -> Application:
                           widgets=[line.widget_id, grid.widget_id], filters=filters,
                           default_state={"date_range": {"preset": "last_12_months"}}), [line, grid])
 
-    return Application(app_id="olist", name="Olist Marketplace Analytics", source_format="native",
+    # codes for the generated report pages / widgets: P-1001.., R-2001.. (curated ops pages carry P-100..P-700)
+    for i, p in enumerate(pages, start=1):
+        p.page_code = f"P-{1000 + i}"
+        p.agent_context = (f"Report page from the Reports library ({title_of[p.directory.split('/')[0]]}). "
+                           "Shows real Olist data for the selected period and filters; 'this'/'here' means the "
+                           "numbers on screen.")
+    # curated operations section (orders, tickets, stock, sellers, planning, promotions) comes first in the nav
+    from generator.ops_pages import build_ops
+    o_modules, o_dirs, o_pages, o_widgets = build_ops(conn, datasets, _synonyms)
+    modules, directories = o_modules + modules, o_dirs + directories
+    pages, widgets = o_pages + pages, o_widgets + widgets
+    for n, w in enumerate(widgets, start=1):
+        w.widget_code = f"R-{n:04d}"
+
+    return Application(app_id="olist", name="Olist Seller Operations", source_format="native",
                        as_of_date=AS_OF_DATE, modules=modules, directories=directories, pages=pages,
                        widgets=widgets, datasets=list(datasets.values()))
 
