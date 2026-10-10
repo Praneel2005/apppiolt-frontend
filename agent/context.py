@@ -59,70 +59,26 @@ def resolve_references(
     memory: SessionMemory,
 ) -> dict[str, Any]:
     """Resolves 'this order', 'these tickets', 'same for SP', etc. from context and memory."""
-    resolved: dict[str, Any] = {}
+    from agent.normalise.references import resolve_structured_references
+
+    resolved = resolve_structured_references(query, page_ctx, memory.last_turn())
     q_lower = query.lower()
 
-    # 1. Inspect visible table widgets on current page
-    widgets = page_ctx.get("widgets", [])
-    table_rows: list[dict[str, Any]] = []
-    for w in widgets:
-        rows = w.get("rows", [])
-        if rows:
-            table_rows.extend(rows)
-
-    # 2. Singular pronoun: "this order", "this ticket", "this product", "this seller"
-    if "this order" in q_lower or "the order" in q_lower:
-        # Check selected widget / selected row
-        for r in table_rows:
-            if "order_id" in r or "order_ref" in r:
-                resolved["order_id"] = r.get("order_id") or r.get("order_ref")
-                break
-    elif "this ticket" in q_lower or "the ticket" in q_lower:
-        for r in table_rows:
-            if "ticket_id" in r or "code" in r:
-                resolved["ticket_id"] = r.get("ticket_id") or r.get("code")
-                break
-    elif "this product" in q_lower or "the product" in q_lower:
-        for r in table_rows:
-            if "product_id" in r or "product_ref" in r:
-                resolved["product_id"] = r.get("product_id") or r.get("product_ref")
-                break
-    elif "this seller" in q_lower or "the seller" in q_lower:
-        for r in table_rows:
-            if "seller_id" in r or "seller_ref" in r:
-                resolved["seller_id"] = r.get("seller_id") or r.get("seller_ref")
-                break
-
-    # 3. Plural pronoun: "these orders", "these products", "these tickets"
-    if "these orders" in q_lower:
-        oids = [r.get("order_id") or r.get("order_ref") for r in table_rows if r.get("order_id") or r.get("order_ref")]
-        if oids:
-            resolved["order_ids"] = oids[:10]
-    elif "these tickets" in q_lower:
-        tids = [r.get("ticket_id") or r.get("code") for r in table_rows if r.get("ticket_id") or r.get("code")]
-        if tids:
-            resolved["ticket_ids"] = tids[:10]
-    elif "these products" in q_lower:
-        pids = [r.get("product_id") or r.get("product_ref") for r in table_rows if r.get("product_id") or r.get("product_ref")]
-        if pids:
-            resolved["product_ids"] = pids[:10]
-
-    # 4. Elliptical follow-up: "same for <X>", "now for <X>", "compare with <X>"
+    # Elliptical follow-up: "same for <X>", "now for <X>", "compare with <X>"
     last = memory.last_turn()
     if last and last.slots:
         match_same = re.search(r"(?:same\s+for|now\s+for|and\s+for)\s+([A-Za-z0-9_\s]+)", q_lower)
         if match_same:
             target = match_same.group(1).strip().upper()
-            # Inherit previous slots
             resolved.update(last.slots)
-            # Override target dimension/state
-            if len(target) == 2:  # Likely Brazilian state code (SP, RJ, etc.)
+            if len(target) == 2:
                 resolved["customer_state"] = target
                 resolved["filters"] = {**resolved.get("filters", {}), "customer_state": target}
             else:
                 resolved["target_value"] = target
 
     return resolved
+
 
 
 def build_prompt_context(

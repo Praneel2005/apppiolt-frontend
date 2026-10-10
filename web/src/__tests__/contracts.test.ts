@@ -68,9 +68,9 @@ describe('widget requests follow shared semantics S5 / S10', () => {
     expect(buildRequest(app, page('ops.dashboard'), widget('ops.dashboard.open_tickets'), st).filters).toEqual({})
   })
   it('a metric widget receives a filter only if its dataset has the field (S5)', () => {
-    const p = page('sales.revenue_by_customer_state')
+    const p = page('sales.revenue')
     const st = state(p.page_id, { filters: { customer_region: { op: 'in', value: ['South'] } }, date_range: { from: '2018-01-01', to: '2018-03-31' } })
-    const req = buildRequest(app, p, widget('sales.revenue_by_customer_state.chart'), st)
+    const req = buildRequest(app, p, widget('sales.revenue.by_customer_state'), st)
     expect(Object.keys(req.filters)).toEqual(['customer_region'])
     expect(req.date_range).toEqual({ from: '2018-01-01', to: '2018-03-31' })
   })

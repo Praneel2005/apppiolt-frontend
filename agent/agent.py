@@ -46,8 +46,14 @@ class AppPilotAgent:
             seq += 1
             return AgentEvent(seq=seq, type=ev_type, data=data)  # type: ignore
 
-        # 1. Understanding event
+        # 1. Understanding and understood events (WP9)
         yield _ev("understanding", {"query": message, "session_id": session_id})
+        from agent.normalise.dates import parse_date_query
+        from backend.config import app_model
+        app_m = app_model()
+        norm_d = parse_date_query(message, as_of=app_m.as_of_date)
+        assump_list = [f"Period resolved to {norm_d.display_text}"] if norm_d else []
+        yield _ev("understood", {"paraphrase": message, "assumptions": assump_list})
 
         # 2. Ingest session state & memory
         s = get_session(session_id)
@@ -99,7 +105,25 @@ class AppPilotAgent:
             )
             return
 
-        yield _ev("validation", {"ok": True, "issues": []})
+        val_res = getattr(retrieval, "validation", None)
+        is_val_ok = val_res.ok if val_res else True
+        val_issues = [x.model_dump() for x in val_res.issues] if val_res else []
+        yield _ev("validation", {"ok": is_val_ok, "issues": val_issues})
+
+        if cfg.use_validator and not is_val_ok:
+            issue_lines = [f"{iss.message}" for iss in val_res.issues[:2]]
+            reply_text = f"I cannot execute that plan because it violates application constraints: {'; '.join(issue_lines)}"
+            yield _ev("answer", {"text": reply_text, "citations": [], "deep_links": []})
+            elapsed = (time.time() - t0) * 1000.0
+            yield _ev("done", {"steps": 0, "replans": 0, "elapsed_ms": round(elapsed, 1)})
+            memory.add_turn(
+                ConversationTurn(
+                    user_message=message,
+                    intent=plan.intent.name,
+                    plan_summary=reply_text,
+                )
+            )
+            return
 
         # 5. Execution Pipeline
         events_start = len(s.events)
@@ -109,6 +133,7 @@ class AppPilotAgent:
         # Run primary plan
         auto_confirm = not cfg.confirm_mode
         exec_res = await executor.run_plan(s, plan, cfg, auto_confirm=auto_confirm)
+        exec_ok = exec_res.get("ok", False)
 
         # Stream new events created on the session by the executor
         for ev in s.events[events_start:]:
@@ -116,7 +141,7 @@ class AppPilotAgent:
                 yield _ev(ev.type, ev.data)
 
         # 6. Bounded Replan (if allowed and evidence gathered)
-        if plan.allow_replan and cfg.max_replans > 0 and s.evidence:
+        if plan.allow_replan and cfg.max_replans > 0 and s.evidence and exec_ok:
             replan_count += 1
             # Update page context
             page_ctx = await page_context(s.state)
@@ -137,20 +162,44 @@ class AppPilotAgent:
             if new_steps:
                 replan.steps = new_steps
                 re_start = len(s.events)
-                await executor.run_plan(s, replan, cfg, auto_confirm=auto_confirm)
+                replan_res = await executor.run_plan(s, replan, cfg, auto_confirm=auto_confirm)
+                if not replan_res.get("ok", False):
+                    exec_ok = False
                 for ev in s.events[re_start:]:
                     if ev.type in ("action", "evidence", "canvas"):
                         yield _ev(ev.type, ev.data)
                 total_steps += len(new_steps)
 
+        # 6. Status calculation & event (WP4, WP9)
+        screen_verified = s.last_verify.ok if s.last_verify else True
+        verified = screen_verified and exec_ok
+        mismatches = s.last_verify.mismatches if s.last_verify else []
+
+        if verified:
+            status_tag = "VERIFIED"
+        elif not exec_ok and not screen_verified:
+            status_tag = "FAILED"
+        else:
+            status_tag = "PARTIAL"
+
+        yield _ev("status", {
+            "status": status_tag,
+            "verified": verified,
+            "screen_verified": screen_verified,
+            "exec_ok": exec_ok,
+            "mismatches": mismatches,
+        })
+
         # 7. Narration
-        verified = s.last_verify.ok if s.last_verify else True
         answer_text, citations, deep_links = await narrate(
             plan=plan,
             evidence_map=s.evidence,
             query=message,
             final_state=s.state,
             verified=verified,
+            status=status_tag,
+            mismatches=mismatches,
+            assumptions=getattr(plan, "assumptions", []),
             config=cfg,
         )
 

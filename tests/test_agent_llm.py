@@ -113,3 +113,24 @@ def test_get_llm_factory():
     llm_gemini = get_llm("gemini", model_name="gemini-custom")
     assert isinstance(llm_gemini, GeminiProvider)
     assert llm_gemini.model_name == "gemini-custom"
+
+
+def test_chained_llm_provider_failover():
+    from agent.llm import ChainedLLMProvider
+
+    class FailingProvider(FakeLLM):
+        async def generate_structured(self, schema, messages, system_prompt=""):
+            raise RuntimeError("Primary provider rate-limited or unavailable")
+
+    primary = FailingProvider("failing-primary")
+    fallback = FakeLLM("working-fallback")
+    fallback.queue_response(DummySchema(message="fallback success", code=200))
+
+    chained = ChainedLLMProvider(primary, fallback)
+
+    async def _run():
+        res = await chained.generate_structured(DummySchema, [{"role": "user", "content": "test"}])
+        assert res.message == "fallback success"
+        assert res.code == 200
+
+    asyncio.run(_run())

@@ -53,6 +53,7 @@ class RetrievalResult:
     pages: list[RetrievalCandidate]
     apis: list[RetrievalCandidate]
     graph_expanded_ids: list[str] = field(default_factory=list)
+    validation: Any | None = None
 
 
 # ------------------------------------------------------------------------------

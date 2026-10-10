@@ -40,9 +40,7 @@ T = TypeVar("T", bound=BaseModel)
 class ToolCallFlat(BaseModel):
     model_config = ConfigDict(extra="ignore")
     tool: ToolName
-    args: dict[str, Any] | None = None
     args_json: str = Field("{}", description="JSON string of tool arguments")
-    expect: dict[str, Any] | None = None
     expect_json: str = Field("{}", description="JSON string of expected UI state postconditions")
 
 
@@ -60,7 +58,6 @@ class IntentFlat(BaseModel):
         "out_of_scope",
         "unsafe_action",
     ]
-    slots: dict[str, Any] | None = None
     slots_json: str = Field("{}", description="JSON string of slots (metric, dimension, etc.)")
     ambiguity: str | None = None
 
@@ -75,12 +72,10 @@ class PlanFlat(BaseModel):
 
 def plan_flat_to_plan(flat: PlanFlat) -> Plan:
     """Convert Gemini-compatible PlanFlat to official contracts.actions.Plan."""
-    slots = flat.intent.slots
-    if slots is None:
-        try:
-            slots = json.loads(flat.intent.slots_json) if flat.intent.slots_json else {}
-        except Exception:
-            slots = {}
+    try:
+        slots = json.loads(flat.intent.slots_json) if flat.intent.slots_json else {}
+    except Exception:
+        slots = {}
 
     intent = Intent(
         name=flat.intent.name,
@@ -90,19 +85,15 @@ def plan_flat_to_plan(flat: PlanFlat) -> Plan:
 
     steps: list[ToolCall] = []
     for s in flat.steps:
-        args = s.args
-        if args is None:
-            try:
-                args = json.loads(s.args_json) if s.args_json else {}
-            except Exception:
-                args = {}
+        try:
+            args = json.loads(s.args_json) if s.args_json else {}
+        except Exception:
+            args = {}
 
-        expect = s.expect
-        if expect is None:
-            try:
-                expect = json.loads(s.expect_json) if s.expect_json else {}
-            except Exception:
-                expect = {}
+        try:
+            expect = json.loads(s.expect_json) if s.expect_json else {}
+        except Exception:
+            expect = {}
 
         steps.append(
             ToolCall(
@@ -392,6 +383,10 @@ class GroqProvider(LLMProvider):
         t0 = time.time()
         schema_name = schema.__name__
 
+        # Handle Plan schema flattening
+        is_plan = schema is Plan
+        target_schema = PlanFlat if is_plan else schema
+
         # 1. Check disk cache
         cached = self.cache.get(self.model_name, schema_name, messages, system_prompt)
         if cached:
@@ -405,14 +400,17 @@ class GroqProvider(LLMProvider):
                     cached=True,
                 )
             )
+            if is_plan:
+                try:
+                    return Plan.model_validate_json(cached)  # type: ignore
+                except Exception:
+                    flat = PlanFlat.model_validate_json(cached)
+                    return plan_flat_to_plan(flat)  # type: ignore
             return schema.model_validate_json(cached)
 
         if not self.api_key:
             raise ValueError("GROQ_API_KEY is not configured in .env or environment.")
 
-        # Handle Plan schema flattening
-        is_plan = schema is Plan
-        target_schema = PlanFlat if is_plan else schema
         schema_json = json.dumps(target_schema.model_json_schema(), indent=2)
 
         groq_sys_prompt = (
@@ -457,6 +455,9 @@ class GroqProvider(LLMProvider):
                     m = re.search(r"try again in ([0-9.]+)s", msg)
                     if m:
                         wait_s = float(m.group(1)) + 1.0
+                    if wait_s > 2.0:
+                        logger.warning("Groq rate limit wait %.1fs exceeds 2.0s threshold; aborting to trigger failover", wait_s)
+                        raise RuntimeError(f"Rate limit backoff {wait_s:.1f}s exceeds 2.0s threshold")
                     logger.warning(f"Groq 429 rate limit hit, backing off {wait_s:.1f}s...")
                     await asyncio.sleep(wait_s)
                     continue
@@ -506,6 +507,37 @@ class GroqProvider(LLMProvider):
                     await asyncio.sleep(2.0)
                     continue
                 raise last_err from None
+
+
+# ------------------------------------------------------------------------------
+# Chained Provider for Failover (WP6)
+# ------------------------------------------------------------------------------
+class ChainedLLMProvider(LLMProvider):
+    """Resilient provider chain: tries primary; on failure or rate-limit, tries fallback."""
+
+    def __init__(self, primary: LLMProvider, fallback: LLMProvider | None = None):
+        super().__init__(primary.model_name, primary.cache.dir)
+        self.primary = primary
+        self.fallback = fallback
+
+    async def generate_structured(
+        self,
+        schema: Type[T],
+        messages: list[dict[str, str]],
+        system_prompt: str = "",
+    ) -> T:
+        try:
+            return await self.primary.generate_structured(schema, messages, system_prompt)
+        except Exception as e:
+            if self.fallback:
+                logger.warning(
+                    "Primary provider '%s' failed (%s). Failing over to '%s'...",
+                    self.primary.model_name,
+                    e,
+                    self.fallback.model_name,
+                )
+                return await self.fallback.generate_structured(schema, messages, system_prompt)
+            raise
 
 
 # ------------------------------------------------------------------------------
@@ -592,7 +624,7 @@ def get_llm(
     model_name: str | None = None,
     cache_dir: Path | str | None = None,
 ) -> LLMProvider:
-    provider = provider_name or os.environ.get("LLM_PROVIDER") or "gemini"
+    provider = (provider_name or os.environ.get("LLM_PROVIDER") or "gemini").strip("\"'").lower()
     if provider == "fake":
         return FakeLLM(model_name or "fake-model", cache_dir)
     if provider == "gemini":

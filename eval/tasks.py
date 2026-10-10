@@ -47,9 +47,9 @@ def generate_gold_tasks(count: int = 150, seed: int = 42) -> list[GoldTask]:
         ("ops.tickets", ["open operations tickets", "customer support tickets", "open ticket queue"]),
         ("ops.sellers", ["open seller directory", "show seller profiles", "active sellers list"]),
         ("ops.promotions", ["open promotions management", "campaign list", "show active discounts"]),
-        ("rep.sales_overview", ["sales overview report", "show total revenue breakdown"]),
-        ("rep.customer_geography", ["customer geography report", "where are buyers located"]),
-        ("rep.delivery_performance", ["delivery performance metrics report", "sla delivery breakdown"]),
+        ("sales.overview", ["sales overview report", "show total revenue breakdown"]),
+        ("customers.overview", ["customer geography report", "where are buyers located"]),
+        ("logistics.avg_delivery_days", ["delivery performance metrics report", "sla delivery breakdown"]),
     ]
     t_id = 1
     for page_id, queries in nav_specs:

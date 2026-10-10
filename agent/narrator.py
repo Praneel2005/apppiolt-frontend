@@ -36,11 +36,12 @@ def _extract_evidence_numbers(evidence_map: dict[str, Any]) -> set[str]:
 
     def _walk(obj: Any):
         if isinstance(obj, (int, float)) and not isinstance(obj, bool):
-            numbers.add(str(obj))
-            if isinstance(obj, float):
-                numbers.add(f"{obj:.1f}")
-                numbers.add(f"{obj:.2f}")
-                numbers.add(str(int(round(obj))))
+            abs_v = abs(obj)
+            for num in (obj, abs_v):
+                numbers.add(str(num))
+                numbers.add(f"{num:.1f}")
+                numbers.add(f"{num:.2f}")
+                numbers.add(str(int(round(num))))
         elif isinstance(obj, str):
             for m in re.findall(r"\d+(?:\.\d+)?", obj):
                 numbers.add(m)
@@ -60,7 +61,14 @@ def _extract_evidence_numbers(evidence_map: dict[str, Any]) -> set[str]:
     return numbers
 
 
-def narrate_navigation(plan: Plan, final_state: UiState | None, verified: bool = True) -> str:
+def narrate_navigation(
+    plan: Plan,
+    final_state: UiState | None,
+    verified: bool = True,
+    status: str = "VERIFIED",
+    mismatches: list[dict] | None = None,
+    assumptions: list[str] | None = None,
+) -> str:
     """Zero-LLM deterministic narration for UI navigation and state changes."""
     app = app_model()
     page_title = "requested page"
@@ -81,11 +89,21 @@ def narrate_navigation(plan: Plan, final_state: UiState | None, verified: bool =
     if final_state and final_state.date_range:
         if final_state.date_range.preset:
             date_desc = f" for {final_state.date_range.preset.replace('_', ' ')}"
-        elif final_state.date_range.from_date and final_state.date_range.to_date:
-            date_desc = f" from {final_state.date_range.from_date} to {final_state.date_range.to_date}"
+        elif getattr(final_state.date_range, "from_", None) and getattr(final_state.date_range, "to", None):
+            date_desc = f" from {final_state.date_range.from_} to {final_state.date_range.to}"
 
-    ver_tag = " [Screen verified ✓]" if verified else " [Screen state applied]"
-    return f"Opened {page_title}{filters_desc}{date_desc}.{ver_tag}"
+    if status == "VERIFIED" and verified:
+        ver_tag = " [Screen verified ✓]"
+    elif status == "PARTIAL":
+        m_info = f" (mismatches: {[m.get('field') for m in (mismatches or [])]})" if mismatches else ""
+        ver_tag = f" [Screen status: PARTIAL{m_info}]"
+    elif status == "FAILED" or not verified:
+        ver_tag = " [Screen status: FAILED]"
+    else:
+        ver_tag = " [Screen state applied]"
+
+    assump_text = f"\n*Assumptions: {'; '.join(assumptions)}*" if assumptions else ""
+    return f"Opened {page_title}{filters_desc}{date_desc}.{ver_tag}{assump_text}"
 
 
 
@@ -166,7 +184,48 @@ def narrate_analytics_fallback(evidence_map: dict[str, Any]) -> str:
                 lines.append(f"**Total {title}**: {total:,}")
 
         rows = vals.get("rows", [])
-        if rows:
+        if "stats" in vals:
+            st = vals["stats"]
+            direction = st.get("trend", "flat")
+            chg = st.get("change_pct")
+            chg_str = f" ({chg:+.1f}% total change)" if chg is not None else ""
+            lines.append(f"**Trend Analysis for {title}**: Overall direction is **{direction}**{chg_str}.")
+            pk = st.get("peak")
+            if pk:
+                lines.append(f"- **Peak**: {pk.get('month')} ({unit_prefix}{pk.get('value'):,.2f})")
+            tr = st.get("trough")
+            if tr:
+                lines.append(f"- **Trough**: {tr.get('month')} ({unit_prefix}{tr.get('value'):,.2f})")
+            if rows:
+                lines.append("\n**Monthly Growth (MoM)**:")
+                for r in rows:
+                    m_str = r.get("order_month")
+                    v_str = f"{unit_prefix}{r.get('value', 0):,.2f}"
+                    mom = r.get("mom_pct")
+                    mom_str = f" ({mom:+.1f}% MoM)" if mom is not None else " (baseline)"
+                    lines.append(f"- **{m_str}**: {v_str}{mom_str}")
+        elif "drivers" in vals or (vals.get("current") and vals.get("previous") and isinstance(vals.get("current"), dict)):
+            cur_val = vals.get("current", {}).get("value")
+            prev_val = vals.get("previous", {}).get("value")
+            pct = vals.get("pct_change", 0.0)
+            delta = vals.get("delta", 0.0)
+            dir_word = "increased" if delta > 0 else ("decreased" if delta < 0 else "remained flat")
+            cur_str = f"{unit_prefix}{cur_val:,.2f}" if cur_val is not None else "N/A"
+            prev_str = f"{unit_prefix}{prev_val:,.2f}" if prev_val is not None else "N/A"
+            lines.append(
+                f"**{title} Comparison**: {title} {dir_word} by **{pct:+.2f}%** ({unit_prefix}{delta:+,.2f}) "
+                f"from {prev_str} to {cur_str}."
+            )
+            drivers = vals.get("drivers", rows)
+            if drivers:
+                lines.append(f"\n**Key Drivers of Change [{ev_id}]**:")
+                for idx, d in enumerate(drivers[:5], 1):
+                    grp = d.get("group", f"Segment #{idx}")
+                    d_val = d.get("delta", 0.0)
+                    c_pct = d.get("contribution_pct")
+                    c_str = f" ({c_pct:+.1f}% contribution)" if c_pct is not None else ""
+                    lines.append(f"- **{grp}**: {unit_prefix}{d_val:+,.2f}{c_str}")
+        elif rows:
             lines.append(f"\nTop breakdowns [{ev_id}]:")
             for idx, r in enumerate(rows[:5], 1):
                 dim = next((k for k in r if k not in ("value", "share_pct", "total", "count", "items_value", "is_late")), None)
@@ -194,6 +253,9 @@ async def narrate(
     query: str,
     final_state: UiState | None = None,
     verified: bool = True,
+    status: str = "VERIFIED",
+    mismatches: list[dict] | None = None,
+    assumptions: list[str] | None = None,
     config: AgentConfig | None = None,
 ) -> tuple[str, list[str], list[str]]:
     """Master narration function returning (answer_text, citations, deep_links)."""
@@ -220,7 +282,14 @@ async def narrate(
 
     # 1. Navigation / set_state only: zero-LLM template
     if plan.intent.name in ("navigate", "set_state") and not evidence_map:
-        text = narrate_navigation(plan, final_state, verified)
+        text = narrate_navigation(
+            plan,
+            final_state,
+            verified=verified,
+            status=status,
+            mismatches=mismatches,
+            assumptions=assumptions,
+        )
         return text, citations, deep_links
 
     # 2. Refusal / clarification

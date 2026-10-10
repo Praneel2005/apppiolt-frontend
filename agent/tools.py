@@ -94,12 +94,33 @@ def tool_schemas(
         },
         {
             "name": "navigate",
-            "description": "Navigate to a specific application page, resetting state to page defaults.",
+            "description": "Atomically navigate to a specific application page and optionally set initial filters, date range, or sort in a single operation.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "page_id": {"type": "string", "enum": page_ids, "description": "Target page ID."},
                     "keep_state": {"type": "boolean", "description": "Preserve compatible filters and dates."},
+                    "filters": {
+                        "type": "object",
+                        "description": "Initial filters dictionary, e.g. {'customer_state': ['SP', 'RJ']}.",
+                    },
+                    "date_range": {
+                        "type": "object",
+                        "properties": {
+                            "preset": {"type": "string", "enum": DATE_PRESETS, "description": "Named relative preset."},
+                            "from": {"type": "string", "description": "ISO date YYYY-MM-DD."},
+                            "to": {"type": "string", "description": "ISO date YYYY-MM-DD."},
+                        },
+                        "description": "Active date range.",
+                    },
+                    "sort": {
+                        "type": "object",
+                        "properties": {
+                            "field": {"type": "string"},
+                            "dir": {"type": "string", "enum": ["asc", "desc"]},
+                        },
+                        "description": "Sort column and direction.",
+                    },
                 },
                 "required": ["page_id"],
             },

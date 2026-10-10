@@ -108,8 +108,38 @@ async def _ui_step(s: Session, step: ToolCall, i: int, config: AgentConfig, auto
             return StepResult(step_index=i, ok=False, error_code="denied", message="The user declined this step.")
     if step.tool in ("navigate", "open_deep_link"):
         page = app.page(a["page_id"])
-        flt = {k: FilterValue(**v) for k, v in (a.get("filters") or {}).items()}
-        rng = DateRange.model_validate(a["date_range"]) if a.get("date_range") else None
+        flt = {}
+        for k, v in (a.get("filters") or {}).items():
+            if isinstance(v, FilterValue):
+                flt[k] = v
+            elif isinstance(v, dict):
+                op = v.get("op", "in" if isinstance(v.get("value"), list) else "eq")
+                val_list = v.get("value", v.get("values", []))
+                if not isinstance(val_list, list):
+                    val_list = [str(val_list)]
+                else:
+                    val_list = [str(x) for x in val_list]
+                flt[k] = FilterValue(op=op, value=val_list)
+            elif isinstance(v, list):
+                flt[k] = FilterValue(op="in", value=[str(x) for x in v])
+            else:
+                flt[k] = FilterValue(op="eq", value=[str(v)])
+        rng = None
+        if a.get("date_range"):
+            raw_rng = a["date_range"]
+            if isinstance(raw_rng, DateRange):
+                rng = raw_rng
+            elif isinstance(raw_rng, dict):
+                if "preset" in raw_rng and ("from" not in raw_rng or "to" not in raw_rng):
+                    from contracts.dates import resolve as cr
+                    f_d, t_d = cr(raw_rng["preset"], app.as_of_date)
+                    rng = DateRange(from_=f_d, to=t_d, preset=raw_rng["preset"])
+                else:
+                    rng = DateRange.model_validate(raw_rng)
+            elif isinstance(raw_rng, str):
+                from contracts.dates import resolve as cr
+                f_d, t_d = cr(raw_rng, app.as_of_date)
+                rng = DateRange(from_=f_d, to=t_d, preset=raw_rng)
         if a.get("keep_state"):  # S1 exception: carry compatible filters and the date range over
             ids = {f.filter_id for f in page.filters}
             flt = {**{k: v for k, v in st.filters.items() if k in ids}, **flt}

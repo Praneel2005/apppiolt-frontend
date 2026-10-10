@@ -68,6 +68,18 @@ def resolve(preset: str, as_of: str) -> tuple[str, str]:
         r = (date(int(m[1]), 1, 1), date(int(m[1]), 12, 31))
     elif m := re.fullmatch(r"between:(\d{4}-\d{2}-\d{2}):(\d{4}-\d{2}-\d{2})", preset):
         r = (_d(m[1]), _d(m[2]))
+    elif m := re.fullmatch(r"months:(\d+)", preset):
+        n = int(m[1])
+        y, m_ = _shift_month(a.year, a.month, -(n - 1))
+        r = (date(y, m_, 1), a)
+    elif m := re.fullmatch(r"days:(\d+)", preset):
+        n = int(m[1])
+        r = (a - timedelta(days=n - 1), a)
+    elif m := re.fullmatch(r"weeks:(\d+)", preset):
+        n = int(m[1])
+        r = (a - timedelta(days=7 * n - 1), a)
+    elif m := re.fullmatch(r"since:(\d{4}-\d{2}-\d{2})", preset):
+        r = (_d(m[1]), a)
     else:
         raise ValueError(f"unknown date preset: {preset}")
     if r[0] > r[1]:

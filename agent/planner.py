@@ -119,16 +119,23 @@ FEW_SHOT_EXAMPLES = [
 
 
 def format_candidates(retrieval: RetrievalResult) -> str:
-    lines = ["RETRIEVED CANDIDATE PAGES:"]
-    for p in retrieval.pages:
-        f_names = [f["id"] for f in p.data.get("filters", [])]
-        lines.append(f"  - Page '{p.title}' (page_id: {p.id}, route: {p.data.get('route')}, filters: {f_names})")
+    try:
+        from agent.capabilities import get_capability_model
+        cap_model = get_capability_model()
+        page_ids = [p.id for p in retrieval.pages]
+        api_ids = [a.id for a in retrieval.apis]
+        return cap_model.compact_slice(page_ids, api_ids)
+    except Exception:
+        lines = ["RETRIEVED CANDIDATE PAGES:"]
+        for p in retrieval.pages:
+            f_names = [f["id"] for f in p.data.get("filters", [])]
+            lines.append(f"  - Page '{p.title}' (page_id: {p.id}, route: {p.data.get('route')}, filters: {f_names})")
 
-    lines.append("\nRETRIEVED CANDIDATE APIS:")
-    for a in retrieval.apis:
-        lines.append(f"  - API '{a.title}' (api_id: {a.id}, kind: {a.data.get('api_kind', 'read')}, path: {a.data.get('path')})")
+        lines.append("\nRETRIEVED CANDIDATE APIS:")
+        for a in retrieval.apis:
+            lines.append(f"  - API '{a.title}' (api_id: {a.id}, kind: {a.data.get('api_kind', 'read')}, path: {a.data.get('path')})")
 
-    return "\n".join(lines)
+        return "\n".join(lines)
 
 
 def _substitute_resolved(obj: Any, resolved_refs: dict[str, Any]) -> Any:
@@ -214,6 +221,30 @@ async def plan_request(
         except Exception:
             pass
 
+    # Rules-first Frame Extraction (WP3: skip LLM when confident, unless FakeLLM is being tested)
+    from agent.frame import extract_frame_by_rules
+    from agent.router import route_frame
+    from agent.compiler import compile_frame_to_plan, merge_ui_steps
+    from agent.normalise.dates import parse_date_query
+    from agent.llm import FakeLLM
+
+    is_fake = isinstance(provider, FakeLLM)
+    if not is_fake:
+        frame = extract_frame_by_rules(
+            query,
+            page_ctx,
+            memory.last_turn(),
+            as_of=app.as_of_date,
+        )
+        if frame and frame.confidence >= 0.9:
+            routing = route_frame(frame, current_page_id=curr_pid)
+            candidate_plan = compile_frame_to_plan(frame, routing, current_page_id=curr_pid)
+            val_res = validate(app, candidate_plan, current_state, cat)
+            if val_res.ok:
+                retrieval.validation = val_res
+                logger.info("Rules-first fast path succeeded for '%s' -> %s", query, routing.skill)
+                return candidate_plan, retrieval
+
     plan = None
     for attempt in range(max_retries + 1):
         plan = await provider.generate_structured(Plan, messages, system_prompt=SYSTEM_PROMPT)
@@ -222,11 +253,31 @@ async def plan_request(
         for step in plan.steps:
             step.args = _substitute_resolved(step.args, resolved_refs)
 
+        # Override dates from normaliser (Normaliser overrides LLM date - Section 5.1)
+        norm_date = parse_date_query(query, as_of=app.as_of_date)
+        if norm_date:
+            for step in plan.steps:
+                if "date_range" in step.args:
+                    step.args["date_range"] = {
+                        "preset": norm_date.preset,
+                        "from": norm_date.from_date,
+                        "to": norm_date.to_date,
+                    }
+                elif step.tool == "set_date_range":
+                    step.args["preset"] = norm_date.preset
+                    step.args["from"] = norm_date.from_date
+                    step.args["to"] = norm_date.to_date
+
+        # Merge UI steps into one atomic navigate step (WP3) unless testing raw FakeLLM steps
+        if not is_fake:
+            plan = merge_ui_steps(plan)
+
         # Skip validation if disabled (ablation A1) or if refusal / clarify
         if not cfg.use_validator or plan.intent.name in ("clarify_needed", "out_of_scope", "unsafe_action") or not plan.steps:
             break
 
         val_res = validate(app, plan, current_state, cat)
+        retrieval.validation = val_res
         if val_res.ok:
             break
 

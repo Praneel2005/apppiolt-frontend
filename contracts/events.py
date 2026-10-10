@@ -16,6 +16,12 @@ class AgentEvent(BaseModel):
     seq: int
     type: Literal[
         "understanding",    # data: {intent, slots}
+        "understood",       # data: {paraphrase, assumptions}
+        "frame",            # data: Frame representation
+        "status",           # data: {status: VERIFIED|PARTIAL|FAILED, details}
+        "analysis_step",    # data: {step, progress}
+        "form_open",        # data: FormState
+        "form_patch",       # data: {field, value}
         "retrieval",        # data: {candidates: [{page_id, score}]}
         "plan",             # data: {steps: [...]}
         "validation",       # data: {ok, issues}
