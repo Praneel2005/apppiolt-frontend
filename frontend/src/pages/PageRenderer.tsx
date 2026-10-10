@@ -76,76 +76,97 @@ export function PageRenderer({ page, application }: PageRendererProps) {
     }
   }
 
+  const breadcrumbParts = page.directory.split("/");
+
   return (
-    <div className="flex flex-col gap-6 p-6 flex-1 overflow-y-auto bg-[#F8FAFC] min-h-0">
-      {/* Breadcrumb */}
-      <div className="text-xs text-slate-400">
-        {page.directory.replace(/\//g, " › ")}
+    <div className="flex flex-col gap-5 p-6 flex-1 overflow-y-auto bg-[#F8FAFC] min-h-0">
+      {/* Breadcrumb & metadata */}
+      <div className="flex items-center gap-1.5 text-xs text-slate-400 font-medium select-none">
+        <span>🏠</span>
+        {breadcrumbParts.map((part, idx) => (
+          <span key={idx} className="flex items-center gap-1.5">
+            <span>/</span>
+            <span
+              className={
+                idx === breadcrumbParts.length - 1
+                  ? "text-slate-700 font-semibold"
+                  : "text-slate-400"
+              }
+            >
+              {part.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+            </span>
+          </span>
+        ))}
       </div>
 
-      {/* Page header */}
-      <div>
-        <h1 className="text-[20px] font-semibold text-slate-900">{page.title}</h1>
+      {/* Page Header */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-3">
+          <h1 className="text-[22px] font-bold text-slate-900 tracking-tight">
+            {page.title}
+          </h1>
+          <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200">
+            {page.page_id}
+          </span>
+        </div>
         {page.description && (
-          <p className="text-sm text-slate-500 mt-1">{page.description}</p>
+          <p className="text-xs text-slate-500 max-w-3xl leading-relaxed">
+            {page.description}
+          </p>
         )}
       </div>
 
       {/* Filter bar */}
-      {page.filters.length > 0 && (
-        <FilterBar page={page} />
-      )}
+      {page.filters.length > 0 && <FilterBar page={page} />}
 
-      {/* Widgets by layout type */}
+      {/* Widgets Layout */}
       {pageType === "overview" && (
-        <>
+        <div className="space-y-5">
           {kpiWidgets.length > 0 && (
             <div
               className="grid gap-4"
               style={{
-                gridTemplateColumns: `repeat(${Math.min(kpiWidgets.length, 4)}, 1fr)`,
+                gridTemplateColumns: `repeat(${Math.min(
+                  kpiWidgets.length,
+                  4
+                )}, minmax(0, 1fr))`,
               }}
             >
               {kpiWidgets.map(renderWidget)}
             </div>
           )}
-          {lineWidget && (
-            <div className="w-full">{renderWidget(lineWidget)}</div>
-          )}
-          {/* Any other non-kpi, non-line widgets */}
+          {lineWidget && <div className="w-full">{renderWidget(lineWidget)}</div>}
           {pageWidgets
             .filter((w) => w.type !== "kpi_card" && w.type !== "line_chart")
             .map(renderWidget)}
-        </>
+        </div>
       )}
 
       {pageType === "trend" && (
-        <>
-          {lineWidget && (
-            <div className="w-full">{renderWidget(lineWidget)}</div>
-          )}
+        <div className="space-y-5">
+          {lineWidget && <div className="w-full">{renderWidget(lineWidget)}</div>}
           {gridWidgets.map(renderWidget)}
-        </>
+        </div>
       )}
 
       {pageType === "breakdown1" && (
-        <div className="flex gap-4 flex-wrap xl:flex-nowrap">
+        <div className="flex gap-5 flex-wrap xl:flex-nowrap">
           {barWidget && (
             <div className="flex-[3] min-w-0">{renderWidget(barWidget)}</div>
           )}
           {gridWidgets.length > 0 && (
-            <div className="flex-[2] min-w-0">{gridWidgets.map(renderWidget)}</div>
+            <div className="flex-[2] min-w-0 space-y-4">
+              {gridWidgets.map(renderWidget)}
+            </div>
           )}
         </div>
       )}
 
       {pageType === "breakdown2" && (
-        <>
-          {barWidget && (
-            <div className="w-full">{renderWidget(barWidget)}</div>
-          )}
+        <div className="space-y-5">
+          {barWidget && <div className="w-full">{renderWidget(barWidget)}</div>}
           {gridWidgets.map(renderWidget)}
-        </>
+        </div>
       )}
     </div>
   );

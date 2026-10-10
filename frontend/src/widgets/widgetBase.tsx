@@ -2,7 +2,7 @@
  * Shared widget infrastructure:
  *  - WidgetCard wrapper (title, loading, error, empty states)
  *  - useWidgetData hook (fetches /api/widget-data, registers ack)
- *  - highlightWidget() exported function (Shreeniketh calls this)
+ *  - highlightWidget() exported function (Shreeniketh / citation chips call this)
  */
 
 import React, { useEffect, useRef, useState } from "react";
@@ -19,14 +19,14 @@ import type {
 import { api } from "../net/api";
 import { resolveWidgetAck, useAppStore } from "../state/store";
 
-// ─── highlightWidget (exported, called by Shreeniketh's citation chips) ───────
+// ─── highlightWidget (exported, called by citation chips) ──────────────────────
 
 export function highlightWidget(widgetId: string) {
   const el = document.querySelector(`[data-widget-id="${widgetId}"]`);
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "center" });
   el.classList.add("widget-highlight");
-  setTimeout(() => el.classList.remove("widget-highlight"), 2000);
+  setTimeout(() => el.classList.remove("widget-highlight"), 2400);
 }
 
 // ─── useWidgetData hook ───────────────────────────────────────────────────────
@@ -163,10 +163,20 @@ export function WidgetCard({
   return (
     <div
       data-widget-id={widgetId}
-      className="bg-white border border-slate-200 rounded-xl shadow-sm p-4 flex flex-col gap-3 transition-all duration-200"
-      style={{ minHeight: 160 }}
+      className="bg-white border border-slate-200/90 rounded-2xl shadow-xs p-5 flex flex-col gap-3 transition-all duration-200 hover:border-slate-300"
+      style={{ minHeight: 150 }}
     >
-      <div className="text-sm font-semibold text-slate-700">{title}</div>
+      <div className="flex items-center justify-between gap-2 select-none">
+        <h3 className="text-sm font-semibold text-slate-800 leading-snug">
+          {title}
+        </h3>
+        <span
+          className="text-[10px] font-mono text-slate-400 bg-slate-50 border border-slate-200/60 px-1.5 py-0.5 rounded-md hover:text-slate-600 cursor-default"
+          title={`Widget identifier: ${widgetId}`}
+        >
+          #{widgetId}
+        </span>
+      </div>
       {loading ? (
         <SkeletonBlock />
       ) : error ? (
@@ -182,27 +192,30 @@ export function WidgetCard({
 
 function SkeletonBlock() {
   return (
-    <div className="flex flex-col gap-2 animate-pulse">
-      <div className="h-6 bg-slate-100 rounded w-3/4" />
-      <div className="h-6 bg-slate-100 rounded w-1/2" />
-      <div className="h-6 bg-slate-100 rounded w-2/3" />
+    <div className="flex flex-col gap-2.5 animate-pulse py-2">
+      <div className="h-6 bg-slate-100 rounded-lg w-3/4" />
+      <div className="h-6 bg-slate-100 rounded-lg w-1/2" />
+      <div className="h-6 bg-slate-100 rounded-lg w-2/3" />
     </div>
   );
 }
 
 function ErrorState({ message }: { message: string }) {
   return (
-    <div className="text-sm text-red-600 bg-red-50 rounded p-3">
-      ⚠ Error: {message}
+    <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+      <span>⚠</span>
+      <div>
+        <span className="font-semibold">Error:</span> {message}
+      </div>
     </div>
   );
 }
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center flex-1 gap-1 text-slate-400 py-6">
+    <div className="flex flex-col items-center justify-center flex-1 gap-1 text-slate-400 py-6 select-none">
       <span className="text-2xl">📭</span>
-      <span className="text-sm">No data for this selection</span>
+      <span className="text-xs font-medium">No data found for this filter selection</span>
     </div>
   );
 }

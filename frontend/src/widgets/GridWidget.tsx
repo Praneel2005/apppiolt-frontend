@@ -1,12 +1,10 @@
 /**
- * Grid (table) widget — plain table with client-side sorting and pagination.
- * (TanStack Table v9 has a significantly changed API; using a simpler approach
- *  that is easier to debug during the hackathon.)
+ * Grid (table) widget — table with client-side sorting and pagination.
  *
  * - Sortable column headers (sort change → user_state_change via store)
  * - Numbers right-aligned and formatted by unit
  * - Sticky header
- * - 25 rows per page pagination
+ * - 25 rows per page pagination with clear counters
  */
 
 import { useMemo, useState } from "react";
@@ -110,6 +108,9 @@ export function GridWidget({
     }
   }
 
+  const startEntry = sortedRows.length === 0 ? 0 : page * PAGE_SIZE + 1;
+  const endEntry = Math.min((page + 1) * PAGE_SIZE, sortedRows.length);
+
   return (
     <WidgetCard
       widgetId={widget.widget_id}
@@ -118,36 +119,42 @@ export function GridWidget({
       error={error}
       empty={isEmpty}
     >
-      <div className="overflow-auto max-h-96 rounded border border-slate-100">
-        <table className="w-full text-sm border-collapse">
-          <thead className="sticky top-0 bg-white z-10">
+      <div className="overflow-auto max-h-96 rounded-xl border border-slate-200/80 shadow-2xs">
+        <table className="w-full text-xs border-collapse">
+          <thead className="sticky top-0 bg-slate-50 z-10 border-b border-slate-200">
             <tr>
-              {columns.map((col) => (
-                <th
-                  key={col.id}
-                  onClick={() => handleSort(col.id)}
-                  className={`px-3 py-2 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none whitespace-nowrap ${
-                    col.numeric ? "text-right" : "text-left"
-                  }`}
-                >
-                  {col.header}
-                  {sortField === col.id
-                    ? sortDir === "asc"
-                      ? " ↑"
-                      : " ↓"
-                    : ""}
-                </th>
-              ))}
+              {columns.map((col) => {
+                const isSorted = sortField === col.id;
+                return (
+                  <th
+                    key={col.id}
+                    onClick={() => handleSort(col.id)}
+                    className={`px-3.5 py-2.5 text-xs font-semibold text-slate-600 uppercase tracking-wider cursor-pointer select-none whitespace-nowrap transition-colors hover:bg-slate-100 ${
+                      col.numeric ? "text-right" : "text-left"
+                    } ${isSorted ? "text-indigo-600 bg-indigo-50/40" : ""}`}
+                  >
+                    <span>{col.header}</span>
+                    <span className="ml-1 text-[11px] text-slate-400">
+                      {isSorted ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
+                    </span>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {pageRows.map((row, i) => (
-              <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+              <tr
+                key={i}
+                className={`transition-colors hover:bg-indigo-50/20 ${
+                  i % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+                }`}
+              >
                 {columns.map((col) => (
                   <td
                     key={col.id}
-                    className={`px-3 py-2 text-slate-700 ${
-                      col.numeric ? "text-right tabular-nums" : ""
+                    className={`px-3.5 py-2 text-slate-700 ${
+                      col.numeric ? "text-right tabular-nums font-medium" : ""
                     }`}
                   >
                     {col.numeric
@@ -161,25 +168,35 @@ export function GridWidget({
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2 text-xs text-slate-400">
-          <button
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={page === 0}
-            className="px-2 py-1 rounded hover:bg-slate-100 disabled:opacity-40"
-          >
-            ← Prev
-          </button>
+      {sortedRows.length > 0 && (
+        <div className="flex items-center justify-between pt-1 px-1 text-xs text-slate-500 select-none">
           <span>
-            Page {page + 1} of {totalPages}
+            Showing <strong className="text-slate-700">{startEntry}</strong> to{" "}
+            <strong className="text-slate-700">{endEntry}</strong> of{" "}
+            <strong className="text-slate-700">{sortedRows.length}</strong> rows
           </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={page >= totalPages - 1}
-            className="px-2 py-1 rounded hover:bg-slate-100 disabled:opacity-40"
-          >
-            Next →
-          </button>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-xs font-medium"
+              >
+                ← Prev
+              </button>
+              <span className="text-slate-400 px-1 text-xs">
+                {page + 1} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-xs font-medium"
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </WidgetCard>

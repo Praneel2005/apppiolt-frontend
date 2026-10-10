@@ -78,17 +78,30 @@ export function FilterBar({ page }: FilterBarProps) {
   }
 
   const currentPreset = uiState.date_range?.preset;
+  const activeFilterCount = Object.keys(uiState.filters).length;
 
   return (
-    <div className="flex flex-wrap items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3">
+    <div className="flex flex-wrap items-center gap-2.5 bg-white border border-slate-200/90 rounded-2xl px-4 py-2.5 shadow-xs select-none">
+      {/* Filter label badge */}
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mr-1">
+        <span>⚡ Filters</span>
+        {activeFilterCount > 0 && (
+          <span className="w-5 h-5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[10px] flex items-center justify-center font-bold">
+            {activeFilterCount}
+          </span>
+        )}
+      </div>
+
+      <div className="h-4 w-px bg-slate-200 mx-1 hidden sm:block" />
+
       {/* Date range filter */}
       {page.filters.some((f) => f.type === "date_range") && (
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 font-medium">Date range</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-slate-400">📅</span>
           <select
             value={currentPreset ?? ""}
             onChange={(e) => handleDatePreset(e.target.value)}
-            className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium transition-colors cursor-pointer"
           >
             <option value="" disabled>
               Select preset…
@@ -100,7 +113,7 @@ export function FilterBar({ page }: FilterBarProps) {
             ))}
           </select>
           {uiState.date_range && (
-            <span className="text-xs text-slate-400">
+            <span className="text-[11px] text-slate-500 font-mono bg-slate-100 px-2 py-1 rounded-md">
               {uiState.date_range.from} → {uiState.date_range.to}
             </span>
           )}
@@ -122,9 +135,11 @@ export function FilterBar({ page }: FilterBarProps) {
       {/* Reset */}
       <button
         onClick={handleReset}
-        className="ml-auto text-xs text-slate-400 hover:text-slate-700 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition-colors"
+        title="Reset to page default state"
+        className="ml-auto text-xs text-slate-500 hover:text-slate-800 border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50 transition-colors flex items-center gap-1.5"
       >
-        Reset
+        <span>↺</span>
+        <span>Reset</span>
       </button>
     </div>
   );
@@ -176,59 +191,73 @@ function MultiSelectFilter({
     }
   }
 
-  const buttonLabel =
-    selectedValues.length === 0
-      ? filter.title
-      : selectedValues.length === 1
-      ? label(selectedValues[0])
-      : `${filter.title} (${selectedValues.length})`;
+  const isFiltered = selectedValues.length > 0;
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className={`flex items-center gap-1.5 text-xs border rounded-lg px-3 py-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+          isFiltered
+            ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-semibold"
+            : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+        }`}
       >
-        {buttonLabel}
-        <span className="text-slate-400 text-xs">▾</span>
+        <span>{filter.title}</span>
+        {isFiltered && (
+          <span className="w-4 h-4 rounded-full bg-indigo-600 text-white text-[10px] flex items-center justify-center font-bold">
+            {selectedValues.length}
+          </span>
+        )}
+        <span className="text-slate-400 text-[10px] ml-0.5">▼</span>
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-60 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
-          <div className="p-2 border-b border-slate-100">
+        <div className="absolute z-50 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden animate-fade-in">
+          <div className="p-2 border-b border-slate-100 bg-slate-50">
             <input
               type="text"
-              placeholder="Search…"
+              placeholder={`Search ${filter.title}…`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full text-sm px-2 py-1 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
               autoFocus
             />
           </div>
-          <div className="max-h-52 overflow-y-auto">
+          <div className="max-h-52 overflow-y-auto p-1">
             {filtered.length === 0 && (
-              <div className="text-xs text-slate-400 px-3 py-2">No options</div>
+              <div className="text-xs text-slate-400 px-3 py-3 text-center">
+                No matching options
+              </div>
             )}
-            {filtered.map((val) => (
-              <label
-                key={val}
-                className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer text-sm text-slate-700"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedValues.includes(val)}
-                  onChange={() => toggle(val)}
-                  className="accent-indigo-600"
-                />
-                {label(val)}
-              </label>
-            ))}
+            {filtered.map((val) => {
+              const checked = selectedValues.includes(val);
+              return (
+                <label
+                  key={val}
+                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs transition-colors ${
+                    checked ? "bg-indigo-50/50 text-indigo-900 font-medium" : "text-slate-700"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggle(val)}
+                    className="accent-indigo-600 rounded"
+                  />
+                  <span className="truncate">{label(val)}</span>
+                </label>
+              );
+            })}
           </div>
           {selectedValues.length > 0 && (
-            <div className="p-2 border-t border-slate-100">
+            <div className="p-2 border-t border-slate-100 bg-slate-50 flex items-center justify-between">
+              <span className="text-[10px] text-slate-500">
+                {selectedValues.length} selected
+              </span>
               <button
                 onClick={() => onChange([])}
-                className="text-xs text-slate-400 hover:text-red-500"
+                className="text-xs text-red-600 hover:text-red-700 hover:underline font-medium"
               >
                 Clear all
               </button>

@@ -57,14 +57,21 @@ export function KpiCardWidget({
       error={error}
       empty={isEmpty}
     >
-      <div className="flex flex-col gap-1">
-        <span className="text-[28px] font-bold text-slate-900 leading-tight">
-          {formatted}
-        </span>
-        {metric && (
-          <span className="text-xs text-slate-400 uppercase tracking-wide">
-            {metric.title}
+      <div className="flex flex-col gap-1.5 py-1">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[32px] font-extrabold text-slate-900 tracking-tight tabular-nums leading-none">
+            {formatted}
           </span>
+        </div>
+        {metric && (
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md uppercase tracking-wider">
+              {metric.title}
+            </span>
+            <span className="text-[11px] text-slate-400">
+              {unit ? `Unit: ${unit}` : ""}
+            </span>
+          </div>
         )}
       </div>
     </WidgetCard>

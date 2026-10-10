@@ -1,7 +1,7 @@
 /**
  * Bar Chart widget (horizontal).
  * - Category on y-axis, metric on x-axis, primary colour bars with value labels
- * - Shows top 20 when > 20 categories, with a note
+ * - Shows top 20 when > 20 categories, with a clean info banner
  */
 
 import {
@@ -60,7 +60,7 @@ export function BarChartWidget({
   const totalRows = data?.rows.length ?? 0;
   const visibleRows = (data?.rows ?? []).slice(0, MAX_BARS);
 
-  const truncate = (s: string, n = 22) =>
+  const truncate = (s: string, n = 24) =>
     s && s.length > n ? s.slice(0, n) + "…" : s;
 
   const chartData = visibleRows.map((row) => ({
@@ -80,15 +80,18 @@ export function BarChartWidget({
       empty={isEmpty}
     >
       {totalRows > MAX_BARS && (
-        <p className="text-xs text-slate-400 mb-1">
-          Showing {MAX_BARS} of {totalRows} — see table for all
-        </p>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-xs text-slate-500 mb-2">
+          <span>ℹ️</span>
+          <span>
+            Showing top <strong>{MAX_BARS}</strong> of <strong>{totalRows}</strong> categories — see table for complete data
+          </span>
+        </div>
       )}
       <ResponsiveContainer width="100%" height={chartHeight}>
         <BarChart
           data={chartData}
           layout="vertical"
-          margin={{ left: 0, right: 56, top: 4, bottom: 4 }}
+          margin={{ left: 0, right: 64, top: 4, bottom: 4 }}
         >
           <XAxis
             type="number"
@@ -100,12 +103,13 @@ export function BarChartWidget({
           <YAxis
             type="category"
             dataKey="label"
-            width={130}
-            tick={{ fontSize: 12, fill: "#0F172A" }}
+            width={140}
+            tick={{ fontSize: 12, fill: "#1E293B" }}
             axisLine={false}
             tickLine={false}
           />
           <Tooltip
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(val: any) => [
               formatValue(val, unit),
               metric?.title ?? metricId,
@@ -113,19 +117,21 @@ export function BarChartWidget({
             labelStyle={{ color: "#0F172A", fontWeight: 600 }}
             contentStyle={{
               border: "1px solid #E2E8F0",
-              borderRadius: 8,
-              fontSize: 13,
+              borderRadius: 12,
+              boxShadow: "0 4px 12px rgba(15,23,42,0.08)",
+              fontSize: 12,
             }}
           />
-          <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+          <Bar dataKey="value" radius={[0, 6, 6, 0]}>
             {chartData.map((_, i) => (
               <Cell key={i} fill={PRIMARY} />
             ))}
             <LabelList
               dataKey="value"
               position="right"
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={(v: any) => formatValue(v, unit)}
-              style={{ fontSize: 11, fill: "#64748B" }}
+              style={{ fontSize: 11, fill: "#64748B", fontWeight: 500 }}
             />
           </Bar>
         </BarChart>

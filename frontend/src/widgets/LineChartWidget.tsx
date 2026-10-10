@@ -5,10 +5,11 @@
  */
 
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Dot,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -69,12 +70,18 @@ export function LineChartWidget({
       error={error}
       empty={isEmpty}
     >
-      <ResponsiveContainer width="100%" height={240}>
-        <LineChart
+      <ResponsiveContainer width="100%" height={260}>
+        <ComposedChart
           data={chartData}
-          margin={{ left: 0, right: 16, top: 8, bottom: 4 }}
+          margin={{ left: 0, right: 16, top: 12, bottom: 4 }}
         >
-          <CartesianGrid stroke="#F1F5F9" strokeDasharray="4 2" />
+          <defs>
+            <linearGradient id={`grad-${widget.widget_id}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={PRIMARY} stopOpacity={0.15} />
+              <stop offset="95%" stopColor={PRIMARY} stopOpacity={0.0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="#F1F5F9" strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="month"
             tick={{ fontSize: 11, fill: "#64748B" }}
@@ -87,9 +94,10 @@ export function LineChartWidget({
             axisLine={false}
             tickLine={false}
             tickFormatter={(v: number) => formatValue(v, unit)}
-            width={64}
+            width={72}
           />
           <Tooltip
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             formatter={(val: any) => [
               formatValue(val, unit),
               metric?.title ?? metricId,
@@ -97,19 +105,26 @@ export function LineChartWidget({
             labelStyle={{ color: "#0F172A", fontWeight: 600 }}
             contentStyle={{
               border: "1px solid #E2E8F0",
-              borderRadius: 8,
-              fontSize: 13,
+              borderRadius: 12,
+              boxShadow: "0 4px 12px rgba(15,23,42,0.08)",
+              fontSize: 12,
             }}
+          />
+          <Area
+            type="monotone"
+            dataKey="value"
+            fill={`url(#grad-${widget.widget_id})`}
+            stroke="none"
           />
           <Line
             type="monotone"
             dataKey="value"
             stroke={PRIMARY}
-            strokeWidth={2}
-            dot={<Dot r={3} fill={PRIMARY} stroke="#fff" strokeWidth={1.5} />}
-            activeDot={{ r: 5 }}
+            strokeWidth={2.5}
+            dot={<Dot r={3.5} fill={PRIMARY} stroke="#fff" strokeWidth={2} />}
+            activeDot={{ r: 6, fill: PRIMARY, stroke: "#fff", strokeWidth: 2 }}
           />
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </WidgetCard>
   );

@@ -20,6 +20,7 @@ Last updated: 2026-10-08  ·  Mode: planner builds directly on the workstation (
 | T5 semantic layer | done | `generator/semantic_layer.py`: 4 datasets, 15 governed metrics (BRL; rates as ratios), enum values from DB (27 states, 5 regions, 74 categories); `tests/test_semantic_layer.py`; pytest 52 passed. Example Q2-2018: revenue 2,849,730.26 BRL, 19,897 orders, late rate 0.0483 |
 
 | T6 application generator | done | `generator/build_application.py` → `data/olist/application.json` (committed): 7 modules, **100 pages** (7 overviews, 61 one-dimension breakdowns, 18 two-dimension breakdowns, 14 trends), 215 widgets; unique descriptions; state-name, region, payment and category synonyms; `tests/test_application.py`; pytest 58 passed |
+| T7 frontend renderer + UI/UX overhaul | done | Built responsive React+TS app in `frontend/`: 100 pages dynamic renderer, LeftNav with module icons & search, FilterBar with date presets & searchable multiselects, KPI / Bar / Line / Grid widgets with formatting, WebCrypto SHA-256 series hash matching all 12 vectors (12/12 Vitest passed), WebSocket `apply_state` + `render_ack` verified E2E with Playwright (`verify.ok = true` + fault injection detected 4 mismatches), and full AI-native agentic UI with interactive `ChatPanel` (thought timeline, live verification badge, interactive citations `[e1]` calling `highlightWidget`, confirm mode, undo) and `DebugDrawer`. |
 
 ## Decisions and deviations (append, dated)
 

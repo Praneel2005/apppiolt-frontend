@@ -4,16 +4,20 @@
 @theme {
   --color-primary: #4F46E5;
   --color-primary-hover: #4338CA;
+  --color-primary-light: #EEF2FF;
   --color-success: #16A34A;
+  --color-success-light: #F0FDF4;
   --color-warning: #D97706;
+  --color-warning-light: #FFFBEB;
   --color-danger: #DC2626;
+  --color-danger-light: #FEF2F2;
   --color-page-bg: #F8FAFC;
   --color-surface: #FFFFFF;
   --color-border: #E2E8F0;
   --color-text: #0F172A;
   --color-muted: #64748B;
 
-  --font-family-sans: Inter, system-ui, sans-serif;
+  --font-family-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-size-body: 14px;
   --font-size-title: 20px;
   --font-size-kpi: 28px;
@@ -28,11 +32,46 @@ html, body, #root {
   color: var(--color-text);
   font-family: var(--font-family-sans);
   font-size: var(--font-size-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Widget highlight (called by highlightWidget) ── */
+/* ── Custom Scrollbars ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+/* ── Widget highlight (called by highlightWidget when citation is clicked) ── */
+@keyframes highlightPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.6), 0 4px 12px rgba(79, 70, 229, 0.15);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(79, 70, 229, 0), 0 8px 24px rgba(79, 70, 229, 0.25);
+    transform: scale(1.008);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0), 0 4px 12px rgba(79, 70, 229, 0.15);
+    transform: scale(1);
+  }
+}
+
 .widget-highlight {
-  outline: 2px solid #4F46E5 !important;
-  outline-offset: 2px;
-  transition: outline 0s;
+  outline: 2.5px solid #4F46E5 !important;
+  outline-offset: 3px;
+  animation: highlightPulse 1s cubic-bezier(0.4, 0, 0.2, 1) 2;
+  transition: all 0.25s ease-out;
+  z-index: 10;
 }
