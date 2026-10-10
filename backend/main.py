@@ -25,12 +25,12 @@ import os
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     db.open_pools()
-    if os.environ.get("GROQ_API_KEY") or os.environ.get("GEMINI_API_KEY"):
-        try:
-            from agent import agent as agent_mod
-            session.set_agent(agent_mod._DEFAULT_AGENT)
-        except Exception:
-            pass
+    try:  # the agent always works: with no LLM key it runs on rules and deterministic composition
+        from agent import agent as agent_mod
+        session.set_agent(agent_mod._DEFAULT_AGENT)
+    except Exception:
+        import logging
+        logging.getLogger("backend").exception("could not attach the agent")
     yield
     db.close_pools()
 

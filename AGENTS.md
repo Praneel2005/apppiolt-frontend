@@ -51,5 +51,20 @@ python scripts/check_gemini.py                   # Gemini key + schema compatibi
 
 ## Repository map (details in docs/PROJECT_HANDOFF.md §4)
 `contracts/` shared formats · `sql/` + `generator/` data layers and metadata · `backend/` API, sessions, validator,
-executor, verifier · `web/` React app · `agent/` (to build) LLM agent · `eval/` (to build) evaluation harness ·
+executor, verifier · `web/` React app · `agent/` the V3 layered agent (see `docs/AGENT_V3_ARCHITECTURE.md`):
+`lexicon` `perceive` `interpret` `agent` (orchestrator) `answer` · `agent/skills/` view, data, reason, act, converse ·
+`agent/reasoning/` analysis engine · `agent/legacy_agent.py` baseline B3 (old tool-plan agent) · `data/olist/agent_lexicon.json`
+tenant vocabulary (synonyms, cues, identities: DATA, not code) · `eval/` benchmark + `eval/paraphrases.py` held-out phrasings ·
 `tests/` · `docs/` · `scripts/`. `mock/` is the retired mock backend (kept only for its legacy test).
+
+## Agent V3 rules (in addition to the hard rules above)
+* Understanding is layered: perceive (code) -> interpret (LLM or rules) -> reconcile against metadata. Dates and entity values
+  come from the parser, never from the model. Do not special-case a sentence in code; fix the lexicon data, the parser, the
+  reconcile rule or the prompt, and add the phrasing family to `eval/paraphrases.py`.
+* **No natural-language word lists in code.** Phrase lists (submit / cancel words, direction words, screen phrases, destructive
+  phrases...) live in `data/olist/agent_lexicon.json` ("language"); metric, dimension, page and API names come from metadata;
+  dimension roles (time, state-like, region-like) are detected from the data. `tests/test_v3_language_data.py` enforces it.
+  With an LLM key, the model decides the intent (`AgentConfig.use_fast_lane` is off by default); the rules are the offline fallback.
+* The LLM never calculates, never writes SQL and never states a number: numbers are facts (`F#`) rendered by code.
+* Writes are never auto-approved (`AgentConfig.auto_confirm_writes` exists for tests only).
+* Analysis is deterministic and cited (`agent/reasoning/`); every block of numbers is recorded as evidence.

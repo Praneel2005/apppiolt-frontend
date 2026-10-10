@@ -33,6 +33,10 @@ DEFAULT_CACHE_DIR = ROOT / ".llm_cache"
 T = TypeVar("T", bound=BaseModel)
 
 
+class RateLimited(RuntimeError):
+    """The provider asked us to wait too long; callers should fail over instead of sleeping."""
+
+
 # ------------------------------------------------------------------------------
 # Flattened schemas for Gemini structured output compatibility
 # (Gemini rejects arbitrary free-form dicts in response_schema)
@@ -297,7 +301,7 @@ class GeminiProvider(LLMProvider):
         for attempt in range(2):
             try:
                 loop = asyncio.get_running_loop()
-                response = await loop.run_in_executor(
+                response = await asyncio.wait_for(loop.run_in_executor(
                     None,
                     lambda: client.models.generate_content(
                         model=self.model_name,
@@ -305,9 +309,10 @@ class GeminiProvider(LLMProvider):
                         config={
                             "response_mime_type": "application/json",
                             "response_schema": target_schema,
+                            "temperature": 0.0,
                         },
                     ),
-                )
+                ), timeout=float(os.environ.get("LLM_TIMEOUT_S", "30")))
                 latency_ms = (time.time() - t0) * 1000.0
 
                 raw_text = response.text or "{}"
@@ -344,6 +349,9 @@ class GeminiProvider(LLMProvider):
 
             except Exception as e:
                 last_err = e
+                text = str(e)
+                if "429" in text or "RESOURCE_EXHAUSTED" in text or isinstance(e, asyncio.TimeoutError):
+                    raise RateLimited(f"Gemini unavailable ({type(e).__name__}); failing over") from None
                 if attempt == 0:
                     await asyncio.sleep(1.0)
                     continue
@@ -457,7 +465,7 @@ class GroqProvider(LLMProvider):
                         wait_s = float(m.group(1)) + 1.0
                     if wait_s > 2.0:
                         logger.warning("Groq rate limit wait %.1fs exceeds 2.0s threshold; aborting to trigger failover", wait_s)
-                        raise RuntimeError(f"Rate limit backoff {wait_s:.1f}s exceeds 2.0s threshold")
+                        raise RateLimited(f"Rate limit backoff {wait_s:.1f}s exceeds 2.0s threshold")
                     logger.warning(f"Groq 429 rate limit hit, backing off {wait_s:.1f}s...")
                     await asyncio.sleep(wait_s)
                     continue
@@ -501,6 +509,8 @@ class GroqProvider(LLMProvider):
 
                 return parsed_final  # type: ignore
 
+            except RateLimited:
+                raise
             except Exception as e:
                 last_err = e
                 if attempt < 2:
@@ -619,16 +629,70 @@ class FakeLLM(LLMProvider):
 # ------------------------------------------------------------------------------
 # Factory Function
 # ------------------------------------------------------------------------------
-def get_llm(
-    provider_name: str | None = None,
-    model_name: str | None = None,
-    cache_dir: Path | str | None = None,
-) -> LLMProvider:
-    provider = (provider_name or os.environ.get("LLM_PROVIDER") or "gemini").strip("\"'").lower()
+class OpenAICompatProvider(GroqProvider):
+    """Any OpenAI-compatible chat-completions endpoint (OpenRouter, Together, DeepSeek, Cerebras, a local server...).
+
+    Configure with OPENAI_COMPAT_BASE_URL, OPENAI_COMPAT_API_KEY and OPENAI_COMPAT_MODEL."""
+
+    def __init__(self, model_name: str | None = None, cache_dir: Path | str | None = None):
+        super().__init__(
+            model_name=model_name or os.environ.get("OPENAI_COMPAT_MODEL") or "gpt-4o-mini",
+            api_key=os.environ.get("OPENAI_COMPAT_API_KEY", ""),
+            cache_dir=cache_dir,
+            base_url=os.environ.get("OPENAI_COMPAT_BASE_URL", "https://api.openai.com/v1"),
+        )
+        self.limiter = TokenBucket(requests_per_minute=float(os.environ.get("OPENAI_COMPAT_RPM", "60")))
+
+
+_KEY_ENV = {"gemini": "GEMINI_API_KEY", "groq": "GROQ_API_KEY", "openai_compat": "OPENAI_COMPAT_API_KEY"}
+
+
+def _build(provider: str, model_name: str | None, cache_dir) -> LLMProvider:
     if provider == "fake":
         return FakeLLM(model_name or "fake-model", cache_dir)
     if provider == "gemini":
         return GeminiProvider(model_name, cache_dir=cache_dir)
     if provider == "groq":
         return GroqProvider(model_name, cache_dir=cache_dir)
+    if provider in ("openai_compat", "openai"):
+        return OpenAICompatProvider(model_name, cache_dir=cache_dir)
     raise ValueError(f"Unknown LLM_PROVIDER: {provider}")
+
+
+def _tier_model(provider: str, tier: str) -> str | None:
+    if tier == "strong":
+        return os.environ.get(f"{provider.upper()}_MODEL_STRONG") or None
+    return None
+
+
+def get_llm(
+    provider_name: str | None = None,
+    model_name: str | None = None,
+    cache_dir: Path | str | None = None,
+    tier: str = "fast",
+) -> LLMProvider:
+    """Primary provider, wrapped in a failover chain when LLM_FALLBACK_PROVIDER (or another configured key) exists.
+
+    tier="strong" uses <PROVIDER>_MODEL_STRONG when set (used for analysis interpretation); otherwise the default model."""
+    provider = (provider_name or os.environ.get("LLM_PROVIDER") or "gemini").strip("\"'").lower()
+    primary = _build(provider, model_name or _tier_model(provider, tier), cache_dir)
+    if provider_name is not None or provider == "fake":
+        return primary
+    fb = (os.environ.get("LLM_FALLBACK_PROVIDER") or "").strip("\"'").lower()
+    if not fb:  # sensible default: the other well-known provider, if its key is present
+        fb = next((p for p in ("groq", "gemini") if p != provider and os.environ.get(_KEY_ENV[p])), "")
+    if fb and fb != provider and fb in _KEY_ENV and os.environ.get(_KEY_ENV[fb]):
+        try:
+            return ChainedLLMProvider(primary, _build(fb, _tier_model(fb, tier), cache_dir))
+        except Exception as e:  # noqa: BLE001
+            logger.warning("fallback provider %s unavailable: %s", fb, e)
+    return primary
+
+
+def get_llm_pair() -> tuple[LLMProvider, LLMProvider]:
+    """(fast, strong) models. They are the same object unless a *_MODEL_STRONG variable is configured."""
+    fast = get_llm()
+    provider = (os.environ.get("LLM_PROVIDER") or "gemini").strip("\"'").lower()
+    if _tier_model(provider, "strong"):
+        return fast, get_llm(tier="strong")
+    return fast, fast

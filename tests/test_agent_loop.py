@@ -2,7 +2,7 @@
 import asyncio
 import pytest
 
-from agent.agent import AppPilotAgent
+from agent.legacy_agent import LegacyToolPlanAgent as AppPilotAgent  # baseline B3 (the tool-plan agent)
 from agent.llm import FakeLLM
 from backend.routes.session import set_agent
 from backend.sessions import create_session, get_session

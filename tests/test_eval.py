@@ -86,26 +86,8 @@ async def test_run_evaluation_end_to_end():
         ),
     ]
 
-    fake = FakeLLM()
-    # 1st task: nav plan
-    fake.queue_response(
-        Plan(
-            intent=Intent(name="set_state"),
-            steps=[ToolCall(tool="navigate", args={"page_id": "ops.orders"})],
-            allow_replan=False,
-        )
-    )
-    # 2nd task: refuse
-    fake.queue_response(
-        Plan(
-            intent=Intent(name="unsafe_action"),
-            steps=[],
-            clarifying_question="Deletion operations are not supported.",
-            allow_replan=False,
-        )
-    )
-
-    agent = AppPilotAgent(llm=fake)
+    # the V3 agent needs no LLM for a clear navigation command or a destructive request (rules + fast lane)
+    agent = AppPilotAgent(use_llm=False)
     summary, results = await run_evaluation(agent, tasks)
 
     assert summary.total_tasks == 2

@@ -120,6 +120,7 @@ class ApiCapability:
     data_layers: tuple[str, ...] = ()
     requires_confirmation: bool = False
     undoable: bool = False
+    examples: tuple[str, ...] = ()
 
 
 class CapabilityModel:
@@ -361,6 +362,7 @@ def build_capability_model() -> CapabilityModel:
                 data_layers=tuple(e.get("data_layers", ())),
                 requires_confirmation=e.get("requires_confirmation", False),
                 undoable=e.get("undoable", False),
+                examples=tuple(e.get("examples", ()) or ()),
             )
     except Exception:
         pass

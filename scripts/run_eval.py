@@ -1,17 +1,23 @@
-"""CLI script to run AppPilot benchmark evaluation and generate results/table.md."""
+"""CLI script to run the AppPilot benchmark and generate results/table.md.
+
+Systems compared (all on the same gold tasks):
+  AppPilot V3 (layered)  - the production agent;  V3 without LLM - rules + deterministic composition only
+  B3 tool-plan agent     - the previous LLM tool-planner (agent/legacy_agent.py)
+  B1 prompt stuffing / B2 RAG + tools without gates - the original baselines
+Numbers are produced by this run only; nothing here is a pre-computed result.
+"""
 import argparse
 import asyncio
-import os
 import sys
 from pathlib import Path
 
-# Ensure project root in sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from agent.agent import AppPilotAgent
-from agent.baselines import BaselineB0Agent, BaselineB1Agent, BaselineB2Agent
-from contracts.actions import AgentConfig
-from eval import format_benchmark_table, generate_gold_tasks, run_evaluation
+from agent.agent import AppPilotAgent  # noqa: E402
+from agent.baselines import BaselineB1Agent, BaselineB2Agent  # noqa: E402
+from agent.legacy_agent import LegacyToolPlanAgent  # noqa: E402
+from contracts.actions import AgentConfig  # noqa: E402
+from eval import format_benchmark_table, generate_gold_tasks, run_evaluation  # noqa: E402
 
 
 async def main():
@@ -19,48 +25,30 @@ async def main():
     parser.add_argument("--count", type=int, default=30, help="Number of gold tasks to evaluate")
     parser.add_argument("--seed", type=int, default=42, help="Random seed for gold tasks")
     parser.add_argument("--out", type=str, default="results/table.md", help="Output markdown path")
+    parser.add_argument("--skip-llm-baselines", action="store_true", help="only run the V3 systems")
     args = parser.parse_args()
 
-    print(f"Generating {args.count} gold tasks (seed={args.seed})...")
     tasks = generate_gold_tasks(count=args.count, seed=args.seed)
-    print(f"Loaded {len(tasks)} tasks.")
-
+    print(f"Loaded {len(tasks)} tasks (seed={args.seed}).")
+    cfg = AgentConfig(auto_confirm_writes=True)  # evaluation only: simulated user approval
     summaries = {}
 
-    # 1. Full Agent
-    print("\n[1/5] Evaluating Full AppPilot Agent...")
-    full_agent = AppPilotAgent()
-    summary_full, _ = await run_evaluation(full_agent, tasks, AgentConfig())
-    summaries["AppPilot (Full)"] = summary_full
-    print(f"  -> Success Rate: {summary_full.success_rate * 100:.1f}%")
+    print("\n[1] AppPilot V3 (layered, with LLM if a key is configured)...")
+    summaries["AppPilot V3"], _ = await run_evaluation(AppPilotAgent(), tasks, cfg)
+    print(f"  -> success {summaries['AppPilot V3'].success_rate * 100:.1f}%")
 
-    # 2. Ablation: No Validator
-    print("\n[2/5] Evaluating Ablation: Validator Disabled...")
-    summary_noval, _ = await run_evaluation(full_agent, tasks, AgentConfig(use_validator=False))
-    summaries["Ablation: No Validator"] = summary_noval
-    print(f"  -> Success Rate: {summary_noval.success_rate * 100:.1f}%")
+    print("\n[2] AppPilot V3 without LLM (rules + deterministic composition)...")
+    summaries["AppPilot V3, rules only"], _ = await run_evaluation(AppPilotAgent(use_llm=False), tasks, cfg)
+    print(f"  -> success {summaries['AppPilot V3, rules only'].success_rate * 100:.1f}%")
 
-    # 3. Ablation: No Verifier
-    print("\n[3/5] Evaluating Ablation: Verifier Disabled...")
-    summary_nover, _ = await run_evaluation(full_agent, tasks, AgentConfig(use_verifier=False))
-    summaries["Ablation: No Verifier"] = summary_nover
-    print(f"  -> Success Rate: {summary_nover.success_rate * 100:.1f}%")
+    if not args.skip_llm_baselines:
+        for name, agent, c in (("B3 tool-plan agent", LegacyToolPlanAgent(), AgentConfig(auto_confirm_writes=True)),
+                               ("B1 prompt stuffing", BaselineB1Agent(), None),
+                               ("B2 RAG + tools, no gates", BaselineB2Agent(), None)):
+            print(f"\n[*] {name}...")
+            summaries[name], _ = await run_evaluation(agent, tasks, c) if c else await run_evaluation(agent, tasks)
+            print(f"  -> success {summaries[name].success_rate * 100:.1f}%")
 
-    # 4. Baseline B1: Prompt Stuffing
-    print("\n[4/5] Evaluating Baseline B1 (Prompt Stuffing)...")
-    b1_agent = BaselineB1Agent()
-    summary_b1, _ = await run_evaluation(b1_agent, tasks)
-    summaries["Baseline B1 (Prompt Stuffing)"] = summary_b1
-    print(f"  -> Success Rate: {summary_b1.success_rate * 100:.1f}%")
-
-    # 5. Baseline B2: RAG + Tools Without Gates
-    print("\n[5/5] Evaluating Baseline B2 (RAG No Gates)...")
-    b2_agent = BaselineB2Agent()
-    summary_b2, _ = await run_evaluation(b2_agent, tasks)
-    summaries["Baseline B2 (RAG No Gates)"] = summary_b2
-    print(f"  -> Success Rate: {summary_b2.success_rate * 100:.1f}%")
-
-    # Generate Markdown Table
     table_md = format_benchmark_table(summaries)
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,180 @@
+{
+  "_about": "Tenant vocabulary for the AppPilot agent. Metric and dimension ids must exist in application.json; everything here is data, not code.",
+
+  "metric_synonyms": {
+    "revenue": ["sales", "sale", "gmv", "turnover", "income", "takings", "revenues", "money made", "business volume"],
+    "freight": ["shipping cost", "shipping costs", "freight cost", "freight costs", "delivery cost", "delivery costs", "shipping fee"],
+    "items_sold": ["items", "units sold", "units", "products sold", "line items"],
+    "orders": ["order volume", "number of orders", "order count", "purchases", "transactions"],
+    "customers": ["buyers", "shoppers", "unique customers", "customer count", "number of customers", "clients"],
+    "aov": ["average order value", "avg order value", "basket size", "average basket", "ticket medio", "average ticket", "order value", "average order size"],
+    "avg_delivery_days": ["delivery time", "delivery times", "delivery speed", "days to deliver", "shipping time", "average delivery time", "delivery duration", "lead time"],
+    "late_rate": ["late rate", "late delivery rate", "late deliveries", "delays", "delayed deliveries", "lateness", "sla breaches", "sla breach", "sla"],
+    "order_count": ["orders of any status", "all orders"],
+    "cancel_rate": ["cancellation rate", "cancellations", "cancelation rate", "cancel rate", "cancelled share", "cancellation"],
+    "order_late_rate": ["late order rate", "late orders rate"],
+    "payment_value": ["payments", "payments received", "money received", "amount paid", "payment volume"],
+    "payment_count": ["number of payments", "payment count"],
+    "avg_installments": ["installments", "average installments", "instalments"],
+    "review_count": ["number of reviews", "review count", "reviews received"],
+    "avg_review_score": ["review score", "review scores", "average rating", "rating", "ratings", "satisfaction", "customer satisfaction", "csat", "stars", "average review", "customer happiness"]
+  },
+
+  "dimension_synonyms": {
+    "customer_state": ["state", "states", "customer state", "customer states", "buyer state", "buyers state", "province", "provinces"],
+    "customer_region": ["region", "regions", "customer region", "macro region", "macro regions", "area", "areas"],
+    "seller_state": ["seller state", "seller states", "seller location", "vendor state", "merchant state", "seller region"],
+    "product_category": ["category", "categories", "product category", "product categories", "product type", "product types", "segment"],
+    "order_status": ["status", "statuses", "order status"],
+    "payment_type": ["payment method", "payment methods", "payment type", "payment types", "payment"],
+    "order_month": ["month", "months", "monthly", "per month", "by month", "calendar month"]
+  },
+
+  "state_names": {
+    "AC": ["acre"], "AL": ["alagoas"], "AP": ["amapa"], "AM": ["amazonas"], "BA": ["bahia"], "CE": ["ceara"],
+    "DF": ["distrito federal", "federal district", "brasilia"], "ES": ["espirito santo"], "GO": ["goias"],
+    "MA": ["maranhao"], "MT": ["mato grosso"], "MS": ["mato grosso do sul"], "MG": ["minas gerais", "minas"],
+    "PA": ["para state"], "PB": ["paraiba"], "PR": ["parana"], "PE": ["pernambuco"], "PI": ["piaui"],
+    "RJ": ["rio de janeiro", "rio"], "RN": ["rio grande do norte"], "RS": ["rio grande do sul"],
+    "RO": ["rondonia"], "RR": ["roraima"], "SC": ["santa catarina"], "SP": ["sao paulo"], "SE": ["sergipe"],
+    "TO": ["tocantins"]
+  },
+  "hard_ambiguous_state_codes": ["to", "go", "am", "al", "ma", "pa", "se", "pi", "ac", "ap", "ro", "es"],
+  "safe_lowercase_state_codes": ["sp", "rj", "mg", "pr", "sc", "rs", "df", "ba", "pe", "ce"],
+
+  "region_dimension": "customer_region",
+  "region_synonyms": {
+    "Southeast": ["southeast", "south east", "sudeste"],
+    "South": ["south", "sul"],
+    "Northeast": ["northeast", "north east", "nordeste"],
+    "North": ["north", "norte"],
+    "Central-West": ["central west", "center west", "centre west", "midwest", "mid west", "centro oeste"]
+  },
+
+  "region_states": {
+    "Southeast": ["SP", "RJ", "MG", "ES"],
+    "South": ["PR", "SC", "RS"],
+    "Northeast": ["BA", "PE", "CE", "MA", "PB", "RN", "AL", "PI", "SE"],
+    "Central-West": ["GO", "MT", "MS", "DF"],
+    "North": ["AM", "PA", "RO", "TO", "AC", "AP", "RR"]
+  },
+
+  "value_synonyms": {
+    "order_status": {
+      "canceled": ["cancelled", "canceled", "cancelled orders", "canceled orders"],
+      "delivered": ["delivered"],
+      "shipped": ["shipped", "in transit"],
+      "unavailable": ["unavailable"]
+    },
+    "payment_type": {
+      "credit_card": ["credit card", "credit cards", "card payments"],
+      "boleto": ["boleto", "bank slip", "boletos"],
+      "debit_card": ["debit card", "debit cards"],
+      "voucher": ["voucher", "vouchers"]
+    }
+  },
+
+  "cues": {
+    "explain": ["why", "reason", "reasons", "cause", "caused", "causes", "behind", "driver", "drivers", "drove", "explain", "explanation", "what happened", "how come", "root cause", "due to", "contributing", "contributed", "responsible", "culprit", "what is driving", "what's driving", "what led to", "what lead to", "what explains", "diagnose", "figure out"],
+    "compare": ["compare", "compared", "comparison", "comparing", "versus", "vs", "against", "difference between", "differ", "differs", "relative to", "than", "better than", "worse than", "outperform", "outperforming", "side by side"],
+    "trend": ["trend", "trends", "over time", "trajectory", "month over month", "mom", "year over year", "yoy", "growing", "growth", "declining", "evolution", "history", "historical", "timeline", "seasonal", "seasonality", "progress", "moved", "moving"],
+    "rank": ["top", "best", "highest", "largest", "biggest", "most", "leading", "bottom", "worst", "lowest", "least", "smallest", "rank", "ranking", "ranked"],
+    "change_down": ["drop", "dropped", "dropping", "decrease", "decreased", "decreasing", "decline", "declined", "fell", "fall", "fallen", "falling", "down", "lower", "slump", "slumped", "dip", "dipped", "reduced", "shrank", "shrink", "tank", "tanked", "worse", "slowdown", "weaker", "loss", "lost", "plunge", "plunged", "went down", "go down", "gone down"],
+    "change_up": ["increase", "increased", "increasing", "rise", "rose", "rising", "grew", "grow", "up", "higher", "jump", "jumped", "spike", "spiked", "improve", "improved", "improving", "surge", "surged", "better", "stronger", "went up", "go up", "gone up"],
+    "view": ["show", "open", "go to", "take me", "display", "view", "see", "navigate", "pull up", "bring up", "list", "find", "browse", "visit", "switch to", "load", "filter", "sort"],
+    "write": ["create", "add", "new", "register", "sign up", "signup", "submit", "raise", "file a", "restock", "reorder", "launch", "schedule", "assign", "resolve", "escalate", "onboard", "make a", "set up"],
+    "undo": ["undo", "revert", "roll back", "rollback", "take that back", "cancel that", "reverse that"],
+    "help": ["help", "what can you do", "how do i", "how can i", "what is this", "what does this", "what am i looking at", "capabilities", "guide me", "tutorial", "what can i ask"],
+    "decline": ["delete all", "drop table", "drop tables", "truncate", "wipe", "erase everything", "ignore previous instructions", "ignore all instructions", "ignore the instructions", "disregard instructions"],
+    "followup": ["what about", "how about", "same for", "and for", "now for", "also", "instead", "only", "now by", "now show", "and in", "and what about", "that one", "those", "the same", "and by"],
+    "question": ["what was", "what is", "what were", "how much", "how many", "what's", "whats", "which", "who", "where", "when", "tell me", "count", "total", "how is", "how are", "how did", "how was", "how do"],
+    "health": ["how are we doing", "how is business", "how is the business", "anything unusual", "what is unusual", "what's unusual", "any problems", "any issues", "anomaly", "anomalies", "overview of performance", "health check", "what needs attention", "red flags", "biggest changes", "what changed", "what has changed"]
+  },
+
+  "id_prefixes": {"TCK": "ticket", "RST": "restock_order", "PRM": "promotion", "FLG": "seller_flag"},
+  "default_hex_entity": "order",
+  "entity_highlights": ["order_status", "status", "is_late", "days_late", "days_overdue", "review_score", "priority", "assignee", "category", "categories", "customer_state", "items_value", "freight", "price", "stock", "quantity"],
+
+  "write_verbs": ["create", "register", "signup", "submit", "raise", "restock", "reorder", "launch", "onboard", "escalate", "assign", "resolve", "schedule", "enroll", "enrol", "approve", "reject", "reopen", "publish"],
+  "intent_phrases": ["i want to", "i need to", "i would like to", "i d like to", "id like to", "i wanna", "help me", "let s", "lets", "can you", "could you", "would you", "we need to", "we want to"],
+
+  "language": {
+    "_about": "English phrase lists used by the offline/fallback parser and the safety checks. The code contains no natural-language word lists: swap this block to change language or wording.",
+    "articles": ["a", "an", "another", "new", "one"],
+    "submit_phrases": ["submit", "confirm", "looks good", "look good", "go ahead", "create it", "save it", "do it", "send it", "proceed", "that's right", "thats right", "yes", "yep", "yeah", "okay", "ok", "sure", "file it", "raise it"],
+    "cancel_phrases": ["cancel", "discard", "never mind", "nevermind", "forget it", "forget about it", "abort", "scrap it", "scrap this", "clear the form", "start over"],
+    "resume_phrases": ["continue", "resume", "go back to", "back to"],
+    "destructive": {
+      "delete": ["all", "every", "the", "my", "our", "table", "tables", "database", "records", "data", "orders", "customers", "tickets"],
+      "truncate": ["all", "every", "the", "table", "tables", "database", "records", "data"],
+      "wipe": ["all", "every", "the", "my", "our", "database", "records", "data"],
+      "erase": ["all", "every", "the", "my", "our", "database", "records", "data"],
+      "destroy": ["all", "every", "the", "database", "records", "data"],
+      "drop": ["table", "tables", "database", "schema", "column"]
+    },
+    "injection_markers": ["review", "comment", "note", "message", "customer text", "ticket", "text"],
+    "ignore_instruction_phrases": ["ignore previous instructions", "ignore all instructions", "ignore the instructions", "ignore instructions", "ignore any instructions", "ignore above instructions", "ignore prior instructions", "disregard instructions", "disregard previous instructions"],
+    "screen_reference_phrases": ["this page", "this screen", "this view", "this chart", "this table", "this list", "this report", "these", "here", "on screen", "currently shown", "displayed", "visible", "current filter", "current filters", "current view"],
+    "screen_help_phrases": ["this page", "this screen", "looking at", "this chart", "this table"],
+    "pronouns": ["it", "this", "that", "same one", "the same", "same"],
+    "union_words": ["also", "add", "plus"],
+    "direction_up": ["rose", "rise", "rises", "rising", "increase*", "grew", "grow*", "up", "higher", "gain*", "improv*", "climb*", "jump*", "surg*"],
+    "direction_down": ["fell", "fall*", "drop*", "decreas*", "declin*", "down", "lower", "loss", "lost", "worse*", "slump*", "dip*", "shrank", "shrunk"],
+    "overconfident": ["prove", "proves", "proven", "proved", "definitely", "certainly", "undoubtedly", "guarantee*"],
+    "secret_field_markers": ["password", "passcode", "secret", "token", "card_number", "cvv", "pin"],
+    "free_text_field_markers": ["subject", "name", "title", "notes", "description", "message", "reason", "comment"],
+    "generic_values": ["other", "all", "none", "unknown", "default", "any"],
+    "generic_nouns": ["open", "with", "from", "into", "this", "that", "many", "bulk", "update", "create", "change", "order", "data", "record", "records", "item", "items", "thing", "things", "new", "list", "search"],
+    "view_verbs": ["show", "see", "list", "find", "what", "how", "which", "get", "view", "display", "search"],
+    "polite_words": ["please", "pls", "can", "could", "you", "would", "hey", "hi", "ok", "okay", "now", "then", "and"],
+    "baseline_markers_always": ["compared to", "compared with", "relative to", "versus", "vs", "than", "against"],
+    "baseline_markers_if_change": ["from", "since", "over"],
+    "group_markers": ["by", "per", "across", "each", "every"],
+    "group_phrases": ["split by", "broken down", "grouped by", "segmented by"],
+    "which_words": ["which", "what"],
+    "monthly_words": ["monthly", "month", "months"],
+    "seller_words": ["seller", "vendor", "merchant"],
+    "state_context_words": ["in", "from", "for", "of", "and", "vs", "versus", "state", "states", "to", "between", "compare", "than", "or", "with"]
+  },
+
+  "comparators": ["compared to", "compared with", "vs", "versus", "than", "relative to", "against", "from last", "since last", "over last", "from the previous", "from previous"],
+
+  "stopwords": ["a", "an", "the", "of", "for", "to", "in", "on", "at", "by", "and", "or", "is", "are", "was", "were", "be", "been", "with", "my", "me", "i", "we", "our", "us", "you", "your", "it", "its", "this", "that", "these", "those", "there", "here", "please", "pls", "can", "could", "would", "should", "do", "does", "did", "will", "just", "as", "from", "into", "about", "all", "any", "some", "also", "now", "then", "so", "if", "than", "like", "get", "give", "let", "us", "need", "want", "wanna", "lets", "tell", "show", "see", "know", "look", "check", "what", "which", "how", "much", "many", "who", "when", "where", "last", "past", "previous", "next", "per", "each", "every", "numbers", "number", "data", "info", "information", "stuff", "thing", "things", "report", "page", "screen", "view", "has", "have", "had", "having", "went", "go", "going", "gone", "get", "got", "made", "make", "overall", "total", "totals", "okay", "ok", "hey", "hi", "hello", "thanks", "thank"],
+
+  "identities": [
+    {"metric": "revenue", "factors": ["orders", "aov"], "kind": "product", "explain": "Revenue = orders x average order value"}
+  ],
+  "related_metrics": {
+    "revenue": ["orders", "aov", "items_sold", "customers", "cancel_rate", "late_rate", "avg_review_score", "avg_delivery_days", "freight"],
+    "orders": ["revenue", "aov", "customers", "cancel_rate", "late_rate", "avg_review_score"],
+    "aov": ["revenue", "orders", "items_sold", "freight"],
+    "items_sold": ["orders", "revenue", "aov"],
+    "customers": ["orders", "revenue", "avg_review_score", "late_rate"],
+    "late_rate": ["avg_delivery_days", "orders", "avg_review_score", "cancel_rate"],
+    "avg_delivery_days": ["late_rate", "orders", "avg_review_score"],
+    "avg_review_score": ["late_rate", "avg_delivery_days", "cancel_rate", "orders"],
+    "cancel_rate": ["order_count", "late_rate", "avg_review_score"],
+    "freight": ["revenue", "orders", "aov"]
+  },
+  "health_metrics": ["revenue", "orders", "aov", "customers", "late_rate", "avg_delivery_days", "avg_review_score", "cancel_rate"],
+  "materiality_pct": 5.0,
+  "skip_driver_dimensions": ["order_month"],
+  "dimension_parents": {"customer_state": "customer_region"},
+
+  "examples": [
+    {"q": "show late deliveries in RJ last month", "i": {"paraphrase": "Open the late deliveries view for Rio de Janeiro customers in the last calendar month", "intent": "view", "filters": [{"dimension": "customer_state", "values": ["RJ"]}], "periods": [{"role": "primary", "text": "last month"}]}},
+    {"q": "what was revenue last month", "i": {"paraphrase": "Total revenue in the last calendar month", "intent": "data", "shape": "single", "metric": "revenue", "periods": [{"role": "primary", "text": "last month"}]}},
+    {"q": "top 5 categories by sales this year", "i": {"paraphrase": "Five product categories with the highest revenue this year", "intent": "data", "shape": "rank", "metric": "revenue", "group_by": ["product_category"], "top_n": 5, "sort_dir": "desc", "periods": [{"role": "primary", "text": "this year"}]}},
+    {"q": "is the review score getting better", "i": {"paraphrase": "Monthly trend of the average review score", "intent": "data", "shape": "trend", "metric": "avg_review_score"}},
+    {"q": "SP vs RJ revenue in march 2018", "i": {"paraphrase": "Compare revenue of Sao Paulo and Rio de Janeiro customers in March 2018", "intent": "compare", "compare_kind": "slices", "metric": "revenue", "slices": [{"label": "SP", "filters": [{"dimension": "customer_state", "values": ["SP"]}]}, {"label": "RJ", "filters": [{"dimension": "customer_state", "values": ["RJ"]}]}], "periods": [{"role": "primary", "text": "march 2018"}]}},
+    {"q": "how did orders change compared to last quarter", "i": {"paraphrase": "Orders this quarter compared with last quarter", "intent": "compare", "compare_kind": "periods", "metric": "orders", "periods": [{"role": "primary", "text": "this quarter"}, {"role": "baseline", "text": "last quarter"}]}},
+    {"q": "give me the reason sales dropped from last month", "i": {"paraphrase": "Explain what drove the change in revenue between last month and this month", "intent": "explain", "metric": "revenue", "expected_direction": "down", "compare_kind": "periods", "periods": [{"role": "baseline", "text": "last month"}]}},
+    {"q": "why are customers unhappy", "i": {"paraphrase": "Explain the drivers of the review score", "intent": "explain", "metric": "avg_review_score", "expected_direction": "down"}},
+    {"q": "how are we doing overall", "i": {"paraphrase": "Health check across the main business metrics", "intent": "investigate"}},
+    {"q": "I want to open a ticket for order E481F51C it was damaged", "i": {"paraphrase": "Draft a support ticket for order E481F51C, category damaged item", "intent": "act", "write_api": "tickets.create", "form_action": "fill", "fields": [{"name": "order_id", "value": "E481F51C"}, {"name": "category", "value": "damaged_item"}]}},
+    {"q": "and for RJ", "i": {"paraphrase": "Same request as before, now for Rio de Janeiro", "intent": "data", "follow_up": true, "filters": [{"dimension": "customer_state", "values": ["RJ"]}]}},
+    {"q": "show sales", "i": {"paraphrase": "Ambiguous: sales overview page or a revenue figure", "intent": "clarify", "clarification": "Do you want the Sales overview page, total revenue for a period, or revenue broken down by something?"}},
+    {"q": "delete all orders from 2017", "i": {"paraphrase": "Destructive request", "intent": "decline", "decline_reason": "AppPilot cannot delete records; historical orders are read-only."}},
+    {"q": "what can you do", "i": {"paraphrase": "Explain capabilities", "intent": "help", "help_topic": "capabilities"}}
+  ]
+}

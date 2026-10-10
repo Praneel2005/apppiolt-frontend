@@ -119,6 +119,14 @@ class AgentConfig(_Model):
     max_plan_retries: int = 2
     max_replans: int = 2
     max_tool_retries: int = 1
+    # V3 agent: writes are NEVER approved on the user's behalf unless this is set (tests / evaluation only)
+    auto_confirm_writes: bool = False
+    # V3 agent: after answering a data question, open the page that shows the same numbers (when one exists exactly)
+    open_supporting_view: bool = True
+    # V3 agent: let the LLM write an interpretation on top of the deterministic analysis
+    use_synthesis: bool = True
+    # V3 agent: skip the LLM for clear navigation commands (faster, but keyword-based). Off by default: the model decides.
+    use_fast_lane: bool = False
     # ablation switches (evaluation turns these off one at a time)
     use_validator: bool = True
     use_verifier: bool = True
