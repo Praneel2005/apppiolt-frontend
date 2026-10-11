@@ -6,9 +6,9 @@ import { useStore } from '../state/store'
 function PageLink({ page, active }: { page: Page; active: boolean }) {
   return (
     <a href={page.route} onClick={(e) => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); goToPage(page.page_id) }}
-      className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-md text-sm ${active ? 'bg-primary-soft text-primary font-medium' : 'text-ink hover:bg-page'}`}>
+      className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-[13px] border-l-2 transition-colors ${active ? 'bg-white/12 text-white font-medium border-accent' : 'text-white/75 hover:bg-white/8 hover:text-white border-transparent'}`}>
       <span className="truncate">{page.title}</span>
-      {page.page_code && <span className="text-[10px] font-mono text-muted shrink-0">{page.page_code}</span>}
+      {page.page_code && <span className="text-[10px] font-mono text-white/40 shrink-0">{page.page_code}</span>}
     </a>
   )
 }
@@ -41,28 +41,28 @@ export function LeftNav() {
   const activeModule = app.pages.find((p) => p.page_id === activeId)?.directory.split('/')[0]
 
   return (
-    <aside className="w-64 shrink-0 bg-surface border-r border-border flex flex-col h-full">
-      <div className="px-4 py-4 border-b border-border">
+    <aside className="w-64 shrink-0 bg-primary-deep text-white flex flex-col h-full">
+      <div className="px-4 pt-5 pb-4 border-b border-white/10">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-primary grid place-items-center text-white text-sm font-bold">A</div>
-          <div><div className="text-sm font-semibold leading-4">AppPilot</div><div className="text-[11px] text-muted leading-4">Olist Seller Operations</div></div>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-accent to-[#d9b45a] grid place-items-center text-primary-deep text-sm font-bold shadow-sm">A</div>
+          <div><div className="text-sm font-semibold leading-4 tracking-tight">AppPilot</div><div className="text-[11px] text-white/55 leading-4">Olist Seller Operations</div></div>
         </div>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Find a page…  (e.g. P-300, tickets)"
-          className="mt-3 w-full border border-border rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
+          className="mt-4 w-full bg-white/8 border border-white/15 text-white placeholder:text-white/45 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-2 focus:ring-accent/50 focus:bg-white/12" />
       </div>
-      <nav className="flex-1 overflow-auto scroll-thin px-2 py-2 space-y-3">
+      <nav className="flex-1 overflow-auto scroll-dark px-2.5 py-3 space-y-4">
         {ops.map((m) => {
           const pages = (byModule.get(m.module_id) ?? []).filter(match)
           if (!pages.length) return null
           return (
             <div key={m.module_id}>
-              <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">{m.title}</div>
+              <div className="px-3 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white/40">{m.title}</div>
               {pages.map((p) => <PageLink key={p.page_id} page={p} active={p.page_id === activeId} />)}
             </div>
           )
         })}
         <div>
-          <button className="w-full px-3 pb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-muted"
+          <button className="w-full px-3 pb-1.5 flex items-center justify-between text-[10.5px] font-semibold uppercase tracking-[0.08em] text-white/40 hover:text-white/70"
             onClick={() => setReportsOpen(!reportsOpen)}>
             <span>Reports library</span><span>{reportsOpen || term ? '▾' : '▸'}</span>
           </button>
@@ -73,11 +73,11 @@ export function LeftNav() {
             return (
               <div key={m.module_id} className="mb-1">
                 <button onClick={() => setOpen({ ...open, [m.module_id]: !isOpen })}
-                  className="w-full flex items-center justify-between px-3 py-1.5 text-sm font-medium text-ink hover:bg-page rounded-md">
-                  <span>{m.title}</span><span className="text-xs text-muted">{pages.length} {isOpen ? '▾' : '▸'}</span>
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-[13px] font-medium text-white/90 hover:bg-white/8 rounded-lg">
+                  <span>{m.title}</span><span className="text-xs text-white/40">{pages.length} {isOpen ? '▾' : '▸'}</span>
                 </button>
                 {isOpen && (
-                  <div className="ml-2 border-l border-border pl-1">
+                  <div className="ml-3 mt-0.5 border-l border-white/12 pl-1.5 space-y-0.5">
                     {pages.map((p) => <PageLink key={p.page_id} page={p} active={p.page_id === activeId} />)}
                   </div>
                 )}

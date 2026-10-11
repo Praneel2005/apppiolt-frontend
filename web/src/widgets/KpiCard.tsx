@@ -11,8 +11,9 @@ export function KpiCard({ widget, page }: { widget: Widget; page: Page }) {
   const value = data?.rows[0]?.[metricId]
   return (
     <WidgetCard widget={widget} loading={loading} error={error}>
-      <div className="text-[28px] leading-9 font-semibold text-ink tabular-nums">{formatUnit(value, metric?.unit ?? '')}</div>
-      <div className="text-xs text-muted mt-1">{metric?.title ?? metricId}{metric?.unit && metric.unit !== 'count' && metric.unit !== 'ratio' && metric.unit !== 'score' ? ` · ${metric.unit}` : ''}</div>
+      <div className="w-8 h-1 rounded-full bg-accent mb-3" />
+      <div className="text-[30px] leading-9 font-semibold tracking-tight text-primary tabular-nums">{formatUnit(value, metric?.unit ?? '')}</div>
+      <div className="text-xs text-muted mt-1.5">{metric?.title ?? metricId}{metric?.unit && metric.unit !== 'count' && metric.unit !== 'ratio' && metric.unit !== 'score' ? ` · ${metric.unit}` : ''}</div>
     </WidgetCard>
   )
 }

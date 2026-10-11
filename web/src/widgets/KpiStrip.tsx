@@ -10,14 +10,14 @@ export function KpiStrip({ widget, page }: { widget: Widget; page: Page }) {
   return (
     <section data-widget-id={widget.widget_id} title={widget.description} className="relative">
       {error ? (
-        <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg p-3">⚠ {error}</div>
+        <div className="text-sm text-danger bg-danger-soft border border-danger/20 rounded-lg p-3">⚠ {error}</div>
       ) : (
         <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${cols.length}, minmax(0, 1fr))` }}>
           {cols.map((c) => (
-            <div key={c.name} className="bg-surface border border-border rounded-xl shadow-sm px-4 py-3 min-w-0">
-              <div className="text-xs text-muted truncate">{c.title}</div>
-              {loading ? <div className="h-8 mt-1 rounded bg-slate-100 animate-pulse" /> : (
-                <div className="text-2xl font-semibold text-ink tabular-nums mt-0.5 truncate">{formatCell(row?.[c.name], c)}</div>
+            <div key={c.name} className="card ap-rise px-5 py-4 min-w-0">
+              <div className="w-6 h-1 rounded-full bg-accent mb-2" /><div className="text-xs text-muted truncate">{c.title}</div>
+              {loading ? <div className="h-8 mt-1 rounded bg-primary-mist animate-pulse" /> : (
+                <div className="text-2xl font-semibold tracking-tight text-primary tabular-nums mt-0.5 truncate">{formatCell(row?.[c.name], c)}</div>
               )}
             </div>
           ))}

@@ -19,22 +19,22 @@ export function TopBar({ onToggleAgent, agentOpen }: { onToggleAgent: () => void
     } catch (e) { toast('error', String(e)) }
   }
   return (
-    <header className="h-12 shrink-0 bg-surface border-b border-border flex items-center justify-between px-4 gap-3">
-      <div className="flex items-center gap-3 text-xs text-muted">
+    <header className="h-14 shrink-0 bg-surface/90 backdrop-blur border-b border-border flex items-center justify-between px-5 gap-3">
+      <div className="flex items-center gap-4 text-xs text-muted">
         <span className="flex items-center gap-1.5"><span className={`w-2 h-2 rounded-full ${dot}`} />{link === 'open' ? 'Live' : link === 'connecting' ? 'Connecting…' : 'Offline'}</span>
         <span>Data as of <b className="text-ink">{app?.as_of_date}</b></span>
         <span title="Backend calls made by this page">API calls <b className="text-ink tabular-nums">{calls}</b></span>
         {verify && (
-          <span className={`px-2 py-0.5 rounded-full ${verify.ok ? 'bg-green-50 text-green-700' : 'bg-red-50 text-danger'}`}
+          <span className={`px-2.5 py-1 rounded-full font-medium ${verify.ok ? 'bg-success-soft text-success' : 'bg-danger-soft text-danger'}`}
             title={verify.ok ? 'The backend verified the screen matches the requested state' : JSON.stringify(verify.mismatches).slice(0, 400)}>
             {verify.ok ? '✓ screen verified' : '✕ mismatch caught'}
           </span>
         )}
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={undo} className="px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-page" title="Go back to the previous screen state">↶ Undo view</button>
-        <button onClick={() => void newSession()} className="px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-page">New session</button>
-        <button onClick={onToggleAgent} className={`px-3 py-1.5 text-sm rounded-lg ${agentOpen ? 'bg-primary text-white' : 'border border-primary text-primary hover:bg-primary-soft'}`}>✦ Assistant</button>
+        <button onClick={undo} className="btn" title="Go back to the previous screen state">↶ Undo view</button>
+        <button onClick={() => void newSession()} className="btn">New session</button>
+        <button onClick={onToggleAgent} className={`btn ${agentOpen ? 'btn-primary' : 'border-primary! text-primary! hover:bg-primary-soft!'}`}>✦ Assistant</button>
       </div>
     </header>
   )

@@ -1,12 +1,13 @@
 /** Bar and line charts for both widget kinds: metric widgets (dimension + metric) and API widgets (source.chart). */
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { formatCell, formatCompact, formatDay, formatMonth, formatUnit, humanize } from '../lib/format'
+import { CHART, PALETTE, TOOLTIP } from '../lib/theme'
 import type { Column, Page, Widget } from '../lib/types'
 import { useStore } from '../state/store'
 import { useWidget, WidgetCard } from './widgetBase'
 
-export const PALETTE = ['#4F46E5', '#F59E0B', '#10B981', '#EF4444', '#0EA5E9']
-const PIE_COLORS = ['#4F46E5', '#F59E0B', '#10B981', '#EF4444', '#0EA5E9', '#8B5CF6', '#EC4899', '#94A3B8']
+export { PALETTE }
+const PIE_COLORS = PALETTE
 const MAX_BARS = 30
 const MAX_SLICES = 7
 
@@ -20,7 +21,7 @@ function Donut({ slices, fmt, centerFmt }: { slices: { name: string; value: numb
             <Pie data={slices} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="96%" paddingAngle={1} stroke="none">
               {slices.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
             </Pie>
-            <Tooltip formatter={(v: any, n: any) => [fmt(Number(v)), n]} contentStyle={{ border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12 }} />
+            <Tooltip formatter={(v: any, n: any) => [fmt(Number(v)), n]} {...TOOLTIP} />
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 grid place-items-center pointer-events-none">
@@ -89,28 +90,28 @@ export function ChartWidget({ widget, page }: { widget: Widget; page: Page }) {
     )
   }
   const height = isLine ? 260 : Math.max(200, shown.length * (series.length > 1 ? 36 : 26) + 50)
-  const tip = { contentStyle: { border: '1px solid #E2E8F0', borderRadius: 8, fontSize: 12 }, labelStyle: { fontWeight: 600 } }
+  const tip = TOOLTIP
   return (
     <WidgetCard widget={widget} loading={loading} error={error} empty={empty}
       right={!isLine && rows.length > MAX_BARS ? <span className="text-[11px] text-muted">top {MAX_BARS} of {rows.length}</span> : null}>
       <ResponsiveContainer width="100%" height={height}>
         {isLine ? (
           <LineChart data={shown} margin={{ left: 4, right: 16, top: 8, bottom: 4 }}>
-            <CartesianGrid stroke="#F1F5F9" vertical={false} />
-            <XAxis dataKey="__x" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-            <YAxis tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} width={64} tickFormatter={(v: number) => series[0].compact(v)} />
+            <CartesianGrid stroke={CHART.grid} strokeDasharray="3 4" vertical={false} />
+            <XAxis dataKey="__x" tick={{ fontSize: 11, fill: CHART.axis }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+            <YAxis tick={{ fontSize: 11, fill: CHART.axis }} axisLine={false} tickLine={false} width={64} tickFormatter={(v: number) => series[0].compact(v)} />
             <Tooltip {...tip} formatter={(v: any, name: any) => { const s = series.find((q) => q.key === name); return [s ? s.fmt(v) : v, s?.label ?? humanize(String(name))] }} />
             {series.length > 1 && <Legend formatter={(n: any) => series.find((q) => q.key === n)?.label ?? n} wrapperStyle={{ fontSize: 12 }} />}
-            {series.map((s, i) => <Line key={s.key} type="monotone" dataKey={s.key} stroke={PALETTE[i % 5]} strokeWidth={2} dot={shown.length < 20} connectNulls={false} />)}
+            {series.map((s, i) => <Line key={s.key} type="monotone" dataKey={s.key} stroke={PALETTE[i % PALETTE.length]} strokeWidth={2.5} dot={shown.length < 20 ? { r: 3, fill: '#fff', strokeWidth: 2 } : false} activeDot={{ r: 5 }} connectNulls={false} />)}
           </LineChart>
         ) : (
           <BarChart data={shown} layout="vertical" margin={{ left: 0, right: 24, top: 4, bottom: 4 }}>
-            <CartesianGrid stroke="#F1F5F9" horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 11, fill: '#64748B' }} axisLine={false} tickLine={false} tickFormatter={(v: number) => series[0].compact(v)} />
-            <YAxis type="category" dataKey="__x" width={120} tick={{ fontSize: 12, fill: '#0F172A' }} axisLine={false} tickLine={false} interval={0} />
+            <CartesianGrid stroke={CHART.grid} strokeDasharray="3 4" horizontal={false} />
+            <XAxis type="number" tick={{ fontSize: 11, fill: CHART.axis }} axisLine={false} tickLine={false} tickFormatter={(v: number) => series[0].compact(v)} />
+            <YAxis type="category" dataKey="__x" width={120} tick={{ fontSize: 12, fill: CHART.label }} axisLine={false} tickLine={false} interval={0} />
             <Tooltip {...tip} formatter={(v: any, name: any) => { const s = series.find((q) => q.key === name); return [s ? s.fmt(v) : v, s?.label ?? humanize(String(name))] }} />
             {series.length > 1 && <Legend formatter={(n: any) => series.find((q) => q.key === n)?.label ?? n} wrapperStyle={{ fontSize: 12 }} />}
-            {series.map((s, i) => <Bar key={s.key} dataKey={s.key} fill={PALETTE[i % 5]} radius={[0, 4, 4, 0]} barSize={series.length > 1 ? 12 : 16} />)}
+            {series.map((s, i) => <Bar key={s.key} dataKey={s.key} fill={PALETTE[i % PALETTE.length]} radius={[0, 6, 6, 0]} barSize={series.length > 1 ? 12 : 16} background={{ fill: CHART.track, radius: 6 }} />)}
           </BarChart>
         )}
       </ResponsiveContainer>
