@@ -46,22 +46,22 @@ export function PageView({ page }: { page: Page }) {
     catch { toast('info', location.href) }
   }
   return (
-    <div className="flex flex-col gap-4 p-6 max-w-[1500px]">
+    <div className="flex flex-col gap-5 px-8 py-7 max-w-[1500px]">
       <div>
-        <div className="text-xs text-muted">{mod?.title}{leaf && leaf.path !== mod?.module_id ? ` › ${leaf.title.replace(mod?.title ?? '', '').trim() || leaf.title}` : ''}</div>
+        <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-accent-ink">{mod?.title}{leaf && leaf.path !== mod?.module_id ? ` › ${leaf.title.replace(mod?.title ?? '', '').trim() || leaf.title}` : ''}</div>
         <div className="flex items-start justify-between gap-4 mt-0.5">
           <div className="min-w-0">
-            <h1 className="text-xl font-semibold text-ink flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-ink flex items-center gap-2.5">
               {page.title}
-              {page.page_code && <span className="text-[11px] font-mono font-normal text-muted bg-surface border border-border rounded px-1.5 py-0.5" title={page.page_id}>{page.page_code}</span>}
+              {page.page_code && <span className="text-[11px] font-mono font-normal text-muted bg-surface border border-border rounded-md px-1.5 py-0.5" title={page.page_id}>{page.page_code}</span>}
             </h1>
-            <p className="text-sm text-muted mt-1 max-w-3xl">{page.description}</p>
+            <p className="text-sm text-muted mt-1.5 max-w-3xl leading-relaxed">{page.description}</p>
           </div>
           <div className="flex gap-2 shrink-0">
-            <button onClick={copyLink} className="px-3 py-1.5 text-sm rounded-lg border border-border bg-white hover:bg-page">Copy link</button>
+            <button onClick={copyLink} className="btn">Copy link</button>
             {page.actions.map((a) => (
               <button key={a.action_id} onClick={() => runAction(a)} title={a.description}
-                className="px-3 py-1.5 text-sm rounded-lg bg-primary text-white hover:bg-primary-hover">+ {a.label}</button>
+                className="btn btn-primary">+ {a.label}</button>
             ))}
           </div>
         </div>

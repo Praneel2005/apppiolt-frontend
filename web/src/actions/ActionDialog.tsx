@@ -98,7 +98,7 @@ export function ActionDialog() {
   return (
     // an assistant-filled form leaves the chat panel free, so the user can keep talking to it while this is open
     <div className={agent ? 'fixed top-0 left-0 bottom-0 right-[400px] z-40 flex items-center justify-center p-4 pointer-events-none'
-                          : 'fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4'} onClick={agent ? undefined : close}>
+                          : 'fixed inset-0 z-50 bg-primary-deep/50 flex items-center justify-center p-4'} onClick={agent ? undefined : close}>
       <div className={`bg-surface rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-auto ${agent ? 'pointer-events-auto border-2 border-primary/30' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="px-5 pt-4 pb-3 border-b border-border">
           <div className="text-[11px] uppercase tracking-wide text-muted">{req.entry.entity.replace('_', ' ')} · {req.entry.api_id}</div>
@@ -112,7 +112,7 @@ export function ActionDialog() {
             <>
               {fields.length === 0 && <p className="text-sm text-muted">No further input needed.</p>}
               {fields.map((f) => (
-                <div key={f.name} className={agent && agent.errors[f.name] ? 'rounded-lg ring-1 ring-red-300 p-1.5 -m-1.5' : agent && agent.missing.includes(f.name) ? 'rounded-lg ring-1 ring-amber-300 p-1.5 -m-1.5' : ''}>
+                <div key={f.name} className={agent && agent.errors[f.name] ? 'rounded-lg ring-1 ring-danger/40 p-1.5 -m-1.5' : agent && agent.missing.includes(f.name) ? 'rounded-lg ring-1 ring-warning/40 p-1.5 -m-1.5' : ''}>
                   <FieldInput f={f} value={values[f.name]} onChange={(v) => setValues({ ...values, [f.name]: v })} onCommit={agent ? (v) => sync(f.name, v) : undefined} />
                   {agent?.errors[f.name] && <div className="text-[11px] text-danger mt-0.5">{agent.errors[f.name]}</div>}
                   {agent && !agent.errors[f.name] && agent.missing.includes(f.name) && <div className="text-[11px] text-warning mt-0.5">still needed</div>}
@@ -138,7 +138,7 @@ export function ActionDialog() {
               <>
                 {req.form || fields.length > 0 ? <button className="px-3 py-1.5 text-sm rounded-lg border border-border hover:bg-page" onClick={() => setStep('input')} disabled={step === 'applying'}>Back</button> : null}
                 <button disabled={step === 'applying'} onClick={confirm}
-                  className={`px-3 py-1.5 text-sm rounded-lg text-white ${req.style === 'danger' ? 'bg-danger hover:bg-red-700' : 'bg-primary hover:bg-primary-hover'}`}>
+                  className={`px-3 py-1.5 text-sm rounded-lg text-white ${req.style === 'danger' ? 'bg-danger hover:brightness-90' : 'bg-primary hover:bg-primary-hover'}`}>
                   {step === 'applying' ? 'Saving…' : 'Confirm'}
                 </button>
               </>
@@ -179,7 +179,7 @@ export function FieldInput({ f, value, onChange, onCommit }: { f: Field; value: 
 function ErrorBox({ error }: { error: ApiError | string }) {
   const e = typeof error === 'string' ? null : error
   return (
-    <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg p-3">
+    <div className="text-sm text-danger bg-danger-soft border border-danger/20 rounded-lg p-3">
       <div className="font-medium">{e ? e.message : error as string}</div>
       {e?.body.did_you_mean?.length ? <div className="text-xs mt-1">Did you mean: {e.body.did_you_mean.join(', ')}?</div> : null}
       {e?.body.allowed?.length ? <div className="text-xs mt-1">Allowed: {e.body.allowed.slice(0, 12).join(', ')}</div> : null}
@@ -194,7 +194,7 @@ const SHOW_FIRST = ['code', 'status', 'priority', 'category', 'quantity', 'produ
 export function Preview({ res }: { res: WriteResult }) {
   return (
     <div className="space-y-3">
-      <div className="text-xs font-medium text-warning bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+      <div className="text-xs font-medium text-warning bg-warning-soft border border-warning/20 rounded-lg px-3 py-2">
         Preview: {res.changes.length} {res.changes.length === 1 ? 'record' : 'records'} would change
       </div>
       {res.changes.map((c, i) => <ChangeCard key={i} c={c} />)}

@@ -5,17 +5,17 @@ import { runApi } from '../actions/runner'
 import { formatCell, formatCompact, humanize } from '../lib/format'
 import type { CanvasSpec } from '../lib/types'
 import { useStore } from '../state/store'
-import { PALETTE } from '../widgets/ChartWidget'
+import { CHART, PALETTE, TOOLTIP } from '../lib/theme'
 
 function CanvasCard({ c, onClose }: { c: CanvasSpec; onClose: () => void }) {
   const cols = c.columns
   const colOf = (n: string) => cols.find((x) => x.name === n)
   const fmtY = (n: string, v: unknown) => formatCell(v, colOf(n) ?? { type: 'number', unit: '', name: n })
   return (
-    <section className="bg-surface border-2 border-primary/30 rounded-xl shadow-sm">
+    <section className="card ap-rise border-2 border-accent/40!">
       <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2">
         <div>
-          <div className="text-[11px] uppercase tracking-wide text-primary font-semibold">Generated on the fly · {c.kind}</div>
+          <div className="text-[11px] uppercase tracking-wide text-accent-ink font-semibold">Generated on the fly · {c.kind}</div>
           <h3 className="text-sm font-semibold text-ink">{c.title}</h3>
           {c.subtitle && <p className="text-xs text-muted">{c.subtitle}</p>}
         </div>
@@ -37,17 +37,17 @@ function CanvasCard({ c, onClose }: { c: CanvasSpec; onClose: () => void }) {
           <ResponsiveContainer width="100%" height={c.chart_type === 'line_chart' ? 260 : Math.max(200, c.rows.length * 28 + 50)}>
             {c.chart_type === 'line_chart' ? (
               <LineChart data={c.rows} margin={{ left: 4, right: 16, top: 8 }}>
-                <CartesianGrid stroke="#F1F5F9" vertical={false} /><XAxis dataKey={c.chart.x} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                <CartesianGrid stroke={CHART.grid} strokeDasharray="3 4" vertical={false} /><XAxis dataKey={c.chart.x} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11 }} axisLine={false} tickLine={false} width={60} tickFormatter={(v: number) => formatCompact(v, '')} />
-                <Tooltip formatter={(v: any, n: any) => [fmtY(String(n), v), humanize(String(n))]} />{c.chart.y.length > 1 && <Legend />}
-                {c.chart.y.map((y, i) => <Line key={y} dataKey={y} stroke={PALETTE[i % 5]} strokeWidth={2} />)}
+                <Tooltip {...TOOLTIP} formatter={(v: any, n: any) => [fmtY(String(n), v), humanize(String(n))]} />{c.chart.y.length > 1 && <Legend />}
+                {c.chart.y.map((y, i) => <Line key={y} dataKey={y} stroke={PALETTE[i % PALETTE.length]} strokeWidth={2.5} />)}
               </LineChart>
             ) : (
               <BarChart data={c.rows} layout="vertical" margin={{ left: 0, right: 24 }}>
-                <CartesianGrid stroke="#F1F5F9" horizontal={false} /><XAxis type="number" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatCompact(v, '')} />
+                <CartesianGrid stroke={CHART.grid} strokeDasharray="3 4" horizontal={false} /><XAxis type="number" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => formatCompact(v, '')} />
                 <YAxis type="category" dataKey={c.chart.x} width={120} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} interval={0} />
-                <Tooltip formatter={(v: any, n: any) => [fmtY(String(n), v), humanize(String(n))]} />{c.chart.y.length > 1 && <Legend />}
-                {c.chart.y.map((y, i) => <Bar key={y} dataKey={y} fill={PALETTE[i % 5]} radius={[0, 4, 4, 0]} barSize={16} />)}
+                <Tooltip {...TOOLTIP} formatter={(v: any, n: any) => [fmtY(String(n), v), humanize(String(n))]} />{c.chart.y.length > 1 && <Legend />}
+                {c.chart.y.map((y, i) => <Bar key={y} dataKey={y} fill={PALETTE[i % PALETTE.length]} radius={[0, 6, 6, 0]} barSize={16} background={{ fill: CHART.track, radius: 6 }} />)}
               </BarChart>
             )}
           </ResponsiveContainer>
@@ -56,7 +56,7 @@ function CanvasCard({ c, onClose }: { c: CanvasSpec; onClose: () => void }) {
           <div className="overflow-auto max-h-80 scroll-thin">
             <table className="w-full text-sm">
               <thead><tr>{cols.map((x) => <th key={x.name} className="text-left text-xs font-semibold text-muted px-3 py-2 bg-page whitespace-nowrap">{x.title}</th>)}</tr></thead>
-              <tbody>{c.rows.map((r, i) => <tr key={i} className="border-t border-slate-100">{cols.map((x) => <td key={x.name} className="px-3 py-1.5 whitespace-nowrap tabular-nums">{formatCell(r[x.name], x)}</td>)}</tr>)}</tbody>
+              <tbody>{c.rows.map((r, i) => <tr key={i} className="border-t border-border/60">{cols.map((x) => <td key={x.name} className="px-3 py-1.5 whitespace-nowrap tabular-nums">{formatCell(r[x.name], x)}</td>)}</tr>)}</tbody>
             </table>
           </div>
         )}
@@ -77,7 +77,7 @@ export function CanvasArea() {
   }, [all, page])
   if (!canvases.length) return null
   return (
-    <div className="px-6 pt-4 space-y-3 max-w-[1500px]">
+    <div className="px-8 pt-5 space-y-3 max-w-[1500px]">
       {canvases.slice(-2).map((c) => <CanvasCard key={c.canvas_id} c={c} onClose={() => useStore.setState((s) => ({ canvases: s.canvases.filter((x) => x.canvas_id !== c.canvas_id) }))} />)}
     </div>
   )

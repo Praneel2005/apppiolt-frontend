@@ -81,17 +81,17 @@ export function WidgetCard({ widget, loading, error, empty, right, children, cla
   widget: Widget; loading?: boolean; error?: string | null; empty?: boolean; right?: ReactNode; children: ReactNode; className?: string
 }) {
   return (
-    <section data-widget-id={widget.widget_id} className={`bg-surface border border-border rounded-xl shadow-sm flex flex-col min-w-0 ${className}`}>
-      <header className="flex items-start justify-between gap-2 px-4 pt-3 pb-2">
+    <section data-widget-id={widget.widget_id} className={`card ap-rise flex flex-col min-w-0 ${className}`}>
+      <header className="flex items-start justify-between gap-2 px-5 pt-4 pb-2">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-ink truncate" title={widget.description}>{widget.title}</h3>
+          <h3 className="text-[13px] font-semibold tracking-tight text-ink truncate" title={widget.description}>{widget.title}</h3>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {right}
           {widget.widget_code && <span className="text-[10px] font-mono text-muted bg-page border border-border rounded px-1.5 py-0.5" title={widget.widget_id}>{widget.widget_code}</span>}
         </div>
       </header>
-      <div className="px-4 pb-4 flex-1 min-h-0">
+      <div className="px-5 pb-5 flex-1 min-h-0">
         {loading ? <Skeleton /> : error ? <ErrorBox message={error} /> : empty ? <Empty /> : children}
       </div>
     </section>
@@ -100,13 +100,13 @@ export function WidgetCard({ widget, loading, error, empty, right, children, cla
 
 function Skeleton() {
   return (
-    <div className="space-y-2 animate-pulse py-1">
-      <div className="h-5 bg-slate-100 rounded w-3/4" /><div className="h-5 bg-slate-100 rounded w-1/2" /><div className="h-5 bg-slate-100 rounded w-2/3" />
+    <div className="space-y-2.5 animate-pulse py-1">
+      <div className="h-5 bg-primary-soft rounded-md w-3/4" /><div className="h-5 bg-primary-soft rounded-md w-1/2" /><div className="h-5 bg-primary-soft rounded-md w-2/3" />
     </div>
   )
 }
 function ErrorBox({ message }: { message: string }) {
-  return <div className="text-sm text-danger bg-red-50 border border-red-100 rounded-lg p-3">⚠ {message}</div>
+  return <div className="text-sm text-danger bg-danger-soft border border-danger/20 rounded-lg p-3">⚠ {message}</div>
 }
 function Empty() {
   return <div className="text-sm text-muted py-6 text-center">No data for this selection</div>

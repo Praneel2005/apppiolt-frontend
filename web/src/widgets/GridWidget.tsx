@@ -12,25 +12,25 @@ const MAX_ROWS = 200
 interface GridCol { name: string; title: string; type: string; unit: string }
 
 const BADGE: Record<string, string> = {
-  open: 'bg-red-50 text-red-700', urgent: 'bg-red-50 text-red-700', high: 'bg-red-50 text-red-700', canceled: 'bg-slate-100 text-slate-600',
-  unavailable: 'bg-slate-100 text-slate-600', medium: 'bg-amber-50 text-amber-700', in_progress: 'bg-blue-50 text-blue-700',
-  placed: 'bg-blue-50 text-blue-700', in_transit: 'bg-blue-50 text-blue-700', shipped: 'bg-blue-50 text-blue-700',
-  scheduled: 'bg-blue-50 text-blue-700', resolved: 'bg-green-50 text-green-700', closed: 'bg-green-50 text-green-700',
-  received: 'bg-green-50 text-green-700', delivered: 'bg-green-50 text-green-700', active: 'bg-green-50 text-green-700',
-  dismissed: 'bg-slate-100 text-slate-600', ended: 'bg-slate-100 text-slate-600', low: 'bg-slate-100 text-slate-600',
+  open: 'bg-danger-soft text-danger', urgent: 'bg-danger-soft text-danger', high: 'bg-danger-soft text-danger', canceled: 'bg-primary-mist text-muted',
+  unavailable: 'bg-primary-mist text-muted', medium: 'bg-warning-soft text-warning', in_progress: 'bg-accent-soft text-accent-ink',
+  placed: 'bg-accent-soft text-accent-ink', in_transit: 'bg-accent-soft text-accent-ink', shipped: 'bg-accent-soft text-accent-ink',
+  scheduled: 'bg-accent-soft text-accent-ink', resolved: 'bg-success-soft text-success', closed: 'bg-success-soft text-success',
+  received: 'bg-success-soft text-success', delivered: 'bg-success-soft text-success', active: 'bg-success-soft text-success',
+  dismissed: 'bg-primary-mist text-muted', ended: 'bg-primary-mist text-muted', low: 'bg-primary-mist text-muted',
 }
 
 function Badge({ v }: { v: unknown }) {
   if (v == null) return <span>—</span>
   const s = String(v)
-  return <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${BADGE[s] ?? 'bg-slate-100 text-slate-700'}`}>{humanize(s)}</span>
+  return <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${BADGE[s] ?? 'bg-primary-mist text-ink'}`}>{humanize(s)}</span>
 }
 
 function RowActions({ actions, row }: { actions: Action[]; row: Record<string, unknown> }) {
   const [open, setOpen] = useState(false)
   const btn = (a: Action) => (
     <button key={a.action_id} onClick={() => { setOpen(false); runAction(a, row) }} title={a.description}
-      className={`px-2 py-0.5 text-xs rounded-md border whitespace-nowrap ${a.style === 'danger' ? 'border-red-200 text-danger hover:bg-red-50' : 'border-border text-primary hover:bg-primary-soft'}`}>
+      className={`px-2 py-0.5 text-xs rounded-md border whitespace-nowrap ${a.style === 'danger' ? 'border-danger/30 text-danger hover:bg-danger-soft' : 'border-border text-primary hover:bg-primary-soft'}`}>
       {a.label}
     </button>
   )
@@ -92,18 +92,18 @@ export function GridWidget({ widget, page }: { widget: Widget; page: Page }) {
             <tr>
               {cols.map((c) => (
                 <th key={c.name} onClick={() => toggle(c.name)}
-                  className={`bg-page border-y border-border first:border-l first:rounded-l-md last:border-r px-3 py-2 text-xs font-semibold text-muted whitespace-nowrap ${numeric(c) ? 'text-right' : 'text-left'} ${canSort ? 'cursor-pointer hover:text-ink select-none' : ''}`}>
+                  className={`bg-primary-mist border-y border-border first:border-l first:rounded-l-md last:border-r px-3 py-2 text-xs font-semibold text-muted whitespace-nowrap ${numeric(c) ? 'text-right' : 'text-left'} ${canSort ? 'cursor-pointer hover:text-ink select-none' : ''}`}>
                   {c.title}{active?.field === c.name ? (active.dir === 'asc' ? ' ▲' : ' ▼') : ''}
                 </th>
               ))}
-              {actions.length > 0 && <th className="bg-page border-y border-r border-border rounded-r-md px-3 py-2 text-xs font-semibold text-muted text-right">Actions</th>}
+              {actions.length > 0 && <th className="bg-primary-mist border-y border-r border-border rounded-r-md px-3 py-2 text-xs font-semibold text-muted text-right">Actions</th>}
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={i} className="hover:bg-slate-50">
-                {cols.map((c) => <td key={c.name} className={`px-3 py-1.5 border-b border-slate-100 whitespace-nowrap tabular-nums ${numeric(c) ? 'text-right' : ''}`}>{render(c, r[c.name])}</td>)}
-                {actions.length > 0 && <td className="px-3 py-1.5 border-b border-slate-100"><RowActions actions={actions} row={r} /></td>}
+              <tr key={i} className="hover:bg-primary-mist/70 even:bg-page/40">
+                {cols.map((c) => <td key={c.name} className={`px-3 py-1.5 border-b border-border/60 whitespace-nowrap tabular-nums ${numeric(c) ? 'text-right' : ''}`}>{render(c, r[c.name])}</td>)}
+                {actions.length > 0 && <td className="px-3 py-1.5 border-b border-border/60"><RowActions actions={actions} row={r} /></td>}
               </tr>
             ))}
           </tbody>

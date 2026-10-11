@@ -14,26 +14,28 @@ type Tab = 'chat' | 'runner' | 'context' | 'metrics'
 
 const short = (v: unknown, n = 90) => { const s = typeof v === 'string' ? v : JSON.stringify(v); return s.length > n ? s.slice(0, n) + '…' : s }
 
+const OK = 'text-[#8fd3a4]'
+const BAD = 'text-[#f2a99b]'
+
+/** One line of the work log (shown on the deep-green log background). */
 function Trace({ e }: { e: AgentEvent }) {
   const d = e.data
   switch (e.type) {
-    case 'understanding': return <div>◆ reading <span className="text-slate-300">“{short(d.query ?? '', 80)}”</span></div>
     case 'retrieval': return <div>◆ candidates {((d.pages ?? d.candidates ?? []) as any[]).slice(0, 3).map((c) => `${c.page_id ?? c.id} (${c.score})`).join(' · ')}</div>
-    case 'analysis_step': return <div>⟳ {d.title}{d.detail ? <span className="text-slate-400"> — {short(d.detail, 110)}</span> : null}</div>
+    case 'analysis_step': return <div>⟳ {d.title}{d.detail ? <span className="text-white/45"> — {short(d.detail, 110)}</span> : null}</div>
     case 'form_open': return <div>◆ form opened: <b>{d.title || d.api_id}</b></div>
     case 'form_patch': return <div>◆ form {d.status ?? 'updated'}{d.changes && Object.keys(d.changes).length ? `: ${Object.keys(d.changes).join(', ')}` : ''}{d.errors && Object.keys(d.errors).length ? ` · problems: ${Object.keys(d.errors).join(', ')}` : ''}</div>
     case 'plan': return d.skill
-      ? <div>◆ skill <b>{d.skill}</b><span className="text-slate-400"> · intent {d.intent}</span></div>
-      : <div>◆ plan {(d.steps ?? []).map((s: any, i: number) => <div key={i} className="pl-4 text-slate-300">{i + 1}. {s.tool} <span className="text-slate-400">{short(s.args, 70)}</span></div>)}</div>
-    case 'validation': return d.ok ? <div className="text-emerald-300">✓ plan validated</div>
-      : <div className="text-red-300">✕ plan rejected{(d.issues ?? []).map((x: any, i: number) => <div key={i} className="pl-4">{x.code}: {x.message}{x.suggestion ? ` → ${x.suggestion}` : ''}</div>)}</div>
-    case 'action': return <div className={d.status === 'failed' ? 'text-red-300' : d.status === 'done' ? 'text-slate-400' : ''}>
+      ? <div>◆ skill <b>{d.skill}</b><span className="text-white/45"> · intent {d.intent}</span></div>
+      : <div>◆ plan {(d.steps ?? []).map((s: any, i: number) => <div key={i} className="pl-4 text-white/70">{i + 1}. {s.tool} <span className="text-white/45">{short(s.args, 70)}</span></div>)}</div>
+    case 'validation': return d.ok ? <div className={OK}>✓ plan validated</div>
+      : <div className={BAD}>✕ plan rejected{(d.issues ?? []).map((x: any, i: number) => <div key={i} className="pl-4">{x.code}: {x.message}{x.suggestion ? ` → ${x.suggestion}` : ''}</div>)}</div>
+    case 'action': return <div className={d.status === 'failed' ? BAD : d.status === 'done' ? 'text-white/45' : ''}>
       {d.status === 'running' ? '▶' : d.status === 'done' ? '✓' : '✕'} {d.tool} {d.status === 'running' ? short(d.args, 60) : d.message ? `— ${short(d.message, 100)}` : ''}</div>
-    case 'verify': return d.ok ? <div className="text-emerald-300">✓ screen verified <span className="text-slate-400">({d.source})</span></div>
-      : <div className="text-red-300">✕ verification caught a mismatch: {short(d.mismatches, 160)}</div>
+    case 'verify': return d.ok ? <div className={OK}>✓ screen verified <span className="text-white/45">({d.source})</span></div>
+      : <div className={BAD}>✕ verification caught a mismatch: {short(d.mismatches, 160)}</div>
     case 'canvas': return <div>◆ canvas <b>{d.title}</b> ({d.kind})</div>
-    case 'error': return <div className="text-red-300">✕ {d.code}: {d.message}</div>
-    case 'done': return <div className="text-slate-500">— {d.steps} step(s) · {d.elapsed_ms} ms {d.ok === false ? '· stopped' : ''}</div>
+    case 'error': return <div className={BAD}>✕ {d.code}: {d.message}</div>
     default: return null
   }
 }
@@ -43,14 +45,14 @@ function EvidenceChip({ e }: { e: AgentEvent }) {
   const view = ev.values?.view
   const top = (ev.values?.rows ?? [])[0]
   return (
-    <div className="border border-primary/30 bg-primary-soft rounded-lg px-3 py-2 text-xs">
+    <div className="border border-white/12 bg-white/6 rounded-lg px-2.5 py-1.5 text-[11px] font-sans">
       <div className="flex items-center justify-between gap-2">
-        <span><b className="font-mono text-primary">{ev.evidence_id}</b> · {ev.kind.replace('_', ' ')} · {ev.source}</span>
-        {view?.url && <button className="text-primary underline" onClick={() => { openUrl(view.url); setTimeout(() => view.widget_id && highlightWidget(view.widget_id), 900) }}>
+        <span className="text-white/85"><b className="font-mono text-accent">{ev.evidence_id}</b> · {String(ev.kind).replace('_', ' ')} · {ev.source}</span>
+        {view?.url && <button className="text-[#8fd3a4] underline" onClick={() => { openUrl(view.url); setTimeout(() => view.widget_id && highlightWidget(view.widget_id), 900) }}>
           Open view{view.page_code ? ` ${view.page_code}` : ''}{view.exact === false ? ' (approx.)' : ''}</button>}
       </div>
-      {top && <div className="text-muted mt-1 truncate">{short(top, 120)}</div>}
-      {ev.values?.untrusted_fields && <div className="text-warning mt-1">contains customer-written text ({ev.values.untrusted_fields.join(', ')}); treated as data only</div>}
+      {top && <div className="text-white/45 mt-0.5 truncate">{short(top, 120)}</div>}
+      {ev.values?.untrusted_fields && <div className="text-[#f0c987] mt-0.5">contains customer-written text ({ev.values.untrusted_fields.join(', ')}); treated as data only</div>}
     </div>
   )
 }
@@ -60,23 +62,29 @@ function Understood({ e }: { e: AgentEvent }) {
   const d = e.data
   const how = d.source === 'llm' ? 'language model' : d.source === 'ui' ? 'button' : 'rules'
   return (
-    <div className="text-xs border border-border bg-white rounded-lg px-3 py-2">
+    <div className="ap-rise text-xs border border-border bg-surface rounded-xl px-3.5 py-2.5 shadow-sm">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-muted">Understood as</span>
         <b className="text-ink">{d.paraphrase}</b>
-        <span className="text-[10px] uppercase tracking-wide rounded bg-page border border-border px-1.5 py-0.5 text-muted">{d.intent} · {how}</span>
+        <span className="text-[10px] uppercase tracking-wide rounded-full bg-primary-mist border border-border px-2 py-0.5 text-primary">{d.intent} · {how}</span>
       </div>
       {(d.assumptions ?? []).length > 0 && (
-        <ul className="mt-1 list-disc pl-4 text-muted">{(d.assumptions as string[]).slice(0, 5).map((a, i) => <li key={i}>{a}</li>)}</ul>
+        <ul className="mt-1.5 list-disc pl-4 text-muted space-y-0.5">{(d.assumptions as string[]).slice(0, 5).map((a, i) => <li key={i}>{a}</li>)}</ul>
       )}
     </div>
   )
 }
 
 const STATUS_STYLE: Record<string, string> = {
-  VERIFIED: 'bg-green-50 text-green-700 border-green-200',
-  PARTIAL: 'bg-amber-50 text-warning border-amber-200',
-  FAILED: 'bg-red-50 text-danger border-red-200',
+  VERIFIED: 'bg-success-soft text-success border-success/30',
+  PARTIAL: 'bg-warning-soft text-warning border-warning/30',
+  FAILED: 'bg-danger-soft text-danger border-danger/30',
+}
+
+function Avatar({ pulse }: { pulse?: boolean }) {
+  return (
+    <div className={`absolute left-0 top-0 w-7 h-7 rounded-full bg-primary-deep text-accent grid place-items-center text-[13px] shadow-sm ${pulse ? 'animate-pulse' : ''}`}>✦</div>
+  )
 }
 
 /** The assistant's reply: formatted text, a verified/partial/failed badge, citations, links to the view, follow-up chips. */
@@ -85,27 +93,30 @@ function AnswerCard({ e, onAsk }: { e: AgentEvent; onAsk: (text: string) => void
   const links: string[] = d.deep_links ?? []
   const suggestions: string[] = d.suggestions ?? []
   return (
-    <div className="bg-white border border-border rounded-lg px-3 py-2.5 space-y-2">
-      {d.status && d.status !== 'INFO' && (
-        <span className={`inline-block text-[10px] font-semibold uppercase tracking-wide border rounded px-1.5 py-0.5 ${STATUS_STYLE[d.status] ?? ''}`}>
-          {d.status === 'VERIFIED' ? '✓ verified' : String(d.status).toLowerCase()}
-        </span>
-      )}
-      <Markdown text={String(d.text ?? '')} />
-      {(d.citations ?? []).length > 0 && (
-        <div className="flex flex-wrap gap-1">{(d.citations as string[]).map((c) => <span key={c} className="text-[10px] font-mono bg-primary-soft text-primary rounded px-1.5 py-0.5">{c}</span>)}</div>
-      )}
-      <ProofPanel claims={d.claims ?? []} citations={d.citations ?? []} />
-      {links.length > 0 && (
-        <div className="flex gap-3 flex-wrap">{links.slice(0, 2).map((u, i) => (
-          <button key={u} className="text-xs text-primary underline" onClick={() => openUrl(u)}>Open the view{links.length > 1 ? ` ${i + 1}` : ''}</button>
-        ))}</div>
-      )}
-      {suggestions.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">{suggestions.slice(0, 4).map((s) => (
-          <button key={s} onClick={() => onAsk(s)} className="text-xs border border-primary/30 text-primary bg-primary-soft rounded-full px-2.5 py-1 hover:bg-primary/10">{s}</button>
-        ))}</div>
-      )}
+    <div className="relative pl-9 ap-rise">
+      <Avatar />
+      <div className="bg-surface border border-border rounded-2xl rounded-tl-md px-4 py-3 space-y-2.5 shadow-sm">
+        {d.status && d.status !== 'INFO' && (
+          <span className={`inline-block text-[10px] font-semibold uppercase tracking-wide border rounded-full px-2 py-0.5 ${STATUS_STYLE[d.status] ?? ''}`}>
+            {d.status === 'VERIFIED' ? '✓ verified' : String(d.status).toLowerCase()}
+          </span>
+        )}
+        <div className="text-[13.5px] leading-relaxed"><Markdown text={String(d.text ?? '')} /></div>
+        {(d.citations ?? []).length > 0 && (
+          <div className="flex flex-wrap gap-1">{(d.citations as string[]).map((c) => <span key={c} className="text-[10px] font-mono bg-primary-soft text-primary rounded px-1.5 py-0.5">{c}</span>)}</div>
+        )}
+        <ProofPanel claims={d.claims ?? []} citations={d.citations ?? []} />
+        {links.length > 0 && (
+          <div className="flex gap-3 flex-wrap">{links.slice(0, 2).map((u, i) => (
+            <button key={u} className="text-xs text-primary font-medium hover:underline" onClick={() => openUrl(u)}>Open the view{links.length > 1 ? ` ${i + 1}` : ''} →</button>
+          ))}</div>
+        )}
+        {suggestions.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 pt-0.5">{suggestions.slice(0, 4).map((s) => (
+            <button key={s} onClick={() => onAsk(s)} className="text-xs border border-primary/25 text-primary bg-primary-mist rounded-full px-3 py-1 hover:bg-primary-soft transition-colors">{s}</button>
+          ))}</div>
+        )}
+      </div>
     </div>
   )
 }
@@ -114,19 +125,65 @@ function ConfirmCard({ e, state, onAnswer }: { e: AgentEvent; state?: 'approved'
   const d = e.data
   const preview: WriteResult | undefined = d.preview
   return (
-    <div className="border border-amber-200 bg-amber-50 rounded-lg p-3 text-sm">
+    <div className="ap-rise border border-warning/30 bg-warning-soft rounded-xl p-3.5 text-sm">
       <div className="text-[11px] uppercase tracking-wide text-warning font-semibold">{d.kind === 'write' ? 'Confirm change' : 'Confirm step'}{d.auto_confirmed ? ' · auto-approved (test)' : ''}</div>
       <div className="font-medium text-ink mt-0.5">{d.summary}</div>
       {preview && <div className="mt-2 max-h-60 overflow-auto"><Preview res={preview} /></div>}
       {state ? <div className="mt-2 text-xs font-medium">{state === 'approved' ? '✓ Approved' : '✕ Declined'}</div> : !d.auto_confirmed && (
         <div className="flex gap-2 mt-3">
-          <button className="px-3 py-1.5 text-sm rounded-lg bg-primary text-white hover:bg-primary-hover" onClick={() => onAnswer(true)}>Approve</button>
-          <button className="px-3 py-1.5 text-sm rounded-lg border border-border bg-white hover:bg-page" onClick={() => onAnswer(false)}>Decline</button>
+          <button className="btn btn-primary" onClick={() => onAnswer(true)}>Approve</button>
+          <button className="btn" onClick={() => onAnswer(false)}>Decline</button>
         </div>
       )}
     </div>
   )
 }
+
+/** The assistant is working: bouncing dots, the step it is on, and a thin shimmer line. */
+function Thinking({ label }: { label: string }) {
+  return (
+    <div className="relative pl-9 ap-rise" role="status" aria-live="polite">
+      <Avatar pulse />
+      <div className="bg-surface border border-border rounded-2xl rounded-tl-md px-4 py-3 w-fit max-w-full shadow-sm">
+        <div className="flex items-center gap-3">
+          <span className="ap-dots" aria-hidden="true"><span /><span /><span /></span>
+          <span key={label} className="ap-step-label text-[12.5px] text-muted">{label}</span>
+        </div>
+        <div className="ap-shimmer mt-2.5 w-44" aria-hidden="true" />
+      </div>
+    </div>
+  )
+}
+
+/** Everything the assistant did for one turn, folded into one line; open it to see each step, source and check. */
+function TraceGroup({ events, live, open, onToggle }: { events: AgentEvent[]; live: boolean; open: boolean; onToggle: () => void }) {
+  const steps = events.filter((e) => e.type === 'analysis_step' || e.type === 'action' || e.type === 'form_open' || e.type === 'form_patch').length
+  const sources = events.filter((e) => e.type === 'evidence').length
+  const verify = events.filter((e) => e.type === 'verify').at(-1)
+  const failed = events.some((e) => e.type === 'error' || (e.type === 'verify' && e.data.ok === false))
+  return (
+    <div className="pl-9 ap-rise">
+      <button onClick={onToggle} className="flex items-center gap-2 text-[11.5px] text-muted hover:text-ink transition-colors">
+        <span className={`inline-block transition-transform ${open ? 'rotate-90' : ''}`}>▸</span>
+        <span>{live ? 'Working' : 'How I worked'}{steps ? ` · ${steps} step${steps === 1 ? '' : 's'}` : ''}{sources ? ` · ${sources} source${sources === 1 ? '' : 's'}` : ''}</span>
+        {verify && !live && <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${failed ? 'bg-danger-soft text-danger' : 'bg-success-soft text-success'}`}>{failed ? 'check failed' : '✓ screen verified'}</span>}
+      </button>
+      {open && (
+        <div className="mt-1.5 bg-primary-deep text-white/85 font-mono text-[11px] leading-5 rounded-xl px-3 py-2 space-y-0.5 max-h-72 overflow-auto scroll-dark">
+          {events.map((e, i) => e.type === 'evidence' ? <EvidenceChip key={i} e={e} /> : <Trace key={i} e={e} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const EXAMPLES = ['Revenue by customer state in July 2018', 'Why did revenue change in July 2018 compared to June', 'Show late deliveries in RJ last month']
+
+type Row =
+  | { kind: 'msg'; key: string; m: { text: string; note?: boolean } }
+  | { kind: 'card'; key: string; e: AgentEvent }
+  | { kind: 'trace'; key: string; events: AgentEvent[] }
+  | { kind: 'footer'; key: string; e: AgentEvent }
 
 function ChatTab() {
   const events = useStore((s) => s.events)
@@ -136,6 +193,7 @@ function ChatTab() {
   const [msgs, setMsgs] = useState<{ text: string; at: number; note?: boolean }[]>([])
   const [answered, setAnswered] = useState<Record<string, 'approved' | 'declined'>>({})
   const [rated, setRated] = useState<Record<number, 'up' | 'down'>>({})
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const [pendingAt, setPendingAt] = useState<number | null>(null)
   // waiting for the assistant: from sending until its answer (or a fatal error) arrives
   const busy = pendingAt !== null && !events.some((e) => e.seq > pendingAt && (e.type === 'answer' || (e.type === 'error' && e.data.recoverable === false)))
@@ -144,7 +202,7 @@ function ChatTab() {
     if (!sid) return
     try { await api.feedback(sid, r, seq); setRated((x) => ({ ...x, [seq]: r })) } catch (e) { toast('error', String(e)) }
   }
-  useEffect(() => { end.current?.scrollIntoView({ block: 'end' }) }, [events.length, msgs.length, busy])
+  useEffect(() => { end.current?.scrollIntoView({ block: 'end', behavior: 'smooth' }) }, [events.length, msgs.length, busy])
 
   const send = async (override?: string) => {
     const t = (override ?? text).trim()
@@ -167,51 +225,81 @@ function ChatTab() {
     catch (e) { toast('error', e instanceof Error ? e.message : String(e)) }
   }
 
-  const items = useMemo(() => [
-    ...events.map((e) => ({ seq: e.seq, e, m: null as null | { text: string; note?: boolean } })),
-    ...msgs.map((m) => ({ seq: m.at + 0.5, e: null as AgentEvent | null, m })),
-  ].sort((a, b) => a.seq - b.seq), [events, msgs])
+  const rows = useMemo<Row[]>(() => {
+    const items = [
+      ...events.map((e) => ({ seq: e.seq, e, m: null as null | { text: string; note?: boolean } })),
+      ...msgs.map((m) => ({ seq: m.at + 0.5, e: null as AgentEvent | null, m })),
+    ].sort((a, b) => a.seq - b.seq)
+    const out: Row[] = []
+    for (const it of items) {
+      if (it.m) { out.push({ kind: 'msg', key: `m${it.seq}`, m: it.m }); continue }
+      const e = it.e!
+      if (['answer_delta', 'status', 'frame', 'understanding'].includes(e.type)) continue
+      if (e.type === 'done') { if (e.data.skill) out.push({ kind: 'footer', key: `f${e.seq}`, e }); continue }   // the executor's own 'done' is skipped
+      if (e.type === 'understood' || e.type === 'answer' || e.type === 'confirm_request') { out.push({ kind: 'card', key: `c${e.seq}`, e }); continue }
+      const last = out[out.length - 1]
+      if (last && last.kind === 'trace') last.events.push(e)
+      else out.push({ kind: 'trace', key: `t${e.seq}`, events: [e] })
+    }
+    return out
+  }, [events, msgs])
+
+  // the step the assistant is on right now, for the typing indicator
+  const liveLabel = useMemo(() => {
+    if (pendingAt === null) return ''
+    const mine = events.filter((e) => e.seq > pendingAt)
+    const step = [...mine].reverse().find((e) => e.type === 'analysis_step')
+    if (step) return `${step.data.title}…`
+    if (mine.some((e) => e.type === 'plan')) return 'Putting the answer together…'
+    if (mine.some((e) => e.type === 'understood')) return 'Planning the steps…'
+    return 'Understanding your request…'
+  }, [events, pendingAt])
+
+  const lastTraceKey = [...rows].reverse().find((r) => r.kind === 'trace')?.key
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="flex-1 overflow-auto scroll-thin px-3 py-3 space-y-2">
-        {items.length === 0 && (
-          <div className="text-sm text-muted p-3 bg-page rounded-lg">Ask for something like “late orders in Rio last month” or “why did revenue jump in November 2017”.
-            Every step the assistant takes shows up here, is validated before it runs and verified on screen afterwards.</div>
+    <div className="flex flex-col h-full min-h-0 bg-page">
+      <div className="flex-1 overflow-auto scroll-thin px-4 py-4 space-y-3">
+        {rows.length === 0 && (
+          <div className="card ap-rise p-4 rounded-2xl!">
+            <div className="text-sm font-semibold text-ink">Ask about your data, or tell me where to go</div>
+            <p className="text-[12.5px] text-muted mt-1 leading-relaxed">I open the right page, set filters and dates, explain changes with sources you can re-check, and fill forms for you to confirm.</p>
+            <div className="flex flex-col gap-1.5 mt-3">
+              {EXAMPLES.map((q) => <button key={q} onClick={() => void send(q)} className="text-left text-[12.5px] border border-primary/20 text-primary bg-primary-mist rounded-xl px-3 py-2 hover:bg-primary-soft transition-colors">{q}</button>)}
+            </div>
+          </div>
         )}
-        {items.map((it, i) => it.m ? (
-          <div key={i} className={`text-sm rounded-lg px-3 py-2 ${it.m.note ? 'bg-amber-50 text-warning border border-amber-100' : 'bg-primary text-white ml-8'}`}>{it.m.text}</div>
-        ) : it.e!.type === 'confirm_request' ? (
-          <ConfirmCard key={i} e={it.e!} state={answered[it.e!.data.action_id]} onAnswer={(a) => answer(it.e!.data.action_id, a)} />
-        ) : it.e!.type === 'evidence' ? <EvidenceChip key={i} e={it.e!} />
-        : it.e!.type === 'understood' ? <Understood key={i} e={it.e!} />
-        : it.e!.type === 'answer' ? <AnswerCard key={i} e={it.e!} onAsk={(t) => void send(t)} />
-        : it.e!.type === 'answer_delta' || it.e!.type === 'status' || it.e!.type === 'frame' ? null
-        : it.e!.type === 'done' && !it.e!.data.skill ? null   /* the executor's own 'done' inside a turn: the agent's follows */
-        : it.e!.type === 'done' ? (
-          <div key={i} className="bg-slate-900 text-slate-100 font-mono text-[11px] leading-5 rounded-lg px-3 py-1 flex items-center justify-between">
-            <Trace e={it.e!} />
-            <span className="flex gap-1 font-sans">
-              {rated[it.e!.seq] ? <span className="text-slate-400">{rated[it.e!.seq] === 'up' ? '👍 thanks' : '👎 noted'}</span> : (
-                <><span className="text-slate-500 mr-1">useful?</span>
-                  <button title="Useful" onClick={() => void rate(it.e!.seq, 'up')}>👍</button>
-                  <button title="Not useful" onClick={() => void rate(it.e!.seq, 'down')}>👎</button></>
+        {rows.map((r) => r.kind === 'msg' ? (
+          <div key={r.key} className={`ap-rise text-[13.5px] leading-relaxed px-3.5 py-2 w-fit max-w-[88%] ${r.m.note ? 'bg-warning-soft text-warning border border-warning/20 rounded-xl' : 'bg-primary text-white rounded-2xl rounded-br-md ml-auto shadow-sm'}`}>{r.m.text}</div>
+        ) : r.kind === 'card' ? (
+          r.e.type === 'confirm_request' ? <ConfirmCard key={r.key} e={r.e} state={answered[r.e.data.action_id]} onAnswer={(a) => answer(r.e.data.action_id, a)} />
+          : r.e.type === 'understood' ? <div key={r.key} className="pl-9"><Understood e={r.e} /></div>
+          : <AnswerCard key={r.key} e={r.e} onAsk={(t) => void send(t)} />
+        ) : r.kind === 'trace' ? (
+          <TraceGroup key={r.key} events={r.events} live={busy && r.key === lastTraceKey}
+            open={openGroups[r.key] ?? (busy && r.key === lastTraceKey)} onToggle={() => setOpenGroups((g) => ({ ...g, [r.key]: !(g[r.key] ?? (busy && r.key === lastTraceKey)) }))} />
+        ) : (
+          <div key={r.key} className="pl-9 flex items-center justify-between text-[11px] text-muted -mt-1">
+            <span>{r.e.data.steps ?? 0} step(s) · {r.e.data.elapsed_ms} ms</span>
+            <span className="flex items-center gap-1.5">
+              {rated[r.e.seq] ? <span>{rated[r.e.seq] === 'up' ? '👍 thanks' : '👎 noted'}</span> : (
+                <><span>useful?</span>
+                  <button className="hover:scale-110 transition-transform" title="Useful" onClick={() => void rate(r.e.seq, 'up')}>👍</button>
+                  <button className="hover:scale-110 transition-transform" title="Not useful" onClick={() => void rate(r.e.seq, 'down')}>👎</button></>
               )}
             </span>
           </div>
-        ) : (
-          <div key={i} className="bg-slate-900 text-slate-100 font-mono text-[11px] leading-5 rounded-lg px-3 py-1"><Trace e={it.e!} /></div>
         ))}
-        {busy && <div className="text-xs text-muted px-1 animate-pulse">Working on it…</div>}
+        {busy && <Thinking label={liveLabel} />}
         <div ref={end} />
       </div>
-      <div className="border-t border-border p-3 space-y-2">
-        <div className="flex gap-2">
+      <div className="border-t border-border bg-surface p-3 space-y-2">
+        <div className="flex gap-2 items-center">
           <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void send()} placeholder="Ask the assistant…"
-            className="flex-1 border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
-          <button onClick={() => void send()} className="px-3 py-2 text-sm rounded-lg bg-primary text-white hover:bg-primary-hover">Send</button>
+            className="flex-1 border border-border bg-page rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-surface transition-colors" />
+          <button onClick={() => void send()} disabled={!text.trim()} aria-label="Send" className="btn btn-primary rounded-xl! px-3.5! py-2.5!">Send ↑</button>
         </div>
-        <label className="flex items-center gap-2 text-xs text-muted"><input type="checkbox" checked={confirmMode} onChange={(e) => setConfirmMode(e.target.checked)} />
+        <label className="flex items-center gap-2 text-[11.5px] text-muted"><input type="checkbox" className="accent-[#1f5c45]" checked={confirmMode} onChange={(e) => setConfirmMode(e.target.checked)} />
           Confirm every screen change (data changes are always confirmed)</label>
       </div>
     </div>
@@ -255,13 +343,13 @@ function RunnerTab() {
   return (
     <div className="p-3 space-y-3 overflow-auto scroll-thin h-full">
       <p className="text-xs text-muted">Runs a plan through the same validator → executor → verifier the language-model agent will use. No LLM involved.</p>
-      <select value={name} onChange={(e) => { setName(e.target.value); setText(JSON.stringify(PLANS[e.target.value], null, 2)) }} className="w-full border border-border rounded-lg px-2 py-1.5 text-sm">
+      <select value={name} onChange={(e) => { setName(e.target.value); setText(JSON.stringify(PLANS[e.target.value], null, 2)) }} className="w-full border border-border rounded-lg px-2 py-1.5 text-sm bg-surface">
         {Object.keys(PLANS).map((k) => <option key={k}>{k}</option>)}
       </select>
       <textarea value={text} onChange={(e) => setText(e.target.value)} rows={12} spellCheck={false} className="w-full border border-border rounded-lg p-2 font-mono text-xs" />
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 text-xs text-muted"><input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} /> auto-approve confirmations (testing)</label>
-        <button disabled={busy} onClick={() => void run()} className="px-3 py-1.5 text-sm rounded-lg bg-primary text-white hover:bg-primary-hover">{busy ? 'Running…' : 'Run plan'}</button>
+        <button disabled={busy} onClick={() => void run()} className="btn btn-primary">{busy ? 'Running…' : 'Run plan'}</button>
       </div>
       <label className="flex items-center gap-2 text-xs text-muted">Simulated-browser fault (when no browser is attached)
         <select value={fault} onChange={(e) => { setFault(e.target.value); if (sid) void api.setFault(sid, e.target.value) }} className="border border-border rounded px-1 py-0.5">
@@ -269,7 +357,7 @@ function RunnerTab() {
         </select>
       </label>
       {result && (
-        <div className={`rounded-lg p-3 text-xs border ${result.ok ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+        <div className={`rounded-lg p-3 text-xs border ${result.ok ? 'bg-success-soft border-success/20' : 'bg-danger-soft border-danger/20'}`}>
           <b>{result.ok ? '✓ Plan executed' : `✕ ${result.stage ?? 'failed'}`}</b>
           {result.error && <div>{result.error}</div>}
           {(result.issues ?? []).map((i: any, k: number) => <div key={k}>{i.code}: {i.message}{i.suggestion ? ` → ${i.suggestion}` : ''}</div>)}
@@ -362,14 +450,18 @@ export function AgentPanel({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<Tab>('chat')
   const names: Record<Tab, string> = { chat: 'Assistant', runner: 'Plan runner', context: 'Context', metrics: 'Metrics' }
   return (
-    <aside className="w-[440px] shrink-0 bg-surface border-l border-border flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 h-12 border-b border-border shrink-0">
-        <div className="flex gap-1">
-          {(['chat', 'runner', 'context', 'metrics'] as Tab[]).map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`px-2.5 py-1.5 text-sm rounded-lg ${tab === t ? 'bg-primary-soft text-primary font-medium' : 'text-muted hover:bg-page'}`}>{names[t]}</button>
-          ))}
+    <aside className="w-[440px] shrink-0 bg-surface border-l border-border flex flex-col h-full shadow-[-8px_0_24px_-16px_rgba(20,36,27,0.25)]">
+      <div className="flex items-center justify-between px-4 h-14 border-b border-border shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-primary-deep text-accent grid place-items-center text-[13px]">✦</div>
+          <div className="flex gap-0.5">
+            {(['chat', 'runner', 'context', 'metrics'] as Tab[]).map((t) => (
+              <button key={t} onClick={() => setTab(t)}
+                className={`px-2.5 py-1.5 text-[13px] rounded-lg transition-colors ${tab === t ? 'bg-primary-soft text-primary font-semibold' : 'text-muted hover:bg-primary-mist hover:text-ink'}`}>{names[t]}</button>
+            ))}
+          </div>
         </div>
-        <button onClick={onClose} className="text-muted hover:text-ink">✕</button>
+        <button onClick={onClose} className="btn btn-ghost px-2!" aria-label="Close assistant">✕</button>
       </div>
       <div className="flex-1 min-h-0">{tab === 'chat' ? <ChatTab /> : tab === 'runner' ? <RunnerTab /> : tab === 'context' ? <ContextTab /> : <MetricsTab />}</div>
     </aside>
