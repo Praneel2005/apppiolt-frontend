@@ -8,6 +8,7 @@ how they are used.
 from __future__ import annotations
 
 import calendar
+import difflib
 import re
 from dataclasses import dataclass, field
 from datetime import date, timedelta
@@ -25,7 +26,7 @@ NUMWORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "sev
             "ten": 10, "eleven": 11, "twelve": 12}
 _NUM = r"(\d{1,3}|" + "|".join(NUMWORDS) + r")"
 _UNIT = r"(day|week|month|quarter|year)s?"
-_YEAR = r"(20[12]\d)"
+_YEAR = r"(20\d\d)"      # any 21st-century year: one outside the data ("2030") must be recognised as a period, not ignored
 _PRE = r"(?:last|past|previous|prior)"
 
 
@@ -328,10 +329,26 @@ def _is_shouting(text: str) -> bool:
     return len(letters) > 6 and sum(c.isupper() for c in letters) / len(letters) > 0.6
 
 
+def repair_typos(toks: list[Tok], lex: Lexicon) -> list[Tok]:
+    """Replace a misspelt long word by the vocabulary word it is one or two letters from ('reveneu' -> 'revenue').
+    Conservative: the word must be unknown, 5+ letters, share its first letter, differ in length by at most one, and be a close match
+    to exactly one vocabulary word. Months and other period words are never touched."""
+    out: list[Tok] = []
+    for t in toks:
+        if len(t.text) >= 5 and t.text.isalpha() and t.stem not in lex.known_stems and t.text not in MONTHS:
+            near = [w for w in difflib.get_close_matches(t.stem, lex.repair_vocab, n=2, cutoff=0.85)
+                    if w[0] == t.stem[0] and abs(len(w) - len(t.stem)) <= 1]
+            if len(near) == 1:
+                out.append(Tok(t.i, near[0], near[0], t.start, t.end))
+                continue
+        out.append(t)
+    return out
+
+
 def perceive(text: str, lex: Lexicon, as_of: str | None = None) -> Annotations:
     as_of = as_of or lex.as_of
     norm = norm_text(text)
-    toks = tokenize(norm)
+    toks = repair_typos(tokenize(norm), lex)
     ann = Annotations(text=text, norm=norm, toks=toks)
     blocked: set[int] = set()
     period_tokens: set[int] = set()

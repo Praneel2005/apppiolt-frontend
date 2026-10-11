@@ -88,6 +88,19 @@ class SliceSel:
     filters: dict[str, list[str]]
 
 
+class Notes(list):
+    """The assumptions list of an interpretation. `drop` records a note that also means 'part of the request was NOT used'
+    (an unknown value, an impossible split), so the answer can say it only partly covers what was asked."""
+
+    def __init__(self, *a):
+        super().__init__(*a)
+        self.ignored: list[str] = []
+
+    def drop(self, msg: str) -> None:
+        self.append(msg)
+        self.ignored.append(msg)
+
+
 @dataclass
 class Interp:
     intent: str
@@ -122,6 +135,11 @@ class Interp:
     confidence: float = 0.8
     source: str = "llm"                 # llm | rules | fast
     clarify_options: list[str] = field(default_factory=list)
+    # a value that could mean more than one field (a customer's state or a seller's state) and was not resolved by the words,
+    # the page or an earlier choice: {text, kind, options, values, chosen}
+    ambiguities: list[dict] = field(default_factory=list)
+    clarify_evidence: list[str] = field(default_factory=list)
+    ignored: list[str] = field(default_factory=list)   # parts of the request that were not understood or could not be used
 
     def brief(self) -> str:
         parts = [f"intent={self.intent}"]
@@ -157,6 +175,8 @@ class AgentMemory:
     last_action_kind: str | None = None  # "write" | "state" for "undo that"
     last_entity: tuple[str, str] | None = None   # (entity, id) of the record last looked at: "open a ticket for it"
     turns: int = 0
+    prefs: dict[str, str] = field(default_factory=dict)             # ambiguity kind -> the field the user chose (kept for the session)
+    pending_choices: dict[str, tuple[str, str]] = field(default_factory=dict)  # clarification option text -> (kind, field)
 
 
 _MEM: dict[str, AgentMemory] = {}

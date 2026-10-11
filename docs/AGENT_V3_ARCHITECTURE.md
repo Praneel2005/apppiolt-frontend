@@ -132,6 +132,24 @@ Not done yet: a sentence-level entailment checker for the optional LLM text, and
 * **Checks.** The parts must add up to the headline change; a failing check is added to the answer's notes.
 Not yet: uncertainty ranges for non-monthly periods, significance for ratio metrics, a sentence-level entailment checker.
 
+## 4b5. Clarification and robustness (pillar 3, in progress)
+* **Confidence-aware clarification** (`agent/clarify.py`, switch `AgentConfig.clarify_ambiguity`, on for the live API, off for library
+  and test defaults). A value that could mean different fields (a customer's state or a seller's state) is recorded as an ambiguity
+  unless the user named the field, used a seller word, or already chose earlier in the session. The agent then measures the headline
+  number under each reading (cited evidence). If the readings differ by at least `materiality_pct` it asks, showing both numbers and
+  offering each reading as a ready-to-send message; if they agree it carries on silently. The choice is remembered for the session.
+* **Typo repair** (`perceive.repair_typos`, vocabulary from the lexicon): an unknown 5+ letter word one or two letters from exactly one
+  known word is read as that word ('reveneu' -> revenue). Correct words and periods are never changed.
+* **Unmapped-terms guard** (`clarify.guard_unmapped`, switch `AgentConfig.guard_unmapped`, on for the live API): a period entirely after
+  the data ends is explained, not answered; on the rules path, words the parser could not place are either asked about (most of the
+  request) or reported as ignored (the answer becomes PARTIAL, never VERIFIED); values or fields dropped during validation are
+  carried in `Interp.ignored` for every path. First measurement (rules mode, guard off): 7/7 unanswerable questions were answered
+  confidently; the suite exists to show that number fall.
+* **Robustness suite** (`eval/robustness.py`, `scripts/run_robustness.py`): typos, multilingual (needs a model), injected
+  instructions, unanswerable questions, grounding and screen actions, with measured headline rates: injection success, false answers,
+  ungrounded numbers, action hallucination, and calibration error (undefined when the confidence never varies). Quote a rate only
+  with the mode it was measured in.
+
 ## 4c. Known limits (not yet done)
 * Web app (done, untested in a browser): the assistant panel renders formatted answers (`web/src/agent/Markdown.tsx`), an
   "Understood as" card with assumptions, live progress steps, a verified / partial / failed badge, citation chips, "Open the view"

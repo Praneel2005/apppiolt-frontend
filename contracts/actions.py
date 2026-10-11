@@ -127,6 +127,12 @@ class AgentConfig(_Model):
     use_synthesis: bool = True
     # V3 agent: skip the LLM for clear navigation commands (faster, but keyword-based). Off by default: the model decides.
     use_fast_lane: bool = False
+    # V3 agent: ask before answering when a value could mean different fields and the numbers differ materially. The live API turns
+    # this on for every message unless the request sets it; library and test defaults keep it off.
+    clarify_ambiguity: bool = False
+    # V3 agent: do not present a confident answer to a request that was only partly understood (unknown words or values, a period
+    # outside the data); same default policy as clarify_ambiguity.
+    guard_unmapped: bool = False
     # ablation switches (evaluation turns these off one at a time)
     use_validator: bool = True
     use_verifier: bool = True

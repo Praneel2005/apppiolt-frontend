@@ -141,7 +141,7 @@ def compose_explain(res: ExplainResult, fs: FactSheet) -> tuple[str, list[str]]:
         s = res.seasonality
         if s.get("yoy_pct") is not None:
             f = fs.pct(f"year over year change in {res.title}", s["yoy_pct"], s.get("evidence_id"))
-            signals.append(f"- **Year over year:** {res.title} is {ph(f)} compared with {res.primary.label} a year earlier" +
+            signals.append(f"- **Year over year:** {res.title} is {ph(f)} compared with {s.get('last_year_period') or 'the same period'} (a year earlier)" +
                            _cite(s.get("evidence_id")))
         if s.get("ly_transition_pct") is not None:
             f = fs.pct("same transition last year", s["ly_transition_pct"], s.get("evidence_id"))
@@ -221,7 +221,8 @@ def _rigor_lines(res: ExplainResult, fs: FactSheet, takeaways: list[str]) -> lis
                 f"{ph(pw)} instead of {ph(pt)}")
         if cf.get("share_of_change") is not None:
             sh = fs.share(f"{pretty(cf['group'])} share of the change", abs(cf["share_of_change"]), ev)
-            line += f" ({pretty(cf['group'])} accounts for {ph(sh)} of the change)"
+            offset = "; other groups moved the other way" if abs(cf["share_of_change"]) > 100 else ""
+            line += f" ({pretty(cf['group'])} accounts for {ph(sh)} of the change{offset})"
         out.append(line + "." + _cite(ev))
     it = rg.interaction
     if it and it.get("interaction_share") is not None and it["interaction_share"] >= 10 and res.identity:

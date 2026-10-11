@@ -70,6 +70,7 @@ async def run_converse(ctx, it: Interp, out: SkillResult) -> AsyncIterator[tuple
         opts = it.clarify_options
         out.text = q + ("\n" + "\n".join(f"- {o}" for o in opts) if opts else "")
         out.suggestions = opts[:4]
+        out.citations = list(it.clarify_evidence)
     elif it.intent == "help":
         if it.help_topic == "screen":
             out.text = screen_text(ctx)

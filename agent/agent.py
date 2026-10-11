@@ -14,6 +14,7 @@ import time
 from typing import AsyncIterator
 
 from agent.capabilities import get_capability_model
+from agent.clarify import ambiguity_clarification, guard_unmapped, remember_choice
 from agent.interpret import interpret, llm_interpret, reconcile
 from agent.lexicon import get_lexicon
 from agent.perceive import perceive
@@ -147,6 +148,7 @@ class AppPilotAgent:
             logger.warning("page context failed: %s", e)
             page_ctx = {"page": {"page_id": s.state.page_id}, "widgets": [], "filters": []}
         lex, cap, mem = get_lexicon(), get_capability_model(), get_agent_memory(session_id)
+        remember_choice(mem, message)             # an answer to the question just asked is kept for the session
         use_llm = llm_ready(self.llm)
         ctx = TurnContext(session=s, text=message, page_ctx=page_ctx, cfg=cfg, lex=lex, cap=cap, mem=mem,
                           llm=self.llm if use_llm else None, as_of=lex.as_of)
@@ -170,6 +172,14 @@ class AppPilotAgent:
             it = Interp(intent="clarify", source="rules",
                         clarification="I had trouble understanding that. Could you rephrase it, for example with a metric, a period and where to look?")
             yield ev("error", {"code": "interpret_failed", "message": f"{type(e).__name__}: {e}", "recoverable": True})
+
+        # part of the request outside what can be mapped, or a value that could mean different fields with materially different
+        # answers, is dealt with before anything runs
+        if forced is None:
+            if guard_unmapped(ctx, it):
+                yield ev("analysis_step", {"title": "Checking what I understood", "detail": "part of the request is outside what I can map"})
+            elif await ambiguity_clarification(ctx, it):
+                yield ev("analysis_step", {"title": "Checking what each reading would give", "detail": "the answer differs, so I will ask"})
 
         # an open form is parked (not lost) when the user moves to another topic
         park_note = ""
@@ -214,6 +224,8 @@ class AppPilotAgent:
 
         # ---------------------------------------------------------------- L5 status + L6 answer
         status = out.status if out.status in ("VERIFIED", "PARTIAL", "FAILED") else "INFO"
+        if it.ignored and status == "VERIFIED":      # something in the request was dropped: never claim full verification
+            status = "PARTIAL"
         yield ev("status", {"status": status, "verified": status == "VERIFIED", "mismatches": out.mismatches,
                             "screen": out.screen_note, "skill": name})
 

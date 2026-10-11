@@ -18,7 +18,7 @@ from datetime import date
 
 from agent.lexicon import norm_text, squash
 from agent.perceive import Annotations, describe_range, find_periods, perceive
-from agent.schema import (FieldF, FilterF, Interp, InterpretationF, PeriodF, PeriodSel, SliceF, SliceSel,
+from agent.schema import (FieldF, Notes, FilterF, Interp, InterpretationF, PeriodF, PeriodSel, SliceF, SliceSel,
                           TurnContext)
 from contracts.dates import resolve as resolve_preset
 
@@ -592,6 +592,30 @@ def _value_groups(ctx: TurnContext, ann: Annotations) -> dict[str, list[str]]:
     return groups
 
 
+def _drop(notes: list[str], msg: str) -> None:
+    """Add an assumption that also means part of the request was not used."""
+    getattr(notes, "drop", notes.append)(msg)
+
+
+def _kind(keys: list[str]) -> str:
+    """Identifies one ambiguity (the set of fields a value could belong to), e.g. 'customer_state|seller_state'."""
+    return "|".join(sorted(dict.fromkeys(keys)))
+
+
+def _ambiguous_options(ctx: TurnContext, ann: Annotations, vm, metric: str | None) -> list[str]:
+    """The fields a value could belong to, when nothing settles it: not the words, not the screen, not an earlier choice."""
+    lex = ctx.lex
+    allowed = set(lex.filterable_dims(metric)) if metric else set()
+    keys = list(dict.fromkeys(c.key for c in vm.cands if c.key in allowed and c.key in lex.dims))
+    if len(keys) < 2 or vm.partial or ann.seller_context:
+        return []
+    if any(d.dim in keys for d in ann.dims):
+        return []
+    if ctx.mem.prefs.get(_kind(keys)) in keys:
+        return []
+    return keys
+
+
 def _choose_cand(ctx: TurnContext, ann: Annotations, cands, metric: str | None):
     if not cands:
         return None
@@ -601,6 +625,15 @@ def _choose_cand(ctx: TurnContext, ann: Annotations, cands, metric: str | None):
         allowed = set(lex.filterable_dims(metric))
     pool = [c for c in cands if c.key in allowed] or list(cands)
     if len(pool) > 1:
+        named = {d.dim for d in ann.dims}
+        by_name = [c for c in pool if c.key in named]
+        if by_name:                                                     # the user named the field ("customer state", "seller state")
+            return by_name[0]
+        pref = ctx.mem.prefs.get(_kind([c.key for c in pool]))
+        if pref and not ann.seller_context:                             # an earlier answer to the same question this session
+            hit = next((c for c in pool if c.key == pref), None)
+            if hit:
+                return hit
         # the same value can belong to several dimensions (a state of the customer or of the seller): the role words decide
         roles = tuple(lex.lang.get("seller_words", []))
         is_role = lambda c: any(w in c.key for w in roles)  # noqa: E731
@@ -631,7 +664,7 @@ def _resolve_filters(ctx: TurnContext, flist: list[FilterF], target_page: str | 
                     key = k
                     break
         if key is None:
-            notes.append(f"Could not apply the filter '{fl.dimension}' (not a known field).")
+            _drop(notes, f"Could not apply the filter '{fl.dimension}' (not a known field).")
             continue
         good: list[str] = []
         for v in fl.values:
@@ -643,7 +676,7 @@ def _resolve_filters(ctx: TurnContext, flist: list[FilterF], target_page: str | 
                     good.append(c.value)
             else:
                 hint = f" Did you mean {', '.join(c.suggestions)}?" if c.suggestions else ""
-                notes.append(f"'{v}' is not a valid {key} value.{hint}")
+                _drop(notes, f"'{v}' is not a valid {key} value.{hint}")
         if good:
             out.setdefault(key, [])
             for g in good:
@@ -659,6 +692,7 @@ def reconcile(f: InterpretationF, ctx: TurnContext, ann: Annotations, source: st
                 expected_direction=f.expected_direction if f.expected_direction != "none" else ann.expected_direction,
                 follow_up=f.follow_up, form_action=f.form_action, help_topic=f.help_topic,
                 clarification=f.clarification, decline_reason=f.decline_reason)
+    it.assumptions = Notes(it.assumptions)
     notes = it.assumptions
     it.clarify_options = list(f.clarify_options)
 
@@ -691,7 +725,7 @@ def reconcile(f: InterpretationF, ctx: TurnContext, ann: Annotations, source: st
     # ---- metrics
     metric, _ = lex.resolve_metric(f.metric)
     if f.metric and not metric:
-        notes.append(f"Unknown metric '{f.metric}'.")
+        _drop(notes, f"Unknown metric '{f.metric}'.")
     if not metric and ann.metrics:
         metric = ann.metric_ids[0]
     it.metric = metric
@@ -710,7 +744,7 @@ def reconcile(f: InterpretationF, ctx: TurnContext, ann: Annotations, source: st
         if d and d not in gb:
             gb.append(d)
         elif not d:
-            notes.append(f"'{g}' is not something this data can be broken down by.")
+            _drop(notes, f"'{g}' is not something this data can be broken down by.")
     if not gb and it.intent in ("data", "compare", "explain"):
         gb = [d.dim for d in ann.dims if d.group and d.dim not in lex.time_dims]
     if it.shape == "trend" or (ann.has("trend") and len(gb) == 1 and gb[0] in lex.time_dims):
@@ -719,7 +753,7 @@ def reconcile(f: InterpretationF, ctx: TurnContext, ann: Annotations, source: st
         ok = set(lex.dims_of_metric(metric))
         keep = [d for d in gb if d in ok]
         if len(keep) != len(gb):
-            notes.append(f"{lex.metrics[metric].title} cannot be split by {[d for d in gb if d not in ok]}.")
+            _drop(notes, f"{lex.metrics[metric].title} cannot be split by {[d for d in gb if d not in ok]}.")
         gb = keep
     it.group_by = gb[:2]
 
@@ -769,6 +803,10 @@ def reconcile(f: InterpretationF, ctx: TurnContext, ann: Annotations, source: st
                 flt[key].append(cand.canonical)
         if len(vm.cands) > 1 and not vm.partial:
             notes.append(f"Treating '{vm.text}' as {cand.key.replace('_', ' ')}.")
+            opts = _ambiguous_options(ctx, ann, vm, metric) if analytic else []
+            if opts and cand.key in opts:
+                it.ambiguities.append({"text": vm.text, "kind": _kind(opts), "options": opts, "chosen": cand.key,
+                                       "values": [c.canonical for c in vm.cands if c.key == cand.key]})
     it.soft_filters = soft
     # hierarchy: a region and its own states
     for child, parent in lex.dim_parents.items():

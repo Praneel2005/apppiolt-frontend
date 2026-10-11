@@ -182,6 +182,9 @@ async def post_message(sid: str, req: MessageRequest):
         raise ApiError(501, "agent_not_configured", "No agent is attached to the backend yet. "
                                                     "POST /api/session/{sid}/plan runs a Plan directly.")
     cfg = req.config or s.config
+    live = {k: True for k in ("clarify_ambiguity", "guard_unmapped") if k not in cfg.model_fields_set}   # on in the live app unless set
+    if live:
+        cfg = cfg.model_copy(update=live)
     asyncio.create_task(_pump(s, agent.handle(sid, req.text, cfg)))
     return {"accepted": True}
 

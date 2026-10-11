@@ -17,6 +17,14 @@ const short = (v: unknown, n = 140) => {
   return s && s.length > n ? s.slice(0, n) + '…' : s ?? ''
 }
 
+/** {"from","to"} or {"current","previous"} periods as readable text. */
+function fmtPeriod(p: Record<string, unknown>): string {
+  const range = (x: any) => (x && typeof x === 'object' && 'from' in x ? `${x.from} to ${x.to}` : null)
+  if ('from' in p) return range(p) ?? short(p, 100)
+  const parts = [range(p.current), range(p.previous) ? `vs ${range(p.previous)}` : null].filter(Boolean)
+  return parts.length ? parts.join(' ') : short(p, 100)
+}
+
 function Request({ req }: { req: Record<string, unknown> }) {
   const rows = Object.entries(req).filter(([, v]) => v !== null && v !== undefined && !(Array.isArray(v) && v.length === 0) &&
     !(typeof v === 'object' && !Array.isArray(v) && Object.keys(v as object).length === 0))
@@ -45,7 +53,7 @@ function EvidenceProof({ sid, id }: { sid: string; id: string }) {
       <div className="text-[11px]"><b className="font-mono text-primary">{proof.evidence_id}</b> · {proof.metric.title ?? proof.source} · {proof.kind.replace('_', ' ')}</div>
       {proof.metric.definition && <div className="text-[11px] text-muted">Definition: {proof.metric.definition}</div>}
       <div className="text-[11px] text-muted">
-        {proof.period ? <>Period {short(proof.period, 100)}. </> : null}
+        {proof.period ? <>Period {fmtPeriod(proof.period)}. </> : null}
         {proof.row_count != null ? <>{proof.row_count} row(s). </> : null}
         {proof.data_layers.length ? <>Data: {proof.data_layers.join(', ')}. </> : null}
       </div>

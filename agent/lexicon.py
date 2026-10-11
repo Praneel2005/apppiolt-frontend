@@ -85,6 +85,10 @@ class PhraseIndex:
             bucket.append(payload)
         self.max_len = max(self.max_len, len(key))
 
+    def vocabulary(self) -> set[str]:
+        """Every stemmed word that appears in any phrase of the index."""
+        return {w for key in self._idx for w in key}
+
     def find(self, toks: list[Tok], blocked: set[int] | None = None) -> list[tuple[int, int, list[Any]]]:
         """Non-overlapping matches as (first_token_index, last_token_index_inclusive, payloads)."""
         blocked = blocked or set()
@@ -284,6 +288,15 @@ class Lexicon:
             for f in p.filters:
                 vocab.update(phrase_tokens(f.title))
         self.page_vocab = {w for w in vocab if len(w) > 2}
+
+        # typo repair: a long word the parser does not know, one or two letters away from exactly one word it does, is that word
+        targets: set[str] = set(self.page_vocab)
+        known: set[str] = set(self.stop) | set(self.page_vocab) | self.value_index.vocabulary()
+        for idx in (self.metric_index, self.dim_index, *self.cue_index.values()):
+            targets |= idx.vocabulary()
+            known |= idx.vocabulary()
+        self.known_stems: set[str] = known
+        self.repair_vocab: list[str] = sorted(w for w in targets if len(w) >= 5 and w.isalpha())
 
     # ---------------------------------------------------------------- value vocabulary
     def _build_value_index(self) -> None:
