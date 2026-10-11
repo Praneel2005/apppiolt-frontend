@@ -89,7 +89,8 @@ def state_for_page(app: Application, page: Page, filters: dict[str, FilterValue]
 
 def create_session() -> Session:
     app = app_model()
-    first = app.pages[0]
+    from backend import access
+    first = next((p for p in app.pages if access.page_allowed(p)), app.pages[0])      # start on a page the signed-in role may open
     s = Session(id=uuid.uuid4().hex[:12], state=state_for_page(app, first))
     SESSIONS[s.id] = s
     return s

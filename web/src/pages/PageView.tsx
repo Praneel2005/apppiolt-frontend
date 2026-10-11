@@ -1,4 +1,5 @@
 import { runAction } from '../actions/runner'
+import { canOpen, canWrite } from '../lib/access'
 import type { Application, Page, Widget } from '../lib/types'
 import { toast, useStore } from '../state/store'
 import { ChartWidget } from '../widgets/ChartWidget'
@@ -38,6 +39,18 @@ function layoutRows(app: Application, page: Page): { ids: string[]; weights: num
 
 export function PageView({ page }: { page: Page }) {
   const app = useStore((s) => s.app)!
+  const role = useStore((s) => s.role)
+  if (!canOpen(role, page)) {
+    return (
+      <div className="px-8 py-10 max-w-xl">
+        <div className="card p-6">
+          <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-accent-ink">No access</div>
+          <h1 className="text-xl font-semibold tracking-tight text-ink mt-1">{page.title}</h1>
+          <p className="text-sm text-muted mt-2 leading-relaxed">You are signed in as <b className="text-ink">{role?.title}</b>, which cannot open this page. Choose another page from the menu, or sign in as a different role.</p>
+        </div>
+      </div>
+    )
+  }
   const rows = layoutRows(app, page)
   const mod = app.modules.find((m) => m.module_id === page.directory.split('/')[0])
   const leaf = app.directories.find((d) => d.path === page.directory)
@@ -59,7 +72,7 @@ export function PageView({ page }: { page: Page }) {
           </div>
           <div className="flex gap-2 shrink-0">
             <button onClick={copyLink} className="btn">Copy link</button>
-            {page.actions.map((a) => (
+            {page.actions.filter((a) => canWrite(role, a.api_id)).map((a) => (
               <button key={a.action_id} onClick={() => runAction(a)} title={a.description}
                 className="btn btn-primary">+ {a.label}</button>
             ))}

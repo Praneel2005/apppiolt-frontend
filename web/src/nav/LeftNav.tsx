@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { canOpen } from '../lib/access'
 import type { Application, Module, Page } from '../lib/types'
 import { goToPage } from '../state/session'
 import { useStore } from '../state/store'
@@ -21,6 +22,7 @@ function dirTitle(app: Application, path: string, mod: Module): string {
 export function LeftNav() {
   const app = useStore((s) => s.app)!
   const activeId = useStore((s) => s.state?.page_id)
+  const role = useStore((s) => s.role)
   const [q, setQ] = useState('')
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const [reportsOpen, setReportsOpen] = useState(false)
@@ -28,11 +30,12 @@ export function LeftNav() {
   const byModule = useMemo(() => {
     const m = new Map<string, Page[]>()
     for (const p of app.pages) {
+      if (!canOpen(role, p)) continue                  // a role sees only the pages it may open
       const key = p.directory.split('/')[0]
       m.set(key, [...(m.get(key) ?? []), p])
     }
     return m
-  }, [app])
+  }, [app, role])
 
   const term = q.trim().toLowerCase()
   const match = (p: Page) => !term || `${p.title} ${p.page_code} ${p.keywords.join(' ')}`.toLowerCase().includes(term)

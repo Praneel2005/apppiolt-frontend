@@ -232,6 +232,10 @@ def _h_navigate(c: _Ctx, a: dict) -> dict | None:
     p = _page(c, a)
     if p is None:
         return None
+    from backend import access
+    if not access.page_allowed(p):
+        c.bad("disallowed_tool", f"Your role ({access.role()['title']}) cannot open '{p.title}'.")
+        return None
     filters = {}
     for fid, spec in (a.get("filters") or {}).items():
         spec = spec if isinstance(spec, dict) else {"value": spec}

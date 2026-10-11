@@ -135,7 +135,8 @@ async def navigate(ctx, args: dict) -> dict:
     verified = bool(s.last_verify.ok) if s.last_verify else False
     if not getattr(ctx.cfg, "use_verifier", True):      # ablation: without the verify layer the agent trusts that its action worked
         verified = True
-    return {"ok": bool(res.get("ok")), "verified": verified and bool(res.get("ok")), "dropped": dropped,
+    denied = next((i.get("message") for i in res.get("issues", []) if isinstance(i, dict) and i.get("code") == "disallowed_tool"), None)
+    return {"ok": bool(res.get("ok")), "verified": verified and bool(res.get("ok")), "dropped": dropped, "denied": denied,
             "mismatches": list(s.last_verify.mismatches) if s.last_verify and not s.last_verify.ok
             and getattr(ctx.cfg, "use_verifier", True) else [],
             "attempts": attempts, "stage": res.get("stage"), "issues": res.get("issues", [])}
@@ -152,6 +153,8 @@ async def open_supporting_view(ctx, view: dict | None) -> dict | None:
         return None
     args.pop("route", None)
     out = await navigate(ctx, args)
+    if out.get("denied"):          # the role cannot open the supporting page: the answer stands without moving the screen
+        return None
     out["title"] = view.get("title")
     return out
 

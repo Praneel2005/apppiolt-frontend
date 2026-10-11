@@ -1,0 +1,76 @@
+{
+  "default_role": "admin",
+  "roles": {
+    "admin": {
+      "title": "Administrator",
+      "description": "Sees everything and can make confirmed changes.",
+      "modules": "*",
+      "writes": "*",
+      "reads": "*",
+      "scope": {}
+    },
+    "ops_manager": {
+      "title": "Operations manager",
+      "description": "Runs day-to-day operations: orders, support, inventory, sellers and promotions, and reads the reports library. Can make confirmed changes.",
+      "modules": [
+        "ops_overview",
+        "ops_orders",
+        "ops_support",
+        "ops_inventory",
+        "ops_sellers",
+        "ops_planning",
+        "ops_marketing",
+        "sales",
+        "customers",
+        "sellers",
+        "logistics",
+        "payments",
+        "reviews",
+        "catalog"
+      ],
+      "writes": "*",
+      "reads": "*",
+      "scope": {}
+    },
+    "analyst": {
+      "title": "Analyst",
+      "description": "Reads the reports library for all regions. Cannot open operations pages or change data.",
+      "modules": [
+        "sales",
+        "customers",
+        "sellers",
+        "logistics",
+        "payments",
+        "reviews",
+        "catalog"
+      ],
+      "writes": [],
+      "reads": [
+        "metrics."
+      ],
+      "scope": {}
+    },
+    "south_analyst": {
+      "title": "Analyst, South region",
+      "description": "Reads the reports library for customers in the South region only. Cannot open operations pages or change data.",
+      "modules": [
+        "sales",
+        "customers",
+        "sellers",
+        "logistics",
+        "payments",
+        "reviews",
+        "catalog"
+      ],
+      "writes": [],
+      "reads": [
+        "metrics."
+      ],
+      "scope": {
+        "customer_region": [
+          "South"
+        ]
+      }
+    }
+  }
+}

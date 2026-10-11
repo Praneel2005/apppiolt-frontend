@@ -13,11 +13,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend import db
+from backend import access, db
 from backend.common import ApiError
 from backend.config import CORS_ORIGINS, as_of_date, sim_now
-from backend.routes import (funnel, metrics, orders, plan, products, promotions, reviews, sellers, session, summaries,
-                            system, tickets)
+from backend.routes import (access as access_routes, funnel, metrics, orders, plan, products, promotions, reviews, sellers,
+                            session, summaries, system, tickets)
 
 
 import os
@@ -37,8 +37,9 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="AppPilot - Olist Seller Operations API", version="0.2.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(access.RoleMiddleware)          # the X-Role header sets who is asking (see backend/access.py)
 
-for r in (metrics, plan, funnel, summaries, orders, products, sellers, reviews, tickets, promotions, system, session):
+for r in (metrics, plan, funnel, summaries, orders, products, sellers, reviews, tickets, promotions, system, session, access_routes):
     app.include_router(r.router)
 
 

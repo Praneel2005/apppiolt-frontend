@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Preview } from '../actions/ActionDialog'
 import type { AgentEvent, WriteResult } from '../lib/types'
+import { screenChanged, type AnswerScreen } from '../lib/screen'
 import { api, ApiError } from '../net/api'
 import { openUrl } from '../state/session'
 import { toast, useStore } from '../state/store'
@@ -22,7 +23,16 @@ function Trace({ e }: { e: AgentEvent }) {
   const d = e.data
   switch (e.type) {
     case 'retrieval': return <div>◆ candidates {((d.pages ?? d.candidates ?? []) as any[]).slice(0, 3).map((c) => `${c.page_id ?? c.id} (${c.score})`).join(' · ')}</div>
-    case 'analysis_step': return <div>⟳ {d.title}{d.detail ? <span className="text-white/45"> — {short(d.detail, 110)}</span> : null}</div>
+    case 'analysis_step': {
+      if (d.tasks) return <div>◆ plan <span className="text-white/45">— {d.detail}</span></div>
+      if (d.task) {
+        const s = d.task.status as string
+        return <div className={s === 'failed' ? BAD : s === 'done' ? OK : s === 'skipped' ? 'text-white/45' : ''}>
+          {s === 'running' ? '▶' : s === 'done' ? '✓' : s === 'failed' ? '✕' : '–'} {d.title}{d.task.ms ? <span className="text-white/45"> · {Math.round(d.task.ms)} ms</span> : null}
+          {(s === 'skipped' || s === 'failed') && d.detail ? <span className="text-white/45"> — {short(d.detail, 80)}</span> : null}</div>
+      }
+      return <div>⟳ {d.title}{d.detail ? <span className="text-white/45"> — {short(d.detail, 110)}</span> : null}</div>
+    }
     case 'form_open': return <div>◆ form opened: <b>{d.title || d.api_id}</b></div>
     case 'form_patch': return <div>◆ form {d.status ?? 'updated'}{d.changes && Object.keys(d.changes).length ? `: ${Object.keys(d.changes).join(', ')}` : ''}{d.errors && Object.keys(d.errors).length ? ` · problems: ${Object.keys(d.errors).join(', ')}` : ''}</div>
     case 'plan': return d.skill
@@ -90,6 +100,8 @@ function Avatar({ pulse }: { pulse?: boolean }) {
 /** The assistant's reply: formatted text, a verified/partial/failed badge, citations, links to the view, follow-up chips. */
 function AnswerCard({ e, onAsk }: { e: AgentEvent; onAsk: (text: string) => void }) {
   const d = e.data
+  const current = useStore((s) => s.state)
+  const outdated = screenChanged(d.screen as AnswerScreen | undefined, current)
   const links: string[] = d.deep_links ?? []
   const suggestions: string[] = d.suggestions ?? []
   return (
@@ -104,6 +116,12 @@ function AnswerCard({ e, onAsk }: { e: AgentEvent; onAsk: (text: string) => void
         <div className="text-[13.5px] leading-relaxed"><Markdown text={String(d.text ?? '')} /></div>
         {(d.citations ?? []).length > 0 && (
           <div className="flex flex-wrap gap-1">{(d.citations as string[]).map((c) => <span key={c} className="text-[10px] font-mono bg-primary-soft text-primary rounded px-1.5 py-0.5">{c}</span>)}</div>
+        )}
+        {outdated && (
+          <div className="flex items-center justify-between gap-2 text-[11.5px] rounded-lg bg-warning-soft text-warning border border-warning/25 px-2.5 py-1.5">
+            <span>The screen has changed since this answer.</span>
+            {links[0] && <button className="font-medium underline" onClick={() => openUrl(links[0])}>Show it again</button>}
+          </div>
         )}
         <ProofPanel claims={d.claims ?? []} citations={d.citations ?? []} />
         {links.length > 0 && (
@@ -139,8 +157,36 @@ function ConfirmCard({ e, state, onAnswer }: { e: AgentEvent; state?: 'approved'
   )
 }
 
-/** The assistant is working: bouncing dots, the step it is on, and a thin shimmer line. */
-function Thinking({ label }: { label: string }) {
+interface PlanTask { id: string; title: string; deps: string[]; status: string }
+
+const TASK_ICON: Record<string, { icon: string; cls: string }> = {
+  pending: { icon: '○', cls: 'text-muted/60' }, running: { icon: '◐', cls: 'text-primary animate-pulse' },
+  done: { icon: '✓', cls: 'text-success' }, failed: { icon: '✕', cls: 'text-danger' }, skipped: { icon: '–', cls: 'text-muted/60' },
+}
+
+/** The analysis plan as it runs: which tasks are waiting, running or finished (independent ones run side by side). */
+function PlanChecklist({ plan }: { plan: PlanTask[] }) {
+  const done = plan.filter((t) => t.status === 'done' || t.status === 'skipped' || t.status === 'failed').length
+  return (
+    <div className="mt-2.5 border-t border-border pt-2">
+      <div className="text-[10.5px] uppercase tracking-wide text-muted mb-1">Plan · {done}/{plan.length} done</div>
+      <ul className="space-y-0.5 max-h-40 overflow-auto scroll-thin">
+        {plan.map((t) => {
+          const s = TASK_ICON[t.status] ?? TASK_ICON.pending
+          return (
+            <li key={t.id} className="flex items-center gap-2 text-[12px]">
+              <span className={`w-3 text-center ${s.cls}`}>{s.icon}</span>
+              <span className={t.status === 'pending' ? 'text-muted/70' : t.status === 'skipped' ? 'text-muted line-through' : 'text-ink'}>{t.title}</span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
+/** The assistant is working: bouncing dots, the step it is on, the plan, and a thin shimmer line. */
+function Thinking({ label, plan }: { label: string; plan: PlanTask[] | null }) {
   return (
     <div className="relative pl-9 ap-rise" role="status" aria-live="polite">
       <Avatar pulse />
@@ -150,6 +196,7 @@ function Thinking({ label }: { label: string }) {
           <span key={label} className="ap-step-label text-[12.5px] text-muted">{label}</span>
         </div>
         <div className="ap-shimmer mt-2.5 w-44" aria-hidden="true" />
+        {plan && plan.length > 0 && <PlanChecklist plan={plan} />}
       </div>
     </div>
   )
@@ -255,6 +302,17 @@ function ChatTab() {
     return 'Understanding your request…'
   }, [events, pendingAt])
 
+  // the analysis plan for the question being answered, with each task's current status
+  const livePlan = useMemo<PlanTask[] | null>(() => {
+    if (pendingAt === null) return null
+    const mine = events.filter((e) => e.seq > pendingAt && e.type === 'analysis_step')
+    const planEv = [...mine].reverse().find((e) => e.data.tasks)
+    if (!planEv) return null
+    const status: Record<string, string> = {}
+    for (const e of mine) if (e.data.task && e.seq > planEv.seq) status[e.data.task.id] = e.data.task.status
+    return (planEv.data.tasks as { id: string; title: string; deps: string[] }[]).map((t) => ({ ...t, status: status[t.id] ?? 'pending' }))
+  }, [events, pendingAt])
+
   const lastTraceKey = [...rows].reverse().find((r) => r.kind === 'trace')?.key
 
   return (
@@ -290,7 +348,7 @@ function ChatTab() {
             </span>
           </div>
         ))}
-        {busy && <Thinking label={liveLabel} />}
+        {busy && <Thinking label={liveLabel} plan={livePlan} />}
         <div ref={end} />
       </div>
       <div className="border-t border-border bg-surface p-3 space-y-2">

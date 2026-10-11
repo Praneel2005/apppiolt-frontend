@@ -21,6 +21,7 @@ from datetime import date, timedelta
 from typing import Any, AsyncIterator
 
 from agent.perceive import month_range
+from agent.dag import Task, run_plan
 from agent.reasoning.rigor import build_rigor
 from agent.reasoning.gateway import (AnalysisError, Gateway, align_periods, default_periods, make_period, shift_year,
                                      usable_filters)
@@ -350,15 +351,65 @@ async def explain(ctx, it: Interp, gw: Gateway, depth: str = "full") -> AsyncIte
     dims = candidate_dims(lex, it.metric, filters)
     if it.group_by and depth == "compare":
         dims = [d for d in it.group_by if d in dims] or dims
-    yield "step", {"title": "Splitting the change", "detail": f"{len(dims)} dimensions: {', '.join(dims)}"}
-    scan_tasks = [scan_dimension(gw, it.metric, mi.additive, d, filters, primary, baseline) for d in dims]
-    out = await asyncio.gather(_identity(gw, lex, it.metric, filters, primary, baseline), *scan_tasks)
-    res.identity = out[0]
-    scans = [s for s in out[1:] if s]
+
+    # The analysis as a task plan: everything that only needs the two periods starts at once; a task waits only for what it uses.
+    def scan_task(d: str) -> Task:
+        async def run(_inputs):
+            return await scan_dimension(gw, it.metric, mi.additive, d, filters, primary, baseline)
+        return Task(f"scan:{d}", f"By {d.replace('_', ' ')}", run, kind="scan")
+
+    async def identity_fn(_inputs):
+        return await _identity(gw, lex, it.metric, filters, primary, baseline)
+
+    tasks: list[Task] = [Task("identity", "Volume vs value", identity_fn, kind="identity"), *[scan_task(d) for d in dims]]
+    scan_ids = tuple(f"scan:{d}" for d in dims)
+
+    if depth == "full":
+        async def drill_fn(inputs):
+            scans_ = sorted([inputs[i] for i in scan_ids if inputs.get(i)], key=lambda s: (-s.localisation, s.n_groups))
+            if not (scans_ and scans_[0].movers and scans_[0].gross):
+                return None
+            top = scans_[0].movers[0]
+            if abs(top["delta"]) / scans_[0].gross < 0.2:
+                return None
+            f2 = {**filters, scans_[0].dim: [str(top["group"])]}
+            dims2 = [d for d in candidate_dims(lex, it.metric, f2) if d != scans_[0].dim]
+            s2 = await asyncio.gather(*(scan_dimension(gw, it.metric, mi.additive, d, f2, primary, baseline) for d in dims2))
+            s2 = sorted([s for s in s2 if s], key=lambda s: (-s.localisation, s.n_groups))
+            return DrillResult(scans_[0].dim, str(top["group"]), s2[0]) if s2 else None
+
+        async def confounders_fn(inputs):
+            ident = inputs.get("identity")
+            skip = {f["metric"] for f in ([ident["volume"], ident["rate"]] if ident else [])}
+            return await _confounders(gw, lex, it.metric, filters, primary, baseline, skip)
+
+        async def seasonality_fn(_inputs):
+            return await _seasonality(gw, it.metric, filters, primary, baseline)
+
+        async def trend_fn(_inputs):
+            return await _trend_context(gw, it.metric, filters, primary)
+
+        async def rigor_fn(inputs):
+            res.identity = inputs.get("identity")
+            res.scans = sorted([inputs[i] for i in scan_ids if inputs.get(i)], key=lambda s: (-s.localisation, s.n_groups))
+            return await build_rigor(gw, res, inputs.get("trend"))
+
+        tasks += [Task("drill", "Drilling into the biggest driver", drill_fn, deps=scan_ids, kind="drill"),
+                  Task("confounders", "Related metrics", confounders_fn, deps=("identity",), kind="confounders"),
+                  Task("seasonality", "Same period last year", seasonality_fn, kind="seasonality"),
+                  Task("trend", "The 12-month trend", trend_fn, kind="trend"),
+                  Task("rigor", "Reality checks", rigor_fn, deps=(*scan_ids, "identity", "trend"), kind="rigor")]
+
+    plan = None
+    async for kind, payload in run_plan(tasks, max_parallel=6):
+        if kind == "step":
+            yield "step", payload
+        else:
+            plan = payload
+    res.identity = plan.value("identity")
+    scans = [plan.value(i) for i in scan_ids if plan.value(i)]
     scans.sort(key=lambda s: (-s.localisation, s.n_groups))
     res.scans = scans
-    if res.identity:
-        yield "step", {"title": "Volume vs value", "detail": res.identity["explain"] or "factor decomposition"}
     if scans:
         yield "step", {"title": "Where it happened", "detail": f"most concentrated by {scans[0].dim}"}
 
@@ -367,35 +418,21 @@ async def explain(ctx, it: Interp, gw: Gateway, depth: str = "full") -> AsyncIte
         yield "result", res
         return
 
-    # drill into the biggest driver
-    if scans and scans[0].movers and scans[0].gross:
-        top = scans[0].movers[0]
-        if abs(top["delta"]) / scans[0].gross >= 0.2:
-            f2 = {**filters, scans[0].dim: [str(top["group"])]}
-            dims2 = [d for d in candidate_dims(lex, it.metric, f2) if d != scans[0].dim]
-            yield "step", {"title": f"Drilling into {top['group']}", "detail": f"{len(dims2)} dimensions"}
-            s2 = await asyncio.gather(*(scan_dimension(gw, it.metric, mi.additive, d, f2, primary, baseline) for d in dims2))
-            s2 = sorted([s for s in s2 if s], key=lambda s: (-s.localisation, s.n_groups))
-            if s2:
-                res.drill = DrillResult(scans[0].dim, str(top["group"]), s2[0])
-
-    skip = {f["metric"] for f in ([res.identity["volume"], res.identity["rate"]] if res.identity else [])}
-    yield "step", {"title": "Checking related metrics, last year and the trend", "detail": ""}
-    conf, seas, trend = await asyncio.gather(
-        _confounders(gw, lex, it.metric, filters, primary, baseline, skip),
-        _seasonality(gw, it.metric, filters, primary, baseline),
-        _trend_context(gw, it.metric, filters, primary))
-    res.confounders = conf
+    res.drill = plan.value("drill")
+    res.confounders = plan.value("confounders") or []
+    seas, trend = plan.value("seasonality"), plan.value("trend")
     if seas:
         pt = seas.get("ly_transition_pct")
         seas["seasonal"] = bool(pt is not None and pct is not None and pt * pct > 0 and abs(pt) >= max(2.0, 0.5 * abs(pct)))
     res.seasonality = seas
     res.trend = trend
-    res.rigor = await build_rigor(gw, res, trend)
+    res.rigor = plan.value("rigor")
     if res.rigor:
         for c in res.rigor.checks:
             if not c["ok"]:
                 caveats.append(f"Check: {c['detail']}.")
+    for tid in plan.failed:
+        caveats.append(f"One part of the analysis could not be completed ({tid}); the answer covers the rest.")
     if trend:
         fm = trend.get("first_month")
         if fm and _d(primary.start) < _d(fm):

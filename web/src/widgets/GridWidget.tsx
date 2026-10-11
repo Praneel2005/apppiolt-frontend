@@ -1,6 +1,7 @@
 /** Sortable table for metric widgets (dimensions + metrics) and API widgets (declared columns), with row actions. */
 import { useMemo, useState } from 'react'
 import { runAction } from '../actions/runner'
+import { canWrite } from '../lib/access'
 import { formatCell, formatUnit, humanize } from '../lib/format'
 import type { Action, Page, Widget } from '../lib/types'
 import { setSort } from '../state/session'
@@ -70,7 +71,8 @@ export function GridWidget({ widget, page }: { widget: Widget; page: Page }) {
     else if (sort.dir === 'desc') setSort({ field: name, dir: 'asc' })
     else setSort(null)
   }
-  const actions = widget.source?.row_actions ?? []
+  const role = useStore((s) => s.role)
+  const actions = (widget.source?.row_actions ?? []).filter((a) => canWrite(role, a.api_id))     // no buttons for changes the role may not make
   const rows = (data?.rows ?? []).slice(0, MAX_ROWS)
   const empty = !loading && !error && (data?.rows.length ?? 0) === 0
 

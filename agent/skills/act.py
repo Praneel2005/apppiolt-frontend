@@ -348,6 +348,12 @@ async def run_act(ctx, it: Interp, out: SkillResult) -> AsyncIterator[tuple[str,
         out.suggestions = [a.title for a in writes[:3]]
         return
     api = cap.apis[api_id]
+    from backend import access
+    if not access.write_allowed(api_id):          # the signed-in role may not make this change: no form, and say why
+        out.text = (f"Your role ({access.role()['title']}) cannot make changes, so I can't start “{api.title}”. "
+                    "Ask an administrator or an operations manager.")
+        out.status = "INFO"
+        return
     fields, required, path_names = api_fields(api)
 
     opened = False

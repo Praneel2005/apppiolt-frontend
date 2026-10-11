@@ -3,7 +3,8 @@ import type {
   ApiErrorBody, Application, CatalogEntry, UiState, WidgetData, WidgetRequest, WriteResult,
 } from '../lib/types'
 import type { PresetMap } from '../lib/url'
-import type { Proof, Replay } from '../lib/types'
+import type { Proof, Replay, Role } from '../lib/types'
+import { getRole } from './role'
 
 export class ApiError extends Error {
   status: number
@@ -26,7 +27,7 @@ async function request<T>(method: string, url: string, body?: unknown, headers: 
   bump()
   const res = await fetch(url, {
     method,
-    headers: { ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...headers },
+    headers: { ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(getRole() ? { 'X-Role': getRole() } : {}), ...headers },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   const text = await res.text()
@@ -46,6 +47,8 @@ const qs = (params: Record<string, unknown>) => {
 }
 
 export const api = {
+  roles: () => request<{ default: string; roles: Role[] }>('GET', '/api/roles'),
+  me: () => request<Role>('GET', '/api/me'),
   health: () => request<{ status: string; as_of_date: string; sim_now: string }>('GET', '/api/health'),
   application: () => request<Application>('GET', '/api/application'),
   presets: () => request<PresetMap>('GET', '/api/date-presets'),

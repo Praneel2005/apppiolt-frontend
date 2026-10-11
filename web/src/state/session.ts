@@ -9,6 +9,7 @@ import type { AgentEvent, FilterValue, Page, Sort, UiState, WidgetAck, DateRange
 import { buildRequest, requestKey } from '../lib/request'
 import { fromUrl, stateForPage, toUrl } from '../lib/url'
 import { api, onApiCount } from '../net/api'
+import { getRole, setRole } from '../net/role'
 import { getStore, toast, useStore } from './store'
 import { openAgentForm, useActionDialog } from '../actions/runner'
 
@@ -165,6 +166,14 @@ function openSocket(sid: string) {
   socket.onerror = () => socket?.close()
 }
 
+/** Sign in as another role: the server enforces what it may see and do, so start a clean session on a page it may open. */
+export async function switchRole(id: string): Promise<void> {
+  setRole(id)
+  useStore.setState({ role: getStore().roles.find((r) => r.id === id) ?? null })
+  history.replaceState(null, '', '/')
+  await newSession()
+}
+
 export function newSession(): Promise<void> {
   window.clearTimeout(reconnectTimer)
   socket?.close()
@@ -198,8 +207,9 @@ export function boot(): Promise<void> {
 
 async function doBoot() {
   try {
-    const [app, presets, catalog] = await Promise.all([api.application(), api.presets(), api.catalog()])
-    useStore.setState({ app, presets, catalog })
+    const [app, presets, catalog, rl] = await Promise.all([api.application(), api.presets(), api.catalog(), api.roles()])
+    if (!rl.roles.some((r) => r.id === getRole())) setRole(rl.default)       // a remembered role that no longer exists: the default
+    useStore.setState({ app, presets, catalog, roles: rl.roles, role: rl.roles.find((r) => r.id === getRole()) ?? null })
     onApiCount((n) => useStore.setState({ apiCalls: n }))
     await startSession()
     window.addEventListener('popstate', applyLocationAsUser)

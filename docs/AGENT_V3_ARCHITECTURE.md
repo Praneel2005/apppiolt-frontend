@@ -172,6 +172,35 @@ ambiguous value: the user named the field ("seller state") -> the user named a r
 field the metadata lists first (flagged as an assumption, and asked about when the readings differ materially). This replaces the old
 hard-coded `seller_words`; any new pair (origin / destination city) works with no code change.
 
+## 4b9. Task plans (pillar 5a)
+`agent/dag.py`: a plan is a list of typed `Task`s (id, dependencies, coroutine, kind, retries, timeout, required). `validate_plan` rejects
+duplicate ids, unknown dependencies, cycles and kinds outside an allow-list (so a plan proposed by a model could only contain task
+types the code knows). `run_plan` runs independent tasks side by side (bounded by `max_parallel`), passes each task the results of its
+dependencies, retries a bounded number of times, times out slow tasks, and contains failures: a required task failing skips its
+dependants, an optional one gives them None. It streams `analysis_step` events with `tasks` (the plan) and `task` (id, status, ms), which
+the chat shows live as a checklist. The explain flow is built on it: the identity split, every dimension scan, related metrics, last year
+and the trend all start together; the drill waits only for the scans; the reality checks wait for scans, identity and trend. A model-proposed
+plan is not implemented: the allow-list and validation are the groundwork for it.
+
+## 4b10. Roles and permissions (pillar 5b)
+`data/olist/roles.json` (data, not code) defines roles: which modules (groups of pages) a role may open, which write APIs it may call, which
+read APIs it may use, and a data SCOPE (for example `customer_region = South`) added to every metric query. `backend/access.py` carries the role
+of the current request in a context variable set by `RoleMiddleware` from the `X-Role` header (so it follows the request into worker threads and
+the app's own in-process calls). Enforced server-side at the central points: the validator (navigation), the widget data route (a page's
+widgets), `run_write` and `undo_action` (every write and undo), and both places that build metric SQL (scope). A scope that cannot be
+applied to a dataset REFUSES access rather than widening it. The agent respects the same rules: a refused page or change is explained
+("Your role (Analyst) cannot open Support tickets"), figures carry a note that they are limited to the role's scope, the model prompt names
+the role, and a new session starts on a page the role may open. The web app has a role switcher, hides pages and action buttons the role
+cannot use, and shows a "no access" page for a forbidden link.
+This is role CONTEXT for a demonstration, not authentication: there are no passwords or tokens, and an unknown or missing role is the default
+role. Not enforced yet: the direct operational read routes (`/api/orders`, ...) when called outside the app's own pages.
+
+## 4b11. Versioned screen state (pillar 5c)
+Every answer carries `screen`: the page, filters, dates and state version it was about, and whether it depends on the screen (a view command or
+an answer that moved the screen). The chat compares that with the current screen (`web/src/lib/screen.ts`, filter values compared as sets) and,
+when the screen has changed since, marks the answer "out of date" with a "Show it again" link that restores it. Not done: invalidating cached
+analysis results by dependency (answers are recomputed on every question, so there is no cache to go stale).
+
 ## 4c. Known limits (not yet done)
 * Web app (done, untested in a browser): the assistant panel renders formatted answers (`web/src/agent/Markdown.tsx`), an
   "Understood as" card with assumptions, live progress steps, a verified / partial / failed badge, citation chips, "Open the view"

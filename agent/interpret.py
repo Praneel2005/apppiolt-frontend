@@ -217,6 +217,11 @@ def build_prompt(ctx: TurnContext, ann: Annotations) -> str:
 
     if ctx.mem.last is not None:
         lines.append(f"LAST REQUEST: {ctx.mem.last.brief()}")
+    from backend import access
+    if access.is_restricted():
+        r = access.role()
+        lines.append(f"SIGNED-IN ROLE: {r['title']}. It may open only these modules: {r.get('modules')}; it may make changes: "
+                     f"{'yes' if r.get('writes') else 'no'}" + (f"; all figures are limited to {access.describe_scope()}" if access.scope() else "") + ".")
     if ctx.mem.form is not None:
         fs = ctx.mem.form
         lines.append(f"OPEN FORM: api={fs.api_id} values={fs.values} missing={fs.missing} errors={fs.errors}")

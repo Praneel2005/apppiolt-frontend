@@ -200,6 +200,12 @@ async def run_view(ctx, it: Interp, out: SkillResult) -> AsyncIterator[tuple[str
     yield "analysis_step", {"title": f"Opening {best.title}", "detail": _args_brief(args)}
     nav = await navigate(ctx, args)
     out.steps = 1
+    if nav.get("denied"):                      # the signed-in role may not open this page: say so and offer what it can open
+        from backend import access
+        out.text = f"{nav['denied']} Ask an administrator if you need access."
+        out.status, out.kind = "INFO", "view"
+        out.suggestions = [f"Open {p.title}" for p in ctx.cap.pages.values() if access.page_allowed(p)][:3]
+        return
 
     # read the main table so the answer can say what is on screen
     rows_note = ""

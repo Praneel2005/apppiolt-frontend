@@ -82,6 +82,8 @@ class _Preview(Exception):
 
 def run_write(api_id: str, opts: WriteOpts, params: dict, fn: Callable[[Any, Changes], dict]) -> dict:
     """Run fn(conn, changes) in one transaction. fn validates, writes via `changes`, returns a result."""
+    from backend import access
+    access.require_write(api_id)         # preview, apply and every write route go through here: a role that may not write is stopped first
     with rw() as conn:
         try:
             with conn.transaction():
@@ -118,6 +120,8 @@ def _coltypes(conn, table: str) -> dict[str, str]:
 
 def undo_action(code: str, actor: str) -> dict:
     """Reverse a logged action. Refuses (409) if any row was changed after the action."""
+    from backend import access
+    access.require_any_write()           # reverting a change is a change
     digits = code.strip().upper().rpartition("-")[2]
     if not digits.isdigit():
         raise ApiError(422, "invalid_code", f"'{code}' is not an action code (ACT-000123).")

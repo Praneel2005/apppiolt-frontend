@@ -81,6 +81,13 @@ def ungrounded_numbers(text: str, query: str, it: Interp, out: SkillResult, sess
     return sorted(_extract_digits(text) - allowed)
 
 
+def screen_of(state, depends: bool) -> dict:
+    """The screen an answer is about (page, filters, dates), so the chat can tell when the screen has since changed."""
+    dr = getattr(state, "date_range", None)
+    return {"page_id": state.page_id, "filters": {k: sorted(v.value) for k, v in state.filters.items()},
+            "date_range": [str(dr.from_), str(dr.to)] if dr else None, "depends": depends, "version": state.version}
+
+
 def paraphrase(it: Interp, ctx: TurnContext) -> str:
     if it.paraphrase:
         return it.paraphrase
@@ -187,6 +194,10 @@ class AppPilotAgent:
             mem.form.parked = True
             park_note = f"\n\n*Your “{mem.form.title}” draft is parked; say “continue the form” to resume it.*"
 
+        from backend import access
+        if access.scope() and it.intent in ("data", "compare", "explain", "investigate", "view"):
+            it.assumptions.append(f"Signed in as {access.role()['title']}: figures are limited to {access.describe_scope()}.")
+
         yield ev("understood", {"paraphrase": paraphrase(it, ctx), "assumptions": it.assumptions, "intent": it.intent,
                                 "source": it.source, "confidence": it.confidence,
                                 "parser": ctx.ann.summary() if ctx.ann is not None else {}})
@@ -244,7 +255,8 @@ class AppPilotAgent:
         yield ev("answer", {"text": text, "citations": out.citations, "deep_links": out.deep_links,
                             "suggestions": out.suggestions, "status": status, "assumptions": it.assumptions,
                             "ungrounded_numbers": ungrounded, "grounded": not ungrounded, "intent": it.intent,
-                            "narrative_used": out.narrative_used, "claims": out.claims})
+                            "narrative_used": out.narrative_used, "claims": out.claims, "role": access.role_id(),
+                            "screen": screen_of(s.state, bool(out.screen_note) or name == "view")})
 
         # ---------------------------------------------------------------- memory
         mem.turns += 1

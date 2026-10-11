@@ -54,7 +54,8 @@ async def call_internal(method: str, path: str, params: dict | None = None, json
     """Call one of our own catalogue APIs in-process (same validation, same database roles as a real client)."""
     clean = {k: (str(v).lower() if isinstance(v, bool) else v) for k, v in (params or {}).items() if v is not None}
     async with _asgi_client() as c:
-        r = await c.request(method, path, params=clean, json=json, headers=headers)
+        from backend import access
+        r = await c.request(method, path, params=clean, json=json, headers={**(headers or {}), "x-role": access.role_id()})
     try:
         body = r.json()
     except ValueError:
@@ -89,6 +90,10 @@ def _metric_widget(app: Application, page: Page, w: Widget, filters: dict[str, F
             parts.append(sql.SQL("{} = ANY({})").format(sql.Identifier(field), sql.Placeholder(f"f{i}")))
             params[f"f{i}"] = list(fv.value)
             applied[fid] = fv
+    from backend import access          # the signed-in role's data scope (refused if it cannot be applied to this dataset)
+    for j, (name, values) in enumerate(access.scope_filters(fields).items()):
+        parts.append(sql.SQL("{} = ANY({})").format(sql.Identifier(name), sql.Placeholder(f"s{j}")))
+        params[f"s{j}"] = values
     applied_range = None
     if date_range and ds.time_field and "date_range" in w.supports:
         parts.append(sql.SQL("{} BETWEEN {} AND {}").format(sql.Identifier(ds.time_field), sql.Placeholder("d_from"),
@@ -166,6 +171,8 @@ async def widget_data(widget_id: str, filters: dict[str, FilterValue] | None = N
     if w is None:
         raise ViewError("unknown_widget", f"Unknown widget '{widget_id}'.")
     page = page_for_widget(app, widget_id, page_id)
+    from backend import access
+    access.require_page(page)            # a role cannot read the widgets of a page it cannot open
     filters = filters or {}
     out = (await _api_widget(page, w, filters, date_range, sort)) if w.source else \
         _metric_widget(app, page, w, filters, date_range, sort)

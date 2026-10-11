@@ -1,5 +1,6 @@
 import { api } from '../net/api'
-import { newSession } from '../state/session'
+import { scopeText } from '../lib/access'
+import { newSession, switchRole } from '../state/session'
 import { toast, useStore } from '../state/store'
 
 export function TopBar({ onToggleAgent, agentOpen }: { onToggleAgent: () => void; agentOpen: boolean }) {
@@ -8,6 +9,8 @@ export function TopBar({ onToggleAgent, agentOpen }: { onToggleAgent: () => void
   const verify = useStore((s) => s.lastVerify)
   const app = useStore((s) => s.app)
   const sid = useStore((s) => s.sessionId)
+  const role = useStore((s) => s.role)
+  const roles = useStore((s) => s.roles)
   const dot = link === 'open' ? 'bg-success' : link === 'connecting' ? 'bg-warning' : 'bg-danger'
 
   const undo = async () => {
@@ -32,6 +35,16 @@ export function TopBar({ onToggleAgent, agentOpen }: { onToggleAgent: () => void
         )}
       </div>
       <div className="flex items-center gap-2">
+        {roles.length > 1 && (
+          <label className="flex items-center gap-1.5 text-xs text-muted pr-1" title={role ? `${role.description}${scopeText(role) ? ` Data limited to ${scopeText(role)}.` : ''}` : ''}>
+            <span className="hidden xl:inline">Signed in as</span>
+            <select value={role?.id ?? ''} onChange={(e) => void switchRole(e.target.value)}
+              className="border border-border rounded-lg bg-surface px-2 py-1.5 text-[13px] font-medium text-ink focus:outline-none focus:ring-2 focus:ring-primary/30">
+              {roles.map((r) => <option key={r.id} value={r.id}>{r.title}</option>)}
+            </select>
+            {role && scopeText(role) && <span className="rounded-full bg-accent-soft text-accent-ink px-2 py-0.5 text-[10.5px] font-medium">{scopeText(role)}</span>}
+          </label>
+        )}
         <button onClick={undo} className="btn" title="Go back to the previous screen state">↶ Undo view</button>
         <button onClick={() => void newSession()} className="btn">New session</button>
         <button onClick={onToggleAgent} className={`btn ${agentOpen ? 'btn-primary' : 'border-primary! text-primary! hover:bg-primary-soft!'}`}>✦ Assistant</button>

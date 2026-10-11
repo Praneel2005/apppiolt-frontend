@@ -217,6 +217,10 @@ async def _search(s: Session, step: ToolCall, i: int) -> StepResult:
 
 
 async def _call_api(s: Session, step: ToolCall, i: int) -> StepResult:
+    from backend import access
+    if not access.read_allowed(step.args["api_id"]):
+        return StepResult(step_index=i, ok=False, error_code="api_error",
+                          message=f"forbidden_read: your role ({access.role()['title']}) cannot read '{step.args['api_id']}'.")
     entry = _catalog()[step.args["api_id"]]
     path, query = _split(entry, step.args["params"])
     status, body = await call_internal(entry["method"], path, query, headers={"x-actor": "agent"})

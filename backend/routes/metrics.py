@@ -85,6 +85,10 @@ def _where(ds: dict, filters: dict[str, list[str]], f: date | None, t: date | No
     for i, (name, values) in enumerate(filters.items()):
         parts.append(sql.SQL("{} = ANY({})").format(sql.Identifier(name), sql.Placeholder(f"f{i}")))
         params[f"f{i}"] = values
+    from backend import access          # the signed-in role's data scope applies to every metric query (refused if it cannot be applied)
+    for j, (name, values) in enumerate(access.scope_filters(f["name"] for f in ds["fields"]).items()):
+        parts.append(sql.SQL("{} = ANY({})").format(sql.Identifier(name), sql.Placeholder(f"s{j}")))
+        params[f"s{j}"] = values
     where = sql.SQL(" WHERE ") + sql.SQL(" AND ").join(parts) if parts else sql.SQL("")
     return where, params
 

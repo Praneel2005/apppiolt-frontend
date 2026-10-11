@@ -5,7 +5,7 @@
  */
 import { create } from 'zustand'
 import type {
-  AgentEvent, Application, CanvasSpec, CatalogEntry, Page, UiState, WidgetAck,
+  AgentEvent, Application, CanvasSpec, CatalogEntry, Page, Role, UiState, WidgetAck,
 } from '../lib/types'
 import type { PresetMap } from '../lib/url'
 
@@ -18,6 +18,8 @@ interface Store {
   app: Application | null
   presets: PresetMap
   catalog: Record<string, CatalogEntry>
+  role: Role | null          // who is signed in (what they may open and do)
+  roles: Role[]
 
   sessionId: string | null
   link: 'connecting' | 'open' | 'closed'
@@ -35,7 +37,7 @@ interface Store {
 }
 
 export const useStore = create<Store>()((set) => ({
-  boot: 'loading', bootError: null, app: null, presets: {}, catalog: {},
+  boot: 'loading', bootError: null, app: null, presets: {}, catalog: {}, role: null, roles: [],
   sessionId: null, link: 'connecting', state: null, acks: {}, refreshTick: 0, lastVerify: null, apiCalls: 0,
   events: [], canvases: [], toasts: [],
   set: (patch) => set(patch),

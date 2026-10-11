@@ -236,6 +236,13 @@ export interface CanvasSpec {
   pageId?: string
 }
 
+/** A signed-in role: what it may open (modules), change (write APIs) and read, and the data scope added to its queries. */
+export interface Role {
+  id: string; title: string; description: string
+  modules: '*' | string[]; writes: '*' | string[]; reads: '*' | string[]
+  scope: Record<string, string[]>
+}
+
 /** How one piece of evidence was produced (GET /api/session/{sid}/evidence/{id}/proof). */
 export interface Proof {
   evidence_id: string; kind: string; source: string
