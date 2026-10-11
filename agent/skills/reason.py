@@ -62,7 +62,14 @@ async def run_reason(ctx, it: Interp, out: SkillResult) -> AsyncIterator[tuple[s
         template, sugg = compose_slices(result, fs)
         flags = {"kind": "slice comparison"}
         view_metric, view_filters, view_period, best_dim = result.metric, dict(it.filters), result.period, None
-        await _slices_canvas(ctx, result)
+        # slices that differ in ONE dimension can be shown by an existing page: that dimension as the breakdown, its values as the filter
+        sdim = _slice_dimension(result)
+        if sdim:
+            best_dim = sdim[0]
+            view_filters = {**view_filters, sdim[0]: sdim[1]}
+        shown = bool(sdim and ctx.cfg.open_supporting_view and (gw.view_for(view_metric, [sdim[0]], view_filters, view_period) or {}).get("exact"))
+        if not shown:   # no page can show it: generate the chart, for this answer only
+            await _slices_canvas(ctx, result)
         title_note = result.title
     else:
         assert isinstance(result, HealthResult)
@@ -109,6 +116,21 @@ async def run_reason(ctx, it: Interp, out: SkillResult) -> AsyncIterator[tuple[s
                 out.mismatches = nav["mismatches"]
     if issues:
         logger.info("interpretation rejected (%s); deterministic answer used", "; ".join(issues[:3]))
+
+
+def _slice_dimension(res: SliceCompareResult) -> tuple[str, list[str]] | None:
+    """(dimension, values) when every slice differs from the others only in one dimension's value(s)."""
+    fl = [s.get("filters") or {} for s in res.slices]
+    if len(fl) < 2:
+        return None
+    keys = {k for f in fl for k in f}
+    varying = [k for k in keys if len({tuple(f.get(k, ())) for f in fl}) > 1]
+    if len(varying) != 1 or any(k != varying[0] and len({tuple(f.get(k, ())) for f in fl}) > 1 for k in keys):
+        return None
+    d = varying[0]
+    if any(d not in f or not f[d] for f in fl):
+        return None
+    return d, list(dict.fromkeys(v for f in fl for v in f[d]))
 
 
 async def _explain_canvas(ctx, res: ExplainResult) -> None:

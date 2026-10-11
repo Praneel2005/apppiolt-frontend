@@ -17,6 +17,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any, Callable, Generic, Literal, Type, TypeVar
@@ -238,12 +239,13 @@ class GeminiProvider(LLMProvider):
         model_name: str | None = None,
         api_key: str | None = None,
         cache_dir: Path | str | None = None,
-        rpm: float = 15.0,
+        rpm: float | None = None,
     ):
         model = model_name or os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash"
         super().__init__(model, cache_dir)
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY") or ""
-        self.limiter = TokenBucket(rpm)
+        # free-tier keys allow as few as 5 requests a minute: set GEMINI_RPM to your plan's limit
+        self.limiter = TokenBucket(rpm if rpm is not None else float(os.environ.get("GEMINI_RPM", "4")))
         self._client = None
 
     def _get_client(self):
@@ -296,9 +298,11 @@ class GeminiProvider(LLMProvider):
         client = self._get_client()
         t0 = time.time()
 
-        # Retry once on transient parse or network failures
+        # Retry on transient failures; on a rate limit wait only if the provider's suggested delay is short
+        # (LLM_MAX_WAIT_S, default 2 s, so the app fails over instead of freezing; evaluation scripts raise it)
         last_err = None
-        for attempt in range(2):
+        max_wait = float(os.environ.get("LLM_MAX_WAIT_S", "2"))
+        for attempt in range(6):
             try:
                 loop = asyncio.get_running_loop()
                 response = await asyncio.wait_for(loop.run_in_executor(
@@ -351,7 +355,19 @@ class GeminiProvider(LLMProvider):
                 last_err = e
                 text = str(e)
                 if "429" in text or "RESOURCE_EXHAUSTED" in text or isinstance(e, asyncio.TimeoutError):
-                    raise RateLimited(f"Gemini unavailable ({type(e).__name__}); failing over") from None
+                    m = re.search(r"retry in ([0-9.]+)\s*s", text)
+                    wait = (float(m.group(1)) + 1.0) if m else 15.0
+                    quotas = sorted(set(re.findall(r"[A-Za-z]*Per(?:Day|Minute)[A-Za-z]*", text)))
+                    daily = any("PerDay" in q for q in quotas)
+                    if daily:
+                        wait = 1e9                       # a daily quota will not recover within this run
+                    if wait <= max_wait and attempt < 5:
+                        logger.warning("Gemini rate limit (%s); waiting %.0fs", ", ".join(quotas) or "per-minute", wait)
+                        await asyncio.sleep(wait)
+                        continue
+                    reason = "daily quota used up" if daily else f"rate limited, asked to wait {wait:.0f}s (limit {max_wait:.0f}s)"
+                    logger.warning("Gemini unavailable: %s [%s]", reason, ", ".join(quotas))
+                    raise RateLimited(f"Gemini unavailable: {reason}") from None
                 if attempt == 0:
                     await asyncio.sleep(1.0)
                     continue

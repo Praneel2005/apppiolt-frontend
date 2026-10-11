@@ -16,6 +16,7 @@ from typing import AsyncIterator
 from agent.capabilities import get_capability_model
 from agent.interpret import interpret, llm_interpret, reconcile
 from agent.lexicon import get_lexicon
+from agent.perceive import perceive
 from agent.llm import ChainedLLMProvider, FakeLLM, LLMProvider, get_llm_pair
 from agent.schema import Interp, TurnContext, get_agent_memory
 from agent.skills.act import run_act
@@ -115,7 +116,18 @@ class AppPilotAgent:
             self.llm, strong = None, None
         self.strong_llm = strong or self.llm
 
-    async def handle(self, session_id: str, message: str, config: AgentConfig | None = None) -> AsyncIterator[AgentEvent]:
+    async def handle_form_action(self, session_id: str, action: str, config: AgentConfig | None = None) -> AsyncIterator[AgentEvent]:
+        """A button on the live form (submit / cancel): the interpretation is known, so no model call is needed."""
+        mem = get_agent_memory(session_id)
+        if mem.form is None:
+            return
+        forced = Interp(intent="act", form_action=action, write_api=mem.form.api_id, source="ui", confidence=1.0,
+                        paraphrase=f"{action.capitalize()} the open form")
+        async for e in self.handle(session_id, f"{action} the form", config, forced=forced):
+            yield e
+
+    async def handle(self, session_id: str, message: str, config: AgentConfig | None = None,
+                     forced: Interp | None = None) -> AsyncIterator[AgentEvent]:
         t0 = time.time()
         cfg = config or AgentConfig()
         seq = 0
@@ -142,7 +154,11 @@ class AppPilotAgent:
 
         # ---------------------------------------------------------------- L1-L2 perceive + interpret
         try:
-            it = await interpret(ctx)
+            if forced is not None:
+                ctx.ann = perceive(message, lex, lex.as_of)
+                it = forced
+            else:
+                it = await interpret(ctx)
             if it.source == "fast" and it.intent == "view" and ctx.llm is not None:
                 best, margin = view_confidence(ctx, it)
                 if best is None or margin < 0.7 or best.score < 2.0:   # the rules are not sure which page: ask the model

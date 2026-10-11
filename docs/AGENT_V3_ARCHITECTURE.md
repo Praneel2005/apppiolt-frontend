@@ -105,7 +105,7 @@ verify, evidence, canvas, status, answer, error, done`. The `answer` event carri
 `ungrounded_numbers` (end-to-end faithfulness measure) and `narrative_used`.
 
 ## 4b2. Adding a new form (no agent code change)
-A form is any write API in `/api/catalog`. Add the endpoint to the backend (with a Pydantic body, a title, a description and
+A form is a write API in `/api/catalog` that the application metadata exposes as an action on a page or row. Add the endpoint to the backend (with a Pydantic body, a title, a description and
 `examples`) and restart: the capability model picks it up, the LLM prompt lists it with its fields, the rules fallback learns its
 verbs (first word of the title and of each example) and nouns (title and entity words), the form is generated from its JSON
 schema (enums, required fields, defaults, max lengths, ids), chat values are extracted by field name / enum / id / number /
@@ -113,8 +113,14 @@ email / quoted text, and submission goes through the same preview -> confirm -> 
 proves this with a synthetic account sign-up API. Secrets (fields named password, token, pin...) are refused in chat.
 
 ## 4c. Known limits (not yet done)
-* The web app does not yet render `understood`, `analysis_step`, `status`, `form_open/form_patch` or answer `suggestions`;
-  forms are re-emitted as a `canvas` with a stable id (`FORM-<api_id>`) until the frontend patches them live.
+* Web app (done, untested in a browser): the assistant panel renders formatted answers (`web/src/agent/Markdown.tsx`), an
+  "Understood as" card with assumptions, live progress steps, a verified / partial / failed badge, citation chips, "Open the view"
+  links and follow-up suggestion chips. The agent never draws a form: it fills the website's own action dialog. A write API is
+  a form only if an action for it exists in the application metadata (a page action such as "New ticket", or a table-row action);
+  `CapabilityModel.form_hosts` maps each API to those actions. The agent opens the hosting page, the dialog appears with the
+  values it understood, chat keeps filling it, typing in it syncs back (`POST /api/session/{sid}/form`), and the dialog's own
+  Preview / Confirm or the chat's "submit" both go through the normal preview -> confirm -> audit -> undo path. A write API with no
+  action in the app is refused as "not available". Confirmation cards appear in the chat panel, so keep it open. Secret fields (passwords...) are refused everywhere in this flow until a dedicated secure input exists.
 * No onboarding-style write API exists (tickets, restocks, promotions only); an account form needs one new write API.
 * Guarded text-to-SQL "analyst mode" for questions the governed metrics cannot express is not implemented.
 * Dimensions available to the analysis engine are those of the four semantic-layer datasets; questions about entities outside

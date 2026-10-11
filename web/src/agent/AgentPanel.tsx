@@ -7,6 +7,7 @@ import { api, ApiError } from '../net/api'
 import { openUrl } from '../state/session'
 import { toast, useStore } from '../state/store'
 import { highlightWidget } from '../widgets/widgetBase'
+import { Markdown } from './Markdown'
 
 type Tab = 'chat' | 'runner' | 'context' | 'metrics'
 
@@ -15,9 +16,14 @@ const short = (v: unknown, n = 90) => { const s = typeof v === 'string' ? v : JS
 function Trace({ e }: { e: AgentEvent }) {
   const d = e.data
   switch (e.type) {
-    case 'understanding': return <div>◆ intent <b>{d.intent}</b> {d.slots && Object.keys(d.slots).length ? short(d.slots) : ''}</div>
-    case 'retrieval': return <div>◆ retrieve {(d.candidates ?? []).slice(0, 3).map((c: any) => `${c.page_id ?? c.id} (${c.score})`).join(' · ')}</div>
-    case 'plan': return <div>◆ plan {(d.steps ?? []).map((s: any, i: number) => <div key={i} className="pl-4 text-slate-300">{i + 1}. {s.tool} <span className="text-slate-400">{short(s.args, 70)}</span></div>)}</div>
+    case 'understanding': return <div>◆ reading <span className="text-slate-300">“{short(d.query ?? '', 80)}”</span></div>
+    case 'retrieval': return <div>◆ candidates {((d.pages ?? d.candidates ?? []) as any[]).slice(0, 3).map((c) => `${c.page_id ?? c.id} (${c.score})`).join(' · ')}</div>
+    case 'analysis_step': return <div>⟳ {d.title}{d.detail ? <span className="text-slate-400"> — {short(d.detail, 110)}</span> : null}</div>
+    case 'form_open': return <div>◆ form opened: <b>{d.title || d.api_id}</b></div>
+    case 'form_patch': return <div>◆ form {d.status ?? 'updated'}{d.changes && Object.keys(d.changes).length ? `: ${Object.keys(d.changes).join(', ')}` : ''}{d.errors && Object.keys(d.errors).length ? ` · problems: ${Object.keys(d.errors).join(', ')}` : ''}</div>
+    case 'plan': return d.skill
+      ? <div>◆ skill <b>{d.skill}</b><span className="text-slate-400"> · intent {d.intent}</span></div>
+      : <div>◆ plan {(d.steps ?? []).map((s: any, i: number) => <div key={i} className="pl-4 text-slate-300">{i + 1}. {s.tool} <span className="text-slate-400">{short(s.args, 70)}</span></div>)}</div>
     case 'validation': return d.ok ? <div className="text-emerald-300">✓ plan validated</div>
       : <div className="text-red-300">✕ plan rejected{(d.issues ?? []).map((x: any, i: number) => <div key={i} className="pl-4">{x.code}: {x.message}{x.suggestion ? ` → ${x.suggestion}` : ''}</div>)}</div>
     case 'action': return <div className={d.status === 'failed' ? 'text-red-300' : d.status === 'done' ? 'text-slate-400' : ''}>
@@ -48,6 +54,60 @@ function EvidenceChip({ e }: { e: AgentEvent }) {
   )
 }
 
+/** What the assistant understood, before it acts: the one-line meaning, how it was decided, and every assumption it made. */
+function Understood({ e }: { e: AgentEvent }) {
+  const d = e.data
+  const how = d.source === 'llm' ? 'language model' : d.source === 'ui' ? 'button' : 'rules'
+  return (
+    <div className="text-xs border border-border bg-white rounded-lg px-3 py-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-muted">Understood as</span>
+        <b className="text-ink">{d.paraphrase}</b>
+        <span className="text-[10px] uppercase tracking-wide rounded bg-page border border-border px-1.5 py-0.5 text-muted">{d.intent} · {how}</span>
+      </div>
+      {(d.assumptions ?? []).length > 0 && (
+        <ul className="mt-1 list-disc pl-4 text-muted">{(d.assumptions as string[]).slice(0, 5).map((a, i) => <li key={i}>{a}</li>)}</ul>
+      )}
+    </div>
+  )
+}
+
+const STATUS_STYLE: Record<string, string> = {
+  VERIFIED: 'bg-green-50 text-green-700 border-green-200',
+  PARTIAL: 'bg-amber-50 text-warning border-amber-200',
+  FAILED: 'bg-red-50 text-danger border-red-200',
+}
+
+/** The assistant's reply: formatted text, a verified/partial/failed badge, citations, links to the view, follow-up chips. */
+function AnswerCard({ e, onAsk }: { e: AgentEvent; onAsk: (text: string) => void }) {
+  const d = e.data
+  const links: string[] = d.deep_links ?? []
+  const suggestions: string[] = d.suggestions ?? []
+  return (
+    <div className="bg-white border border-border rounded-lg px-3 py-2.5 space-y-2">
+      {d.status && d.status !== 'INFO' && (
+        <span className={`inline-block text-[10px] font-semibold uppercase tracking-wide border rounded px-1.5 py-0.5 ${STATUS_STYLE[d.status] ?? ''}`}>
+          {d.status === 'VERIFIED' ? '✓ verified' : String(d.status).toLowerCase()}
+        </span>
+      )}
+      <Markdown text={String(d.text ?? '')} />
+      {(d.citations ?? []).length > 0 && (
+        <div className="flex flex-wrap gap-1">{(d.citations as string[]).map((c) => <span key={c} className="text-[10px] font-mono bg-primary-soft text-primary rounded px-1.5 py-0.5">{c}</span>)}</div>
+      )}
+      {links.length > 0 && (
+        <div className="flex gap-3 flex-wrap">{links.slice(0, 2).map((u, i) => (
+          <button key={u} className="text-xs text-primary underline" onClick={() => openUrl(u)}>Open the view{links.length > 1 ? ` ${i + 1}` : ''}</button>
+        ))}</div>
+      )}
+      {suggestions.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">{suggestions.slice(0, 4).map((s) => (
+          <button key={s} onClick={() => onAsk(s)} className="text-xs border border-primary/30 text-primary bg-primary-soft rounded-full px-2.5 py-1 hover:bg-primary/10">{s}</button>
+        ))}</div>
+      )}
+    </div>
+  )
+}
+
 function ConfirmCard({ e, state, onAnswer }: { e: AgentEvent; state?: 'approved' | 'declined'; onAnswer: (a: boolean) => void }) {
   const d = e.data
   const preview: WriteResult | undefined = d.preview
@@ -74,20 +134,26 @@ function ChatTab() {
   const [msgs, setMsgs] = useState<{ text: string; at: number; note?: boolean }[]>([])
   const [answered, setAnswered] = useState<Record<string, 'approved' | 'declined'>>({})
   const [rated, setRated] = useState<Record<number, 'up' | 'down'>>({})
+  const [pendingAt, setPendingAt] = useState<number | null>(null)
+  // waiting for the assistant: from sending until its answer (or a fatal error) arrives
+  const busy = pendingAt !== null && !events.some((e) => e.seq > pendingAt && (e.type === 'answer' || (e.type === 'error' && e.data.recoverable === false)))
   const end = useRef<HTMLDivElement>(null)
   const rate = async (seq: number, r: 'up' | 'down') => {
     if (!sid) return
     try { await api.feedback(sid, r, seq); setRated((x) => ({ ...x, [seq]: r })) } catch (e) { toast('error', String(e)) }
   }
-  useEffect(() => { end.current?.scrollIntoView({ block: 'end' }) }, [events.length, msgs.length])
+  useEffect(() => { end.current?.scrollIntoView({ block: 'end' }) }, [events.length, msgs.length, busy])
 
-  const send = async () => {
-    const t = text.trim()
+  const send = async (override?: string) => {
+    const t = (override ?? text).trim()
     if (!t || !sid) return
     const at = events.at(-1)?.seq ?? 0
-    setMsgs((m) => [...m, { text: t, at }]); setText('')
+    setMsgs((m) => [...m, { text: t, at }])
+    if (override === undefined) setText('')
+    setPendingAt(at)
     try { await api.message(sid, t, confirmMode) }
     catch (e) {
+      setPendingAt(null)
       const note = e instanceof ApiError && e.code === 'agent_not_configured'
         ? 'No language-model agent is attached to the backend yet. Use the Plan runner tab to run plans directly.' : String(e)
       setMsgs((m) => [...m, { text: note, at: events.at(-1)?.seq ?? at, note: true }])
@@ -116,12 +182,11 @@ function ChatTab() {
         ) : it.e!.type === 'confirm_request' ? (
           <ConfirmCard key={i} e={it.e!} state={answered[it.e!.data.action_id]} onAnswer={(a) => answer(it.e!.data.action_id, a)} />
         ) : it.e!.type === 'evidence' ? <EvidenceChip key={i} e={it.e!} />
-        : it.e!.type === 'answer' ? (
-          <div key={i} className="bg-white border border-border rounded-lg px-3 py-2 text-sm">
-            {it.e!.data.text}
-            <div className="mt-1 flex flex-wrap gap-1">{(it.e!.data.citations ?? []).map((c: string) => <span key={c} className="text-[10px] font-mono bg-primary-soft text-primary rounded px-1.5 py-0.5">{c}</span>)}</div>
-          </div>
-        ) : it.e!.type === 'answer_delta' ? null : it.e!.type === 'done' ? (
+        : it.e!.type === 'understood' ? <Understood key={i} e={it.e!} />
+        : it.e!.type === 'answer' ? <AnswerCard key={i} e={it.e!} onAsk={(t) => void send(t)} />
+        : it.e!.type === 'answer_delta' || it.e!.type === 'status' || it.e!.type === 'frame' ? null
+        : it.e!.type === 'done' && !it.e!.data.skill ? null   /* the executor's own 'done' inside a turn: the agent's follows */
+        : it.e!.type === 'done' ? (
           <div key={i} className="bg-slate-900 text-slate-100 font-mono text-[11px] leading-5 rounded-lg px-3 py-1 flex items-center justify-between">
             <Trace e={it.e!} />
             <span className="flex gap-1 font-sans">
@@ -135,6 +200,7 @@ function ChatTab() {
         ) : (
           <div key={i} className="bg-slate-900 text-slate-100 font-mono text-[11px] leading-5 rounded-lg px-3 py-1"><Trace e={it.e!} /></div>
         ))}
+        {busy && <div className="text-xs text-muted px-1 animate-pulse">Working on it…</div>}
         <div ref={end} />
       </div>
       <div className="border-t border-border p-3 space-y-2">

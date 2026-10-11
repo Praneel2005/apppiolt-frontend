@@ -57,14 +57,18 @@ def attempt(label, schema, prompt):
         return False
 
 
+from agent.schema import InterpretationF  # noqa: E402
+
 ok1 = attempt("tiny schema", Tiny, "Return page 'Revenue by Region' and filters ['West'].")
+if not ok1:
+    print("\nIf the error is 429 RESOURCE_EXHAUSTED the key works but the free quota is used up for now "
+          "(wait the suggested seconds, or set GEMINI_RPM=5 in .env).")
+    sys.exit(1)
+time.sleep(13)  # stay under a 5-requests-per-minute free quota
 ok2 = attempt(
-    "our Plan schema (contracts/actions.py)",
-    Plan,
-    "The user says: open Revenue by Region and filter region to West. Return a Plan with intent 'set_state' "
-    "and two steps using tools navigate and set_filter.",
+    "the agent's interpretation schema (agent/schema.py)",
+    InterpretationF,
+    "The user says: why did sales drop compared to last month. Return intent 'explain' with metric 'revenue' "
+    "and one baseline period 'last month'.",
 )
-if ok1 and not ok2:
-    print("\nThe API works but our Plan schema is rejected or fails. Tell the planner: we will flatten the schema "
-          "(e.g. `args` as a JSON string) and update contracts/actions.py by agreement.")
-sys.exit(0 if (ok1 and ok2) else 1)
+sys.exit(0 if ok2 else 1)

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import asyncio
 import json
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, ConfigDict, Field
@@ -182,17 +182,53 @@ async def post_message(sid: str, req: MessageRequest):
         raise ApiError(501, "agent_not_configured", "No agent is attached to the backend yet. "
                                                     "POST /api/session/{sid}/plan runs a Plan directly.")
     cfg = req.config or s.config
-
-    async def run():
-        try:
-            async for ev in agent.handle(sid, req.text, cfg):
-                if ev.type not in ("action", "verify", "evidence", "canvas", "confirm_request"):
-                    await sessions.emit(s, ev.type, ev.data)
-        except Exception as e:  # noqa: BLE001
-            await sessions.emit(s, "error", {"code": "agent_failed", "message": f"{type(e).__name__}: {e}", "recoverable": False})
-
-    asyncio.create_task(run())
+    asyncio.create_task(_pump(s, agent.handle(sid, req.text, cfg)))
     return {"accepted": True}
+
+
+async def _pump(s, events) -> None:
+    """Forward an agent's events to the session (events the executor already emitted are not repeated)."""
+    try:
+        async for ev in events:
+            if ev.type not in ("action", "verify", "evidence", "canvas", "confirm_request"):
+                await sessions.emit(s, ev.type, ev.data)
+    except Exception as e:  # noqa: BLE001
+        await sessions.emit(s, "error", {"code": "agent_failed", "message": f"{type(e).__name__}: {e}", "recoverable": False})
+
+
+@router.post("/api/session/{sid}/form/{action}", status_code=202)
+async def post_form_action(sid: str, action: Literal["submit", "cancel", "discard"]):
+    """Buttons on the assistant's live form. No language model is needed: the interpretation is known."""
+    s = get_session(sid)
+    if action == "discard":  # the user finished or closed the website's own dialog: forget the draft, say nothing
+        from agent.schema import get_agent_memory
+        mem = get_agent_memory(sid)
+        s.canvases.pop(mem.form_canvas_id or "", None)
+        mem.form, mem.form_canvas_id = None, None
+        return {"accepted": True}
+    agent = _AGENT["agent"]
+    if agent is None or not hasattr(agent, "handle_form_action"):
+        raise ApiError(501, "agent_not_configured", "No form-capable agent is attached to the backend.")
+    asyncio.create_task(_pump(s, agent.handle_form_action(sid, action, s.config)))
+    return {"accepted": True}
+
+
+class FormEditRequest(_Body):
+    values: dict[str, Any]
+
+
+@router.post("/api/session/{sid}/form")
+async def post_form_edit(sid: str, req: FormEditRequest):
+    """The user edited the live form the assistant opened (agent/skills/act.py): validate, update, re-emit the canvas."""
+    from agent.capabilities import get_capability_model
+    from agent.schema import get_agent_memory
+    from agent.skills.act import apply_user_edit
+
+    s = get_session(sid)
+    r = await apply_user_edit(s, get_agent_memory(sid), get_capability_model(), req.values)
+    if not r.get("ok"):
+        raise ApiError(404, "no_open_form", "There is no open form to edit.")
+    return r
 
 
 @router.get("/api/session/{sid}/events")

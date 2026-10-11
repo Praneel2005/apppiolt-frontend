@@ -25,7 +25,9 @@ SIGNUP = ApiCapability(
 
 def cap_with_signup() -> CapabilityModel:
     base = get_capability_model()
-    return CapabilityModel(pages=base.pages, datasets=base.datasets, apis={**base.apis, SIGNUP.api_id: SIGNUP})
+    host = {"page_id": "ops.tickets", "action_id": "new_account", "label": "New account", "description": "", "scope": "page", "fixed": {}, "style": "default"}
+    return CapabilityModel(pages=base.pages, datasets=base.datasets, apis={**base.apis, SIGNUP.api_id: SIGNUP},
+                           form_hosts={**base.form_hosts, SIGNUP.api_id: [host]})
 
 
 def make_ctx(text, session, cap):
@@ -73,6 +75,23 @@ async def test_a_brand_new_form_is_opened_filled_from_chat_and_validated():
 
 
 @pytest.mark.anyio
+async def test_edits_typed_in_the_browser_update_the_agents_form_and_the_live_canvas():
+    from agent.skills.act import apply_user_edit
+    cap, s = cap_with_signup(), create_session()
+    ctx, _, _, _ = await turn("I want to create an account", s, cap)
+    r = await apply_user_edit(s, ctx.mem, cap, {"email": "ana@example.com", "state": "rj", "full_name": "Ana"})
+    assert r["ok"] and r["values"]["state"] == "RJ" and r["missing"] == [] and ctx.mem.form.sources["state"] == "user"
+    spec = s.canvases["FORM-accounts.signup"]["form"]
+    assert spec["live"] is True and spec["defaults"]["email"] == "ana@example.com" and spec["missing"] == []
+    r2 = await apply_user_edit(s, ctx.mem, cap, {"email": "bad"})
+    assert "email" in r2["errors"] and ctx.mem.form.values["email"] == "ana@example.com"
+    r3 = await apply_user_edit(s, ctx.mem, cap, {"full_name": ""})              # an emptied field is cleared and flagged again
+    assert "full_name" in r3["missing"]
+    ctx.mem.form = None
+    assert (await apply_user_edit(s, ctx.mem, cap, {"email": "x@y.co"}))["ok"] is False
+
+
+@pytest.mark.anyio
 async def test_many_phrasings_find_the_new_form_and_read_requests_do_not():
     cap = cap_with_signup()
     for text in ("register a new account for Ana", "I need to create a customer account", "open a new account"):
@@ -102,3 +121,36 @@ def test_field_validation_is_driven_by_the_schema():
     assert validate_field("password", {"type": "string"}, "x")[0] is None
     assert validate_field("order_id", {"type": "string"}, "abc")[1]                    # id too short
     assert validate_field("note", {"anyOf": [{"type": "string", "maxLength": 5}, {"type": "null"}]}, "toolongvalue")[1]
+
+
+@pytest.mark.anyio
+async def test_only_forms_the_website_offers_can_be_opened():
+    """A write API with no action on any page is not a form the app has: the agent must not make one up."""
+    base = get_capability_model()
+    cap = CapabilityModel(pages=base.pages, datasets=base.datasets, apis={**base.apis, SIGNUP.api_id: SIGNUP}, form_hosts=base.form_hosts)
+    s = create_session()
+    ctx, it, out, _ = await turn("I want to create an account", s, cap)
+    assert ctx.mem.form is None and not s.canvases
+    assert it.write_api != "accounts.signup"
+    # an existing website form still works and opens on the page that hosts it
+    s2 = create_session()
+    ctx, it, out, events = await turn("I want to create a support ticket", s2, cap)
+    assert it.write_api == "tickets.create" and ctx.mem.form is not None
+    spec = s2.canvases["FORM-tickets.create"]["form"]
+    assert spec["page_id"] == "ops.tickets" and spec["action_label"] == "New ticket"
+    assert s2.state.page_id == "ops.tickets"
+
+
+@pytest.mark.anyio
+async def test_while_a_form_is_open_everything_stays_with_the_form_until_it_is_cancelled():
+    cap, s = cap_with_signup(), create_session()
+    await turn("I want to create a support ticket", s, cap)
+    for text in ("show revenue last month", "go to orders", "why did sales drop", "category wrong item"):
+        ctx, it, out, _ = await turn(text, s, cap)
+        assert it.intent == "act" and ctx.mem.form is not None and ctx.mem.form.api_id == "tickets.create", text
+        assert s.state.page_id == "ops.tickets", text
+    assert "wrong" in str(ctx.mem.form.values.get("category", "")).lower() or "category" in ctx.mem.form.errors
+    ctx, it, out, _ = await turn("cancel", s, cap)
+    assert ctx.mem.form is None
+    ctx, it, out, _ = await turn("go to orders", s, cap)
+    assert it.intent != "act"

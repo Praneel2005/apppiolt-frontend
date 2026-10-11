@@ -30,6 +30,15 @@ class FormSpec(_Model):
     defaults: dict[str, Any] = {}  # prefilled values (path or body fields)
     submit_label: str = "Preview"
     requires_confirmation: bool = True
+    # live forms (managed by the agent, filled from chat, editable in the browser)
+    live: bool = False
+    missing: list[str] = []            # required fields still empty
+    errors: dict[str, str] = {}        # field -> why the value was refused
+    sources: dict[str, str] = {}       # field -> user | agent | default
+    # the website's own form this fills: the page that hosts the action and the action's label
+    page_id: str = ""
+    action_label: str = ""
+    locked: dict[str, Any] = {}        # values the action fixes (not editable)
 
 
 class CanvasSpec(_Model):

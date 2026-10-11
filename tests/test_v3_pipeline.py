@@ -204,6 +204,22 @@ async def test_form_opens_fills_from_chat_validates_and_cancels():
 
 @needs_db
 @pytest.mark.anyio
+async def test_form_buttons_work_without_a_language_model():
+    from agent.schema import get_agent_memory
+    agent = AppPilotAgent(use_llm=False)
+    sid, _ = await run(agent, "create a support ticket")
+    assert get_agent_memory(sid).form is not None
+    submit = [e async for e in agent.handle_form_action(sid, "submit")]       # incomplete: it says what is missing, saves nothing
+    ans = [e for e in submit if e.type == "answer"][0].data
+    assert "still needed" in ans["text"] and not get_session(sid).writes
+    cancel = [e async for e in agent.handle_form_action(sid, "cancel")]
+    assert any(e.type == "form_patch" and e.data.get("status") == "cancelled" and e.data.get("canvas_id") for e in cancel)
+    assert get_agent_memory(sid).form is None
+    assert [e async for e in agent.handle_form_action(sid, "submit")] == []     # nothing open: nothing happens
+
+
+@needs_db
+@pytest.mark.anyio
 async def test_write_goes_through_preview_confirmation_and_undo():
     from backend.db import fetch_all
     from backend import executor

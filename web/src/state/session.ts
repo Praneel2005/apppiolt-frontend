@@ -10,6 +10,7 @@ import { buildRequest, requestKey } from '../lib/request'
 import { fromUrl, stateForPage, toUrl } from '../lib/url'
 import { api, onApiCount } from '../net/api'
 import { getStore, toast, useStore } from './store'
+import { openAgentForm, useActionDialog } from '../actions/runner'
 
 let socket: WebSocket | null = null
 let reconnectTimer: number | undefined
@@ -123,7 +124,22 @@ async function handleApplyState(msg: { version: number; nonce: string; state: Ui
 function handleEvent(ev: AgentEvent) {
   useStore.setState((s) => {
     const patch: Partial<ReturnType<typeof getStore>> = { events: [...s.events, ev].slice(-500) }
-    if (ev.type === 'canvas') patch.canvases = [...s.canvases.filter((c) => c.canvas_id !== ev.data.canvas_id), ev.data as any]
+    // generated charts / tables belong to the turn that produced them; an open form stays until it is sent or cancelled
+    if (ev.type === 'understanding') patch.canvases = s.canvases.filter((c) => c.kind === 'form')
+    // a form is never drawn by the assistant: it fills the website's own dialog on the page that hosts it
+    if (ev.type === 'canvas' && (ev.data as any).kind === 'form') {
+      const f = (ev.data as any).form
+      if (f?.live) queueMicrotask(() => openAgentForm(f))
+    } else if (ev.type === 'canvas') patch.canvases = [...(patch.canvases ?? s.canvases).filter((c) => c.canvas_id !== ev.data.canvas_id), ev.data as any]
+    if (ev.type === 'form_patch' && (ev.data.status === 'cancelled' || ev.data.status === 'submitted')) {
+      patch.canvases = (patch.canvases ?? s.canvases).filter((c) => c.canvas_id !== ev.data.canvas_id)
+      queueMicrotask(() => { if (useActionDialog.getState().req?.agent) useActionDialog.getState().close() })
+    }
+    // a generated chart/table lives on the page the turn ended on and goes away when the user leaves it
+    if (ev.type === 'answer') {
+      const page = s.state?.page_id
+      patch.canvases = (patch.canvases ?? s.canvases).map((c) => (c.kind !== 'form' && !c.pageId && page ? { ...c, pageId: page } : c))
+    }
     if (ev.type === 'verify') patch.lastVerify = ev.data as any
     return patch
   })

@@ -214,6 +214,10 @@ export interface FormSpec {
   api_id: string; method: string; path: string; title: string
   path_params: Record<string, unknown>; body_schema: JsonSchema; defaults: Record<string, unknown>
   submit_label: string; requires_confirmation: boolean
+  /** live form: opened and filled by the assistant from chat, editable here */
+  live?: boolean; missing?: string[]; errors?: Record<string, string>; sources?: Record<string, string>
+  /** the website's own form this fills: the page hosting the action, its label, and the values the action fixes */
+  page_id?: string; action_label?: string; locked?: Record<string, unknown>
 }
 export interface CanvasSpec {
   canvas_id: string
@@ -228,4 +232,6 @@ export interface CanvasSpec {
   evidence_ids: string[]
   data_layers: string[]
   note: string
+  /** set client-side: the page this generated view belongs to; it is dropped when the user leaves that page */
+  pageId?: string
 }

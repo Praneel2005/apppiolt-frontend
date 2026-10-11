@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import type { JsonSchema, RowChange, WriteResult } from '../lib/types'
 import { humanize } from '../lib/format'
 import { api, ApiError } from '../net/api'
+import { toast, useStore } from '../state/store'
 import { applyWrite, useActionDialog } from './runner'
 
 type Prop = NonNullable<JsonSchema['properties']>[string]
 
-interface Field { name: string; label: string; kind: 'text' | 'textarea' | 'number' | 'integer' | 'boolean' | 'select' | 'date' | 'list'; required: boolean; options?: string[]; hint?: string; def?: unknown }
+export interface Field { name: string; label: string; kind: 'text' | 'textarea' | 'number' | 'integer' | 'boolean' | 'select' | 'date' | 'list'; required: boolean; options?: string[]; hint?: string; def?: unknown }
 
 const TEXTAREA = new Set(['reply_text', 'notes', 'note', 'subject', 'add_note'])
 
@@ -52,6 +53,11 @@ export function ActionDialog() {
   const [error, setError] = useState<ApiError | string | null>(null)
 
   const fields = useMemo(() => (req ? fieldsFor(req.entry, req.locked) : []), [req])
+  const sid = useStore((s) => s.sessionId)
+  const agent = req?.agent
+  // while the assistant fills this form from chat, what the user types is sent back so both always agree
+  const sync = (name: string, v: unknown) => { if (agent && sid) api.editForm(sid, { [name]: v }).catch((e) => toast('error', String(e))) }
+  const leave = (how: 'cancel' | 'discard') => { if (agent && sid) api.formAction(sid, how).catch(() => {}); close() }
 
   const dryRun = async (vals: Record<string, unknown>) => {
     if (!req) return
@@ -82,7 +88,7 @@ export function ActionDialog() {
     try {
       const all = { ...req.locked, ...Object.fromEntries(fields.map((f) => [f.name, coerce(f, values[f.name])]).filter(([, v]) => v !== undefined)) }
       await applyWrite(req, all)
-      close()
+      leave('discard')
     } catch (e) {
       setError(e instanceof ApiError ? e : String(e)); setStep('preview')
     }
@@ -90,19 +96,29 @@ export function ActionDialog() {
 
   const missing = fields.filter((f) => f.required && (values[f.name] === undefined || values[f.name] === ''))
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4" onClick={close}>
-      <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+    // an assistant-filled form leaves the chat panel free, so the user can keep talking to it while this is open
+    <div className={agent ? 'fixed top-0 left-0 bottom-0 right-[400px] z-40 flex items-center justify-center p-4 pointer-events-none'
+                          : 'fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4'} onClick={agent ? undefined : close}>
+      <div className={`bg-surface rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-auto ${agent ? 'pointer-events-auto border-2 border-primary/30' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="px-5 pt-4 pb-3 border-b border-border">
           <div className="text-[11px] uppercase tracking-wide text-muted">{req.entry.entity.replace('_', ' ')} · {req.entry.api_id}</div>
           <h2 className="text-base font-semibold text-ink">{req.label}</h2>
           {req.description && <p className="text-xs text-muted mt-0.5">{req.description}</p>}
+          {agent && <p className="text-[11px] text-primary mt-1">The assistant fills this form from what you say. You can also type here.</p>}
         </div>
         <div className="px-5 py-4 space-y-3">
           {error && <ErrorBox error={error} />}
           {step === 'input' && (
             <>
               {fields.length === 0 && <p className="text-sm text-muted">No further input needed.</p>}
-              {fields.map((f) => <FieldInput key={f.name} f={f} value={values[f.name]} onChange={(v) => setValues({ ...values, [f.name]: v })} />)}
+              {fields.map((f) => (
+                <div key={f.name} className={agent && agent.errors[f.name] ? 'rounded-lg ring-1 ring-red-300 p-1.5 -m-1.5' : agent && agent.missing.includes(f.name) ? 'rounded-lg ring-1 ring-amber-300 p-1.5 -m-1.5' : ''}>
+                  <FieldInput f={f} value={values[f.name]} onChange={(v) => setValues({ ...values, [f.name]: v })} onCommit={agent ? (v) => sync(f.name, v) : undefined} />
+                  {agent?.errors[f.name] && <div className="text-[11px] text-danger mt-0.5">{agent.errors[f.name]}</div>}
+                  {agent && !agent.errors[f.name] && agent.missing.includes(f.name) && <div className="text-[11px] text-warning mt-0.5">still needed</div>}
+                  {agent?.sources[f.name] === 'agent' && !agent.errors[f.name] && <div className="text-[10px] text-primary mt-0.5">filled by the assistant</div>}
+                </div>
+              ))}
               {Object.keys(req.locked).length > 0 && (
                 <div className="text-xs text-muted bg-page border border-border rounded-lg p-2">
                   Already set: {Object.entries(req.locked).map(([k, v]) => <span key={k} className="mr-2"><b>{humanize(k)}</b> {String(v)}</span>)}
@@ -116,7 +132,7 @@ export function ActionDialog() {
         <div className="px-5 py-3 border-t border-border flex items-center justify-between gap-2">
           <span className="text-[11px] text-muted">{step === 'preview' ? 'Nothing is saved until you confirm.' : req.entry.undoable ? 'Can be undone afterwards.' : ''}</span>
           <div className="flex gap-2">
-            <button className="px-3 py-1.5 text-sm rounded-lg border border-border text-ink hover:bg-page" onClick={close}>Cancel</button>
+            <button className="px-3 py-1.5 text-sm rounded-lg border border-border text-ink hover:bg-page" onClick={() => leave('cancel')}>Cancel</button>
             {step === 'input' && <button disabled={missing.length > 0} className="px-3 py-1.5 text-sm rounded-lg bg-primary text-white hover:bg-primary-hover" onClick={() => dryRun(values)}>Preview</button>}
             {(step === 'preview' || step === 'applying') && (
               <>
@@ -134,23 +150,25 @@ export function ActionDialog() {
   )
 }
 
-function FieldInput({ f, value, onChange }: { f: Field; value: unknown; onChange: (v: unknown) => void }) {
+/** `onCommit` (optional) fires when the user finishes editing a field (blur / choice), e.g. to sync a live form. */
+export function FieldInput({ f, value, onChange, onCommit }: { f: Field; value: unknown; onChange: (v: unknown) => void; onCommit?: (v: unknown) => void }) {
   const base = 'w-full border border-border rounded-lg px-2.5 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/30'
   return (
     <label className="block">
       <span className="text-xs font-medium text-ink">{f.label}{f.required && <span className="text-danger"> *</span>}</span>
       {f.kind === 'select' ? (
-        <select className={base} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)}>
+        <select className={base} value={String(value ?? '')} onChange={(e) => { onChange(e.target.value); onCommit?.(e.target.value) }}>
           <option value="">{f.required ? 'Choose…' : '—'}</option>
           {f.options!.map((o) => <option key={o} value={o}>{humanize(o)}</option>)}
         </select>
       ) : f.kind === 'textarea' ? (
-        <textarea className={base} rows={3} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} />
+        <textarea className={base} rows={3} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} onBlur={(e) => onCommit?.(e.target.value)} />
       ) : f.kind === 'boolean' ? (
-        <input type="checkbox" className="ml-2 align-middle" checked={!!value} onChange={(e) => onChange(e.target.checked)} />
+        <input type="checkbox" className="ml-2 align-middle" checked={!!value} onChange={(e) => { onChange(e.target.checked); onCommit?.(e.target.checked) }} />
       ) : (
         <input className={base} type={f.kind === 'number' || f.kind === 'integer' ? 'number' : f.kind === 'date' ? 'date' : 'text'}
           step={f.kind === 'number' ? 'any' : undefined} value={String(value ?? '')} onChange={(e) => onChange(e.target.value)}
+          onBlur={(e) => onCommit?.(e.target.value)}
           placeholder={f.kind === 'list' ? 'comma-separated' : undefined} />
       )}
       {f.hint && <span className="text-[11px] text-muted">{f.hint}</span>}

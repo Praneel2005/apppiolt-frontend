@@ -131,10 +131,14 @@ class CapabilityModel:
         pages: dict[str, PageCapability],
         datasets: dict[str, DatasetCapability],
         apis: dict[str, ApiCapability],
+        form_hosts: dict[str, list[dict[str, Any]]] | None = None,
     ):
         self.pages = pages
         self.datasets = datasets
         self.apis = apis
+        # api_id -> the forms the website itself offers for it: {page_id, action_id, label, scope: page|row, fixed}
+        # The agent may only fill forms that appear here; it never invents one.
+        self.form_hosts = form_hosts or {}
 
     def get_page(self, page_id: str) -> PageCapability | None:
         return self.pages.get(page_id)
@@ -367,10 +371,24 @@ def build_capability_model() -> CapabilityModel:
     except Exception:
         pass
 
+    hosts: dict[str, list[dict[str, Any]]] = {}
+    for p in app.pages:
+        for a in p.actions:
+            hosts.setdefault(a.api_id, []).append({"page_id": p.page_id, "action_id": a.action_id, "label": a.label,
+                                                   "description": a.description, "scope": "page", "fixed": dict(a.fixed), "style": a.style})
+        for wid in p.widgets:
+            w = app.widget(wid)
+            for a in (w.source.row_actions if w.source else []):
+                hosts.setdefault(a.api_id, []).append({"page_id": p.page_id, "action_id": a.action_id, "label": a.label,
+                                                       "description": a.description, "scope": "row", "fixed": dict(a.fixed), "style": a.style})
+    for lst in hosts.values():  # a page-level form (no row needed) is preferred; the first row action is the fallback
+        lst.sort(key=lambda h: h["scope"] != "page")
+
     return CapabilityModel(
         pages=page_caps,
         datasets=dataset_caps,
         apis=api_caps,
+        form_hosts=hosts,
     )
 
 

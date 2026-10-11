@@ -98,9 +98,11 @@ def _resolve_page(ctx: TurnContext, raw: str | None) -> str | None:
 
 
 def _write_apis(ctx: TurnContext) -> dict:
-    """Forms the user can start: every write API except system plumbing (undo has its own intent)."""
+    """Forms the user can start: write APIs that the website itself offers as a form (an action on a page or a table row).
+    The agent fills the app's own forms; it never makes one up. System plumbing (undo has its own intent) is excluded."""
+    hosts = getattr(ctx.cap, "form_hosts", {})
     return {k: v for k, v in ctx.cap.apis.items()
-            if v.kind == "write" and set(v.data_layers or ()) != {"system"}}
+            if v.kind == "write" and set(v.data_layers or ()) != {"system"} and hosts.get(k)}
 
 
 def _resolve_write_api(ctx: TurnContext, raw: str | None) -> str | None:
@@ -885,10 +887,28 @@ def _inherit(it: Interp, last: Interp, ctx: TurnContext, ann: Annotations) -> No
 
 
 # ------------------------------------------------------------------------------------ entry point
+async def _form_turn(ctx: TurnContext, ann: Annotations, rf: InterpretationF) -> Interp:
+    """A form is open: every message belongs to it (fill, edit, submit, cancel) until the user cancels or submits.
+    Cancel and submit are recognised from the user's own words by the data-driven phrase lists; the model, when available,
+    only helps to read field values out of the sentence."""
+    from agent.skills.act import form_signal
+    form = ctx.mem.form
+    form.parked = False
+    sig = form_signal(ctx, ann)
+    f = rf
+    if ctx.llm is not None and sig not in ("cancel", "submit"):
+        f = await llm_interpret(ctx, ann) or rf
+    f.intent, f.write_api, f.form_action = "act", form.api_id, sig or "fill"
+    f.confidence = 1.0
+    return reconcile(f, ctx, ann, "form")
+
+
 async def interpret(ctx: TurnContext) -> Interp:
     ann = perceive(ctx.text, ctx.lex, ctx.as_of)
     ctx.ann = ann
     rf = rules_interpret(ctx, ann)
+    if ctx.mem.form is not None:
+        return await _form_turn(ctx, ann, rf)
     # LLM first: when a model is available it decides the intent (grounded in metadata, screen and history), so understanding
     # does not depend on keywords. The rules are the offline / degraded mode, and an opt-in speed shortcut (use_fast_lane).
     if (ctx.llm is None or getattr(ctx.cfg, "use_fast_lane", False)) and fast_lane(ctx, ann, rf):

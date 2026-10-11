@@ -191,3 +191,14 @@ async def test_health_scan_covers_the_main_metrics():
     it = Interp(intent="investigate")
     _, res = await _run(health_scan(ctx, it, Gateway(ctx)))
     assert len(res.items) >= 5 and all("pct" in i for i in res.items)
+
+
+def test_slices_that_differ_in_one_dimension_can_be_shown_by_a_page():
+    from agent.skills.reason import _slice_dimension
+
+    class R:
+        slices = [{"filters": {"customer_state": ["SP"], "product_category": ["toys"]}},
+                  {"filters": {"customer_state": ["RJ"], "product_category": ["toys"]}}]
+    assert _slice_dimension(R) == ("customer_state", ["SP", "RJ"])
+    R.slices = [{"filters": {"customer_state": ["SP"]}}, {"filters": {"product_category": ["toys"]}}]
+    assert _slice_dimension(R) is None

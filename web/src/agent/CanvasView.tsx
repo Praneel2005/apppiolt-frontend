@@ -1,4 +1,5 @@
 /** Generated canvas: a chart, table or form the assistant shows when no existing page fits. */
+import { useEffect } from 'react'
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { runApi } from '../actions/runner'
 import { formatCell, formatCompact, humanize } from '../lib/format'
@@ -25,7 +26,7 @@ function CanvasCard({ c, onClose }: { c: CanvasSpec; onClose: () => void }) {
         </div>
       </header>
       <div className="px-4 pb-4">
-        {c.kind === 'form' && c.form && (
+        {c.kind === 'form' && c.form && !c.form.live && (
           <div className="flex items-center justify-between gap-4 bg-page rounded-lg p-3">
             <div className="text-sm"><b>{c.form.title}</b><div className="text-xs text-muted">{c.form.method} {c.form.path} · {Object.keys(c.form.body_schema.properties ?? {}).length} fields</div></div>
             <button className="px-3 py-1.5 text-sm rounded-lg bg-primary text-white hover:bg-primary-hover"
@@ -66,7 +67,14 @@ function CanvasCard({ c, onClose }: { c: CanvasSpec; onClose: () => void }) {
 }
 
 export function CanvasArea() {
-  const canvases = useStore((s) => s.canvases)
+  const all = useStore((s) => s.canvases)
+  const page = useStore((s) => s.state?.page_id)
+  const canvases = all.filter((c) => c.kind !== 'form' && (!c.pageId || c.pageId === page))
+  useEffect(() => {
+    if (all.some((c) => c.kind !== 'form' && c.pageId && c.pageId !== page)) {
+      useStore.setState((s) => ({ canvases: s.canvases.filter((c) => c.kind === 'form' || !c.pageId || c.pageId === page) }))
+    }
+  }, [all, page])
   if (!canvases.length) return null
   return (
     <div className="px-6 pt-4 space-y-3 max-w-[1500px]">

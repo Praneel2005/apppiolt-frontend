@@ -66,6 +66,11 @@ export const api = {
   message: (sid: string, text: string, confirmMode: boolean) =>
     request<{ accepted: boolean }>('POST', `/api/session/${sid}/message`, { text, config: { confirm_mode: confirmMode } }),
   stats: (sid: string) => request<any>('GET', `/api/session/${sid}/stats`),
+  /** buttons on the live form: no language model involved */
+  formAction: (sid: string, action: 'submit' | 'cancel' | 'discard') => request<{ accepted: boolean }>('POST', `/api/session/${sid}/form/${action}`),
+  /** the user edited the live form the assistant opened */
+  editForm: (sid: string, values: Record<string, unknown>) =>
+    request<{ ok: boolean; values: Record<string, unknown>; errors: Record<string, string>; missing: string[] }>('POST', `/api/session/${sid}/form`, { values }),
   feedback: (sid: string, rating: 'up' | 'down', eventSeq?: number, comment?: string) =>
     request<{ ok: boolean }>('POST', `/api/session/${sid}/feedback`, { rating, event_seq: eventSeq ?? null, comment: comment ?? null }),
   setFault: (sid: string, kind: string) => request<{ fault: string }>('POST', `/api/session/${sid}/fault`, { kind }),

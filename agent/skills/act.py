@@ -268,12 +268,41 @@ def _apply(form: FormState, fields: dict, raw: dict[str, Any], source: str) -> t
     return changes, errors
 
 
-def _form_canvas_spec(api, form: FormState) -> FormSpec:
+def host_of(cap, api_id: str) -> dict | None:
+    """The website's own form for this API (page + action), preferring one that needs no table row."""
+    hosts = getattr(cap, "form_hosts", {}).get(api_id)
+    return hosts[0] if hosts else None
+
+
+def _form_canvas_spec(api, form: FormState, host: dict | None = None) -> FormSpec:
     fields, _, path_names = api_fields(api)
     body_props = {k: v for k, v in fields.items() if k not in path_names}
-    return FormSpec(api_id=api.api_id, method=api.method, path=api.path, title=api.title,
+    host = host or {}
+    return FormSpec(page_id=host.get("page_id", ""), action_label=host.get("label", ""), locked=dict(host.get("fixed", {})),
+                    api_id=api.api_id, method=api.method, path=api.path, title=api.title,
                     path_params={k: form.values[k] for k in path_names if k in form.values},
-                    body_schema=api.body_schema or {"properties": body_props}, defaults=dict(form.values))
+                    body_schema=api.body_schema or {"properties": body_props}, defaults=dict(form.values),
+                    live=True, missing=list(form.missing), errors=dict(form.errors), sources=dict(form.sources))
+
+
+async def apply_user_edit(session, mem, cap, values: dict) -> dict:
+    """The user typed into the live form in the browser: validate the values, update the agent's form, re-emit the canvas."""
+    from types import SimpleNamespace
+    form = mem.form
+    if form is None:
+        return {"ok": False, "error": "no_open_form"}
+    api = cap.apis[form.api_id]
+    fields, required, _ = api_fields(api)
+    for name, raw in values.items():                       # an emptied field is cleared
+        if name in fields and (raw is None or str(raw).strip() == ""):
+            form.values.pop(name, None)
+            form.errors.pop(name, None)
+            form.sources.pop(name, None)
+    _apply(form, fields, {k: v for k, v in values.items() if v is not None and str(v).strip() != ""}, "user")
+    _recompute(form, fields, required)
+    mem.form_canvas_id = await emit_canvas(SimpleNamespace(session=session), "form", api.title, form=_form_canvas_spec(api, form, host_of(cap, api.api_id)),
+                                           layers=list(api.data_layers), canvas_id=mem.form_canvas_id or f"FORM-{api.api_id}")
+    return {"ok": True, "values": form.values, "errors": form.errors, "missing": form.missing}
 
 
 def _summary(api, form: FormState, fields: dict, required: list[str]) -> str:
@@ -298,10 +327,11 @@ async def run_act(ctx, it: Interp, out: SkillResult) -> AsyncIterator[tuple[str,
     action = it.form_action
 
     if action == "cancel" and form is not None:
-        mem.form = None
-        ctx.session.canvases.pop(mem.form_canvas_id or "", None)
+        cid = mem.form_canvas_id
+        mem.form, mem.form_canvas_id = None, None
+        ctx.session.canvases.pop(cid or "", None)
         out.text, out.status = "Cancelled the form; nothing was saved.", "INFO"
-        yield "form_patch", {"form_id": form.form_id, "status": "cancelled"}
+        yield "form_patch", {"form_id": form.form_id, "status": "cancelled", "canvas_id": cid}
         return
 
     api_id = it.write_api or (form.api_id if form else None)
@@ -326,19 +356,28 @@ async def run_act(ctx, it: Interp, out: SkillResult) -> AsyncIterator[tuple[str,
         for name, spec in fields.items():  # defaults the API declares
             if "default" in spec and spec["default"] is not None:
                 form.values[name], form.sources[name] = spec["default"], "default"
+        host = host_of(cap, api_id) or {}
+        for name, val in host.get("fixed", {}).items():  # what the website's action fixes stays fixed
+            form.values[name], form.sources[name] = val, "action"
         mem.form, opened = form, True
         yield "form_open", form.model_dump()
+        if host.get("page_id") and getattr(ctx.state, "page_id", None) != host["page_id"]:
+            yield "analysis_step", {"title": f"Opening {host.get('label')}", "detail": "the form the app provides for this"}
+            from agent.skills.base import navigate
+            await navigate(ctx, {"page_id": host["page_id"]})
     elif form.parked:
         form.parked = False
         yield "form_patch", {"form_id": form.form_id, "status": "resumed"}
 
-    raw = {**extract_values(ctx, api, ctx.text, ctx.ann), **{k: v for k, v in it.fields.items() if k in fields}}
+    fixed = set((host_of(cap, api_id) or {}).get("fixed", {}))
+    raw = {k: v for k, v in {**extract_values(ctx, api, ctx.text, ctx.ann), **{k: v for k, v in it.fields.items() if k in fields}}.items()
+           if k not in fixed}
     changes, errors = _apply(form, fields, raw, "agent")
     _recompute(form, fields, required)
     if changes or errors or opened:
         yield "form_patch", {"form_id": form.form_id, "changes": changes, "errors": form.errors, "missing": form.missing}
 
-    spec = _form_canvas_spec(api, form)
+    spec = _form_canvas_spec(api, form, host_of(cap, api_id))
     mem.form_canvas_id = await emit_canvas(ctx, "form", api.title, form=spec, layers=list(api.data_layers),
                                            canvas_id=mem.form_canvas_id or f"FORM-{api.api_id}")
 
@@ -351,6 +390,9 @@ async def run_act(ctx, it: Interp, out: SkillResult) -> AsyncIterator[tuple[str,
         return
 
     out.text = _summary(api, form, fields, required)
+    if not opened and not changes and not errors and action not in ("submit",):
+        out.text = ("I could not find a value for this form in that message. " + out.text +
+                    " While the form is open, everything you type goes to it; say **cancel** to leave it.")
     out.extra_text = [str(v) for v in form.values.values()]
     if form.missing:
         out.text += ". Tell me the missing values here or type them into the form."
@@ -381,12 +423,14 @@ async def _submit(ctx, api, form: FormState, fields: dict, path_names: list[str]
         ident = next((str(result[k]) for k in ("code", "id", "ticket_code", "name") if result.get(k)), "")
         out.citations.append(eid)
         form.status = "submitted"
-        mem.form, mem.last_action_kind = None, "write"
+        cid = mem.form_canvas_id
+        mem.form, mem.form_canvas_id, mem.last_action_kind = None, None, "write"
+        ctx.session.canvases.pop(cid or "", None)
         out.text = (f"Done: **{api.title}** was applied" + (f" ({ident})" if ident else "") +
                     f". It is logged as {vals.get('action_id')}; say **undo that** to revert it.")
         out.status = "VERIFIED"
         out.suggestions = ["undo that"]
-        yield "form_patch", {"form_id": form.form_id, "status": "submitted", "action_id": vals.get("action_id")}
+        yield "form_patch", {"form_id": form.form_id, "status": "submitted", "action_id": vals.get("action_id"), "canvas_id": cid}
         return
     form.status = "draft"
     if res.get("stage") == "validation":

@@ -38,7 +38,7 @@ CASES: list[Case] = [
     _c("could you open the seller directory please", intent="view"),
     # ---- data
     _c("what was revenue last month", intent="data", metric="revenue", period_start="2018-07-01"),
-    _c("how much did we sell in march 2018", intent="data", metric="revenue", period_start="2018-03-01", rules=False),
+    _c("how much did we sell in march 2018", intent="data", metric_any=["revenue", "items_sold"], period_start="2018-03-01", rules=False),
     _c("total orders in 2017", intent="data", metric="orders", period_start="2017-01-01"),
     _c("average order value in SP last quarter", intent="data", metric="aov", filters={"customer_state": ["SP"]}, period_start="2018-04-01"),
     _c("revenue by state last quarter", intent="data", metric="revenue", group_by=["customer_state"], period_start="2018-04-01"),
@@ -106,6 +106,8 @@ def check(case: Case, it) -> list[str]:
         bad.append(f"intent {it.intent} != {e.get('intent')}")
     if "metric" in e and it.metric != e["metric"]:
         bad.append(f"metric {it.metric} != {e['metric']}")
+    if "metric_any" in e and it.metric not in e["metric_any"]:        # genuinely ambiguous wording: any listed reading is fine
+        bad.append(f"metric {it.metric} not in {e['metric_any']}")
     if "shape" in e and it.shape != e["shape"]:
         bad.append(f"shape {it.shape} != {e['shape']}")
     if "period_start" in e and not (it.primary and it.primary.start == e["period_start"]):
@@ -124,8 +126,10 @@ def check(case: Case, it) -> list[str]:
     return bad
 
 
-async def evaluate(mode: str = "rules", llm=None) -> dict:
-    """mode 'rules': only the rules-expected cases, no LLM.  mode 'llm': every case with the given provider."""
+async def evaluate(mode: str = "rules", llm=None, limit: int | None = None, hard_only: bool = False, progress=None) -> dict:
+    """mode 'rules': only the rules-expected cases, no LLM.  mode 'llm': every case with the given provider
+    (a case where the model was unavailable and the rules answered instead counts as a failure of the LLM path).
+    `hard_only` runs just the phrasings the rules are not expected to handle; `limit` caps the number of calls."""
     from agent.capabilities import get_capability_model
     from agent.interpret import interpret
     from agent.lexicon import get_lexicon
@@ -134,9 +138,13 @@ async def evaluate(mode: str = "rules", llm=None) -> dict:
     from contracts.actions import AgentConfig
 
     lex, cap = get_lexicon(), get_capability_model()
-    cases = [c for c in CASES if c.rules] if mode == "rules" else CASES
+    cases = [c for c in CASES if c.rules] if mode == "rules" else ([c for c in CASES if not c.rules] if hard_only else CASES)
+    if limit:
+        cases = cases[:limit]
     results, by_intent = [], {}
-    for c in cases:
+    for n, c in enumerate(cases, 1):
+        if progress:
+            progress(n, len(cases), c.text)
         s = create_session()
         ctx = TurnContext(session=s, text=c.text, page_ctx={"page": {}, "widgets": [], "filters": []}, cfg=AgentConfig(),
                           lex=lex, cap=cap, mem=get_agent_memory(s.id), llm=llm if mode == "llm" else None, as_of=lex.as_of)
@@ -144,6 +152,8 @@ async def evaluate(mode: str = "rules", llm=None) -> dict:
             it = await interpret(ctx)
             problems = check(c, it)
             source = it.source
+            if mode == "llm" and it.source != "llm":
+                problems.append("the model did not answer (rate limit or error); the rules fallback was used")
         except Exception as e:  # noqa: BLE001
             problems, source = [f"exception {type(e).__name__}: {e}"], "error"
         results.append({"text": c.text, "ok": not problems, "problems": problems, "source": source, "intent": c.expect.get("intent")})
