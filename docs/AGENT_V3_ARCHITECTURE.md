@@ -156,6 +156,22 @@ Not yet: uncertainty ranges for non-monthly periods, significance for ratio metr
 is a difference from the full system on the same cases in the same run. `use_verifier=False` makes the agent trust that a screen
 action worked, which is what the fault-injection group (dropped filter, wrong route, empty widget) is designed to expose.
 
+## 4b7. Metadata change, not code change (pillar 4)
+`tests/test_v3_metadata_change.py` adds a new page with a new filter to a copy of `application.json`, points the backend at it,
+clears every metadata cache and checks that the agent finds the page from its title and keywords, opens it with a verified screen
+and applies the new filter. Nothing in `agent/`, `backend/` or `web/` changes; afterwards the original metadata is restored.
+This is the no-code-platform claim as an automated test: the vocabulary (page words, filter values), retrieval, capability model
+and validator are all rebuilt from the metadata.
+
+## 4b8. Relationships between dimensions (pillar 4)
+`lexicon.sibling_sets`: dimensions that are the same kind of thing in different roles are found from the DATA (their value sets
+overlap heavily: the customer's state and the seller's state share the state codes), never from a shared name part alone
+(`order_status` and `payment_status` are not siblings). Within a group, a dimension's role words are the parts of its name the siblings
+do not share ('customer', 'seller'); `role_synonyms` in `agent_lexicon.json` adds 'vendor', 'merchant', 'buyer'... Resolution order for an
+ambiguous value: the user named the field ("seller state") -> the user named a role ("vendors") -> an earlier choice this session -> the
+field the metadata lists first (flagged as an assumption, and asked about when the readings differ materially). This replaces the old
+hard-coded `seller_words`; any new pair (origin / destination city) works with no code change.
+
 ## 4c. Known limits (not yet done)
 * Web app (done, untested in a browser): the assistant panel renders formatted answers (`web/src/agent/Markdown.tsx`), an
   "Understood as" card with assumptions, live progress steps, a verified / partial / failed badge, citation chips, "Open the view"

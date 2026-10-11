@@ -607,7 +607,7 @@ def _ambiguous_options(ctx: TurnContext, ann: Annotations, vm, metric: str | Non
     lex = ctx.lex
     allowed = set(lex.filterable_dims(metric)) if metric else set()
     keys = list(dict.fromkeys(c.key for c in vm.cands if c.key in allowed and c.key in lex.dims))
-    if len(keys) < 2 or vm.partial or ann.seller_context:
+    if len(keys) < 2 or vm.partial or set(keys) & ann.role_dims:      # a role word ("seller", "vendor") settles it
         return []
     if any(d.dim in keys for d in ann.dims):
         return []
@@ -629,17 +629,15 @@ def _choose_cand(ctx: TurnContext, ann: Annotations, cands, metric: str | None):
         by_name = [c for c in pool if c.key in named]
         if by_name:                                                     # the user named the field ("customer state", "seller state")
             return by_name[0]
+        by_role = [c for c in pool if c.key in ann.role_dims]
+        if by_role:                                                     # the user named a role ("seller", "vendor")
+            return by_role[0]
         pref = ctx.mem.prefs.get(_kind([c.key for c in pool]))
-        if pref and not ann.seller_context:                             # an earlier answer to the same question this session
+        if pref:                                                        # an earlier answer to the same question this session
             hit = next((c for c in pool if c.key == pref), None)
             if hit:
                 return hit
-        # the same value can belong to several dimensions (a state of the customer or of the seller): the role words decide
-        roles = tuple(lex.lang.get("seller_words", []))
-        is_role = lambda c: any(w in c.key for w in roles)  # noqa: E731
-        preferred = [c for c in pool if is_role(c) == bool(ann.seller_context)]
-        if preferred:
-            return preferred[0]
+        return min(pool, key=lambda c: lex.dim_order.get(c.key, 10_000))   # otherwise the field the metadata lists first
     return pool[0]
 
 

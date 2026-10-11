@@ -121,7 +121,7 @@ class Annotations:
     cues: dict[str, list[tuple[int, int]]] = field(default_factory=dict)
     top_n: int | None = None
     sort_dir: str | None = None
-    seller_context: bool = False
+    role_dims: set[str] = field(default_factory=set)      # dimensions selected by a role word ('seller' -> seller_state)
     expected_direction: str = "none"
     unexplained: list[str] = field(default_factory=list)
     coverage: float = 1.0
@@ -402,7 +402,7 @@ def perceive(text: str, lex: Lexicon, as_of: str | None = None, repair: bool = T
         blocked.update(range(a, b + 1))
         dim_tokens.update(range(a, b + 1))
 
-    ann.seller_context = any(t.stem in lex.seller_stems for t in toks)
+    ann.role_dims = {d for t in toks for d in lex.role_stems.get(t.stem, ())}
 
     # entity values (names, enum values, synonyms). A phrase may be both a metric and a value ("late delivery": the
     # late-delivery rate or the ticket category), so metric tokens do not block values; the interpreter decides by intent.

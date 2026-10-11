@@ -56,6 +56,38 @@ def tokenize(norm: str) -> list[Tok]:
     return [Tok(i, m.group(0), stem(m.group(0)), m.start(), m.end()) for i, m in enumerate(TOKEN_RE.finditer(norm))]
 
 
+def sibling_sets(domains: dict[str, list[str]], min_values: int = 5, min_overlap: float = 0.6) -> list[dict[str, set[str]]]:
+    """Groups of dimensions that are the same kind of thing in different roles, found from the DATA: their value sets overlap
+    heavily (the customer's state and the seller's state share the state codes). Per group, each dimension's role words are the
+    parts of its name the siblings do not share ('customer', 'seller'). Names are only used to label the roles, never to decide
+    that two dimensions are related."""
+    names = [n for n, v in domains.items() if len(v) >= min_values]
+    parent = {n: n for n in names}
+
+    def find(x: str) -> str:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for i, a in enumerate(names):
+        for b in names[i + 1:]:
+            sa, sb = set(map(str, domains[a])), set(map(str, domains[b]))
+            if sa and sb and len(sa & sb) / len(sa | sb) >= min_overlap:
+                parent[find(a)] = find(b)
+    comps: dict[str, list[str]] = {}
+    for n in names:
+        comps.setdefault(find(n), []).append(n)
+    out = []
+    for comp in comps.values():
+        if len(comp) < 2:
+            continue
+        toks = {n: set(n.split("_")) for n in comp}
+        common = set.intersection(*toks.values())
+        out.append({n: toks[n] - common for n in comp})
+    return out
+
+
 def phrase_re(items: list[str]) -> re.Pattern:
     """Regex matching any phrase of a data list on normalised text. A trailing '*' means 'any ending' (increase*)."""
     alts = []
@@ -190,7 +222,6 @@ class Lexicon:
         self.group_phrases: set[tuple[str, ...]] = {tuple(p.split()) for p in lang.get("group_phrases", [])}
         self.which_words: set[str] = set(lang.get("which_words", []))
         self.monthly_words: set[str] = set(lang.get("monthly_words", []))
-        self.seller_stems: set[str] = {stem(w) for w in lang.get("seller_words", [])}
         self.state_context_words: set[str] = set(lang.get("state_context_words", []))
         self.id_prefixes: dict[str, str] = {k.upper(): v for k, v in raw.get("id_prefixes", {}).items()}
         self.default_hex_entity: str = raw.get("default_hex_entity", "")
@@ -224,12 +255,24 @@ class Lexicon:
         self.code_dims: set[str] = {n for n, i in self.dims.items()
                                     if i.values and all(len(v) == 2 and v.isalpha() and v.isupper() for v in i.values)}
         self.region_dim: str | None = raw.get("region_dimension")
+        self.dim_order: dict[str, int] = {n: i for i, n in enumerate(self.dims)}       # field order in the metadata
 
         self._domains: dict[str, list[str]] = {}          # key (dimension or filter id) -> allowed values
         self._value_synonyms: dict[str, dict[str, list[str]]] = {}
         for name, info in self.dims.items():
             if info.values:
                 self._domains[name] = list(info.values)
+
+        # relationships between dimensions: siblings are the same kind of thing in different roles, and the words that name the role
+        self.sibling_sets: list[dict[str, set[str]]] = sibling_sets(self._domains)
+        syn = raw.get("role_synonyms", {})
+        self.role_stems: dict[str, set[str]] = {}          # a word naming a role -> the dimensions it selects ('seller' -> seller_state)
+        for group in self.sibling_sets:
+            for dim, words in group.items():
+                for w in words:
+                    self.role_stems.setdefault(stem(w), set()).add(dim)
+                    for s in syn.get(w, []):
+                        self.role_stems.setdefault(stem(norm_text(s)), set()).add(dim)
         for key, table in raw.get("value_synonyms", {}).items():
             self._value_synonyms.setdefault(key, {}).update(table)
         self.state_names: dict[str, list[str]] = raw.get("state_names", {})

@@ -53,7 +53,7 @@ def test_entities_and_roles(lex):
     assert any(c.key == "customer_region" for v in a.values for c in v.cands)
     b = P("compare revenue in sp and rj", lex)
     assert {c.canonical for v in b.values for c in v.cands if c.key == "customer_state"} == {"SP", "RJ"}
-    assert P("sellers in PR", lex).seller_context is True
+    assert "seller_state" in P("sellers in PR", lex).role_dims
     assert "RJ" in {c.canonical for v in P("orders from Rio", lex).values for c in v.cands}
 
 

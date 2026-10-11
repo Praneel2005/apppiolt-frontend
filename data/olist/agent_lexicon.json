@@ -133,7 +133,6 @@
     "group_phrases": ["split by", "broken down", "grouped by", "segmented by"],
     "which_words": ["which", "what"],
     "monthly_words": ["monthly", "month", "months"],
-    "seller_words": ["seller", "vendor", "merchant"],
     "state_context_words": ["in", "from", "for", "of", "and", "vs", "versus", "state", "states", "to", "between", "compare", "than", "or", "with"]
   },
 
@@ -158,6 +157,7 @@
   },
   "health_metrics": ["revenue", "orders", "aov", "customers", "late_rate", "avg_delivery_days", "avg_review_score", "cancel_rate"],
   "materiality_pct": 5.0,
+  "role_synonyms": {"seller": ["vendor", "merchant", "supplier"], "customer": ["buyer", "client", "shopper"]},
   "skip_driver_dimensions": ["order_month"],
   "dimension_parents": {"customer_state": "customer_region"},
 
