@@ -112,6 +112,26 @@ schema (enums, required fields, defaults, max lengths, ids), chat values are ext
 email / quoted text, and submission goes through the same preview -> confirm -> audit -> undo path. `tests/test_v3_forms.py`
 proves this with a synthetic account sign-up API. Secrets (fields named password, token, pin...) are refused in chat.
 
+## 4b3. Proof layer (pillar 1, in progress)
+`agent/reasoning/proof.py`. The Gateway tags every governed metric result with the call that produced it; when evidence is
+created the proof is stored in `session.proofs` (call, metric definition, filters, period, row count, data layers, supporting
+view). Derived evidence (several queries combined) lists the calls of the turn and says it is not a single call. Endpoints:
+`GET /api/session/{sid}/evidence/{id}/proof` and `POST .../replay` (re-runs the call and compares numbers matched by label).
+Each answer carries `claims`: one per line, with its facts, evidence and support (`direct` = the number is in the evidence,
+`derived` = computed from it, `none`). The chat shows this under "How was this computed?" with a Replay button and a
+"Show on screen" link. All of it is best-effort: a recording or replay failure never changes an answer.
+Not done yet: a sentence-level entailment checker for the optional LLM text, and per-claim highlighting of the exact cell.
+
+## 4b4. Statistical rigour (pillar 2, in progress)
+`agent/reasoning/rigor.py`, attached to `ExplainResult.rigor` at full depth and rendered as "Reality checks" in the answer.
+* **Is it unusual?** The month-over-month change is compared with the earlier monthly changes using the median and MAD (robust to a
+  launch-month spike, with a floor on the scale so a flat history does not make everything unusual). Fewer than 6 earlier changes
+  means "I cannot judge", never a verdict. Only for calendar-month comparisons whose history is available.
+* **Counterfactual.** Additive metrics only: "if the top group had stayed at its old level, the change would have been X% instead of Y%".
+* **Interaction.** Volume, value and the interaction between them (exact, order-free); shown when the interaction is >= 10% of the change.
+* **Checks.** The parts must add up to the headline change; a failing check is added to the answer's notes.
+Not yet: uncertainty ranges for non-monthly periods, significance for ratio metrics, a sentence-level entailment checker.
+
 ## 4c. Known limits (not yet done)
 * Web app (done, untested in a browser): the assistant panel renders formatted answers (`web/src/agent/Markdown.tsx`), an
   "Understood as" card with assumptions, live progress steps, a verified / partial / failed badge, citation chips, "Open the view"

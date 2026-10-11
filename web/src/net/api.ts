@@ -3,6 +3,7 @@ import type {
   ApiErrorBody, Application, CatalogEntry, UiState, WidgetData, WidgetRequest, WriteResult,
 } from '../lib/types'
 import type { PresetMap } from '../lib/url'
+import type { Proof, Replay } from '../lib/types'
 
 export class ApiError extends Error {
   status: number
@@ -71,6 +72,10 @@ export const api = {
   /** the user edited the live form the assistant opened */
   editForm: (sid: string, values: Record<string, unknown>) =>
     request<{ ok: boolean; values: Record<string, unknown>; errors: Record<string, string>; missing: string[] }>('POST', `/api/session/${sid}/form`, { values }),
+  /** how a piece of evidence was produced (the governed call, definition, filters, period) */
+  proof: (sid: string, evidenceId: string) => request<Proof>('GET', `/api/session/${sid}/evidence/${evidenceId}/proof`),
+  /** run the recorded call again and compare with what was shown */
+  replay: (sid: string, evidenceId: string) => request<Replay>('POST', `/api/session/${sid}/evidence/${evidenceId}/replay`),
   feedback: (sid: string, rating: 'up' | 'down', eventSeq?: number, comment?: string) =>
     request<{ ok: boolean }>('POST', `/api/session/${sid}/feedback`, { rating, event_seq: eventSeq ?? null, comment: comment ?? null }),
   setFault: (sid: string, kind: string) => request<{ fault: string }>('POST', `/api/session/${sid}/fault`, { kind }),

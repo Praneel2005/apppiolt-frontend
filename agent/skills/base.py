@@ -31,6 +31,7 @@ class SkillResult:
     narrative_used: bool = False
     facts: Any = None
     extra_text: list[str] = field(default_factory=list)   # notes/caveats whose numbers come from code, not facts
+    claims: list[dict] = field(default_factory=list)     # sentence -> facts -> evidence (agent/reasoning/proof.py)
 
 
 # ------------------------------------------------------------------------------------ canvas

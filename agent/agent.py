@@ -232,7 +232,7 @@ class AppPilotAgent:
         yield ev("answer", {"text": text, "citations": out.citations, "deep_links": out.deep_links,
                             "suggestions": out.suggestions, "status": status, "assumptions": it.assumptions,
                             "ungrounded_numbers": ungrounded, "grounded": not ungrounded, "intent": it.intent,
-                            "narrative_used": out.narrative_used})
+                            "narrative_used": out.narrative_used, "claims": out.claims})
 
         # ---------------------------------------------------------------- memory
         mem.turns += 1

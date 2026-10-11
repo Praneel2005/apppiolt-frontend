@@ -235,3 +235,22 @@ export interface CanvasSpec {
   /** set client-side: the page this generated view belongs to; it is dropped when the user leaves that page */
   pageId?: string
 }
+
+/** How one piece of evidence was produced (GET /api/session/{sid}/evidence/{id}/proof). */
+export interface Proof {
+  evidence_id: string; kind: string; source: string
+  exact: boolean                                   // false: derived from several queries, listed in `calls`
+  call: { op: string; request: Record<string, unknown> } | null
+  calls: { op: string; request: Record<string, unknown> }[]
+  metric: { id?: string | null; title?: string | null; unit?: string | null; additive?: boolean | null; definition?: string | null }
+  filters?: Record<string, unknown> | null; group_by?: unknown
+  period?: Record<string, unknown> | null
+  row_count: number | null; data_layers: string[]; tables: string[]
+  view: { url?: string; widget_id?: string; page_code?: string; title?: string; exact?: boolean } | null
+}
+export interface Replay {
+  ok: boolean; message: string; reason?: string
+  checked?: number; match?: boolean; differences?: { path: string; stored: number; now: number }[]
+}
+/** One line of an answer: the facts it states and the evidence behind each. */
+export interface Claim { text: string; facts: string[]; evidence: string[]; support: Record<string, 'direct' | 'derived' | 'none'> }

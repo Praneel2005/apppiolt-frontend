@@ -12,6 +12,7 @@ from agent.answer import compose_breakdown, compose_single, compose_trend, desc_
 from agent.reasoning.engine import trend_summary
 from agent.reasoning.facts import FactSheet
 from agent.reasoning.gateway import AnalysisError, Gateway, align_periods, previous_of, usable_filters
+from agent.reasoning.proof import build_claims
 from agent.schema import Interp
 from agent.skills.base import SkillResult, emit_canvas, open_supporting_view, reset_canvases, screen_sentence
 
@@ -125,7 +126,9 @@ async def run_data(ctx, it: Interp, out: SkillResult) -> AsyncIterator[tuple[str
         nav = await open_supporting_view(ctx, first_view)
         out.screen_note = screen_sentence(nav)
 
-    text = fs.render("\n\n".join(sections))
+    joined = "\n\n".join(sections)
+    text = fs.render(joined)
+    out.claims = build_claims(fs, joined, ctx.session)
     if notes:
         text += "\n\n**Notes:** " + " ".join(notes)
     out.text = text

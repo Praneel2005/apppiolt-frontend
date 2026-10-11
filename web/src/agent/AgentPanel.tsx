@@ -8,6 +8,7 @@ import { openUrl } from '../state/session'
 import { toast, useStore } from '../state/store'
 import { highlightWidget } from '../widgets/widgetBase'
 import { Markdown } from './Markdown'
+import { ProofPanel } from './ProofPanel'
 
 type Tab = 'chat' | 'runner' | 'context' | 'metrics'
 
@@ -94,6 +95,7 @@ function AnswerCard({ e, onAsk }: { e: AgentEvent; onAsk: (text: string) => void
       {(d.citations ?? []).length > 0 && (
         <div className="flex flex-wrap gap-1">{(d.citations as string[]).map((c) => <span key={c} className="text-[10px] font-mono bg-primary-soft text-primary rounded px-1.5 py-0.5">{c}</span>)}</div>
       )}
+      <ProofPanel claims={d.claims ?? []} citations={d.citations ?? []} />
       {links.length > 0 && (
         <div className="flex gap-3 flex-wrap">{links.slice(0, 2).map((u, i) => (
           <button key={u} className="text-xs text-primary underline" onClick={() => openUrl(u)}>Open the view{links.length > 1 ? ` ${i + 1}` : ''}</button>

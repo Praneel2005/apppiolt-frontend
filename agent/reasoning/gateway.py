@@ -10,6 +10,7 @@ import calendar
 from datetime import date, timedelta
 from typing import Any
 
+from agent.reasoning import proof
 from agent.perceive import describe_range, month_range, quarter_range, shift_month
 from agent.schema import PeriodSel
 from backend import executor
@@ -145,6 +146,7 @@ class Gateway:
         self.lex = ctx.lex
         self._sem = asyncio.Semaphore(4)
         self.evidence_ids: list[str] = []
+        self.calls: list[dict] = []     # every governed call made for this turn (lineage of derived evidence)
 
     async def _run(self, fn, body):
         async with self._sem:
@@ -155,28 +157,45 @@ class Gateway:
             except Exception as e:  # noqa: BLE001  (database timeouts etc. must degrade one step, not the whole turn)
                 raise AnalysisError(f"{type(e).__name__}: {str(e)[:160]}") from e
 
+    async def _tagged(self, op: str, body, fn) -> dict:
+        """Run a governed call and remember which call produced the result, so the evidence built from it can be replayed."""
+        res = await self._run(fn, body)
+        try:
+            call = proof.make_call(op, body.model_dump(mode="json", exclude_none=True))
+            self.calls.append(call)
+            if isinstance(res, dict):
+                res[proof.CALL_KEY] = call
+        except Exception:  # noqa: BLE001  (provenance must never break an analysis)
+            pass
+        return res
+
     async def query(self, metric: str, group_by: list[str] | None, filters: dict[str, list[str]] | None,
                     period: PeriodSel | None, sort: str | None = None, limit: int = 100) -> dict:
         body = MetricQuery(metric=metric, group_by=list(group_by or []), filters=dict(filters or {}),
                            date_from=_d(period.start) if period else None, date_to=_d(period.end) if period else None,
                            sort=sort, limit=limit)
-        return await self._run(metrics_query, body)
+        return await self._tagged("query", body, metrics_query)
 
     async def compare(self, metric: str, group_by: str | None, filters: dict[str, list[str]] | None,
                       primary: PeriodSel, baseline: PeriodSel, limit: int = 200) -> dict:
         body = MetricCompare(metric=metric, group_by=group_by, filters=dict(filters or {}),
                              date_from=_d(primary.start), date_to=_d(primary.end),
                              compare_from=_d(baseline.start), compare_to=_d(baseline.end), limit=limit)
-        return await self._run(metrics_compare, body)
+        return await self._tagged("compare", body, metrics_compare)
 
     async def trend(self, metric: str, filters: dict[str, list[str]] | None, period: PeriodSel | None) -> dict:
         body = TrendQuery(metric=metric, filters=dict(filters or {}),
                           date_from=_d(period.start) if period else None, date_to=_d(period.end) if period else None)
-        return await self._run(metrics_trend, body)
+        return await self._tagged("trend", body, metrics_trend)
 
     async def evidence(self, kind: str, source: str, values: dict[str, Any]) -> str:
+        call = values.pop(proof.CALL_KEY, None)
+        for v in list(values.values()):                    # a result nested one level down (e.g. {"head": res}) carries its call too
+            if isinstance(v, dict):
+                call = call or v.pop(proof.CALL_KEY, None)
         ev = await executor._evidence(self.s, kind, source, values)
         self.evidence_ids.append(ev.evidence_id)
+        proof.record(self.s, ev.evidence_id, kind, source, ev.values, call, self.calls)
         return ev.evidence_id
 
     def view_for(self, metric: str, group_by: list[str] | None, filters: dict[str, list[str]] | None,

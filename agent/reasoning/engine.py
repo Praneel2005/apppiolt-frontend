@@ -21,6 +21,7 @@ from datetime import date, timedelta
 from typing import Any, AsyncIterator
 
 from agent.perceive import month_range
+from agent.reasoning.rigor import build_rigor
 from agent.reasoning.gateway import (AnalysisError, Gateway, align_periods, default_periods, make_period, shift_year,
                                      usable_filters)
 from agent.schema import Interp, PeriodSel
@@ -81,6 +82,7 @@ class ExplainResult:
     trend: dict | None = None
     evidence_ids: list[str] = field(default_factory=list)
     depth: str = "full"
+    rigor: Any = None               # agent.reasoning.rigor.Rigor: unusual?, counterfactual, interaction, checks
 
 
 @dataclass
@@ -300,8 +302,10 @@ async def _trend_context(gw: Gateway, metric: str, filters: dict, primary: Perio
     except AnalysisError:
         return None
     out = trend_summary(tr)
+    tk = next((k for k in ((tr.get("rows") or [{}])[0]) if k not in ("value", "mom_pct", "yoy_pct")), "month")
+    out["series"] = [r.get("value") for r in tr.get("rows", [])]              # the monthly values, for "is this change unusual?"
+    out["series_labels"] = [str(r.get(tk)) for r in tr.get("rows", [])]
     if record:
-        tk = next((k for k in ((tr.get("rows") or [{}])[0]) if k not in ("value", "mom_pct", "yoy_pct")), "month")
         out["evidence_id"] = await gw.evidence("trend", metric, {**tr, "view": gw.view_for(metric, [tk], filters, None)})
     return out
 
@@ -387,6 +391,11 @@ async def explain(ctx, it: Interp, gw: Gateway, depth: str = "full") -> AsyncIte
         seas["seasonal"] = bool(pt is not None and pct is not None and pt * pct > 0 and abs(pt) >= max(2.0, 0.5 * abs(pct)))
     res.seasonality = seas
     res.trend = trend
+    res.rigor = await build_rigor(gw, res, trend)
+    if res.rigor:
+        for c in res.rigor.checks:
+            if not c["ok"]:
+                caveats.append(f"Check: {c['detail']}.")
     if trend:
         fm = trend.get("first_month")
         if fm and _d(primary.start) < _d(fm):

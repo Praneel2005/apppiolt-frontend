@@ -455,10 +455,20 @@ def pick_write_api(ctx: TurnContext, ann: Annotations) -> str | None:
     words = {t.stem for t in ann.toks} - {"a", "the", "for", "i", "to", "want", "need", "an", "my", "of"}
     wv = write_vocab(ctx)
     best, best_s = None, -1e9
+    title_words = {aid: {stem(w) for w in re.findall(r"[a-z]+", norm_text(f"{a.title} {a.entity} {aid.replace('.', ' ').replace('_', ' ')}"))}
+                   for aid, a in writes.items()}
+    # a word that most forms share ("create", "new") says nothing about WHICH form is meant; the data decides what is generic
+    ent_of = {aid: (a.entity or aid.split(".")[0]) for aid, a in writes.items()}
+    n_ent = len(set(ent_of.values()))
+    spread = max(2, -(-n_ent // 3))                                     # a word used across this many different record types is generic
+    generic = {w for w in set().union(*title_words.values())
+               if len({ent_of[aid] for aid, tw in title_words.items() if w in tw}) >= spread}
     for aid, a in writes.items():
-        tw = {stem(w) for w in re.findall(r"[a-z]+", norm_text(f"{a.title} {a.entity} {aid.replace('.', ' ').replace('_', ' ')}"))}
+        tw = title_words[aid]
         ew = {stem(w) for ex in a.examples for w in re.findall(r"[a-z]+", norm_text(ex))} - tw
         hits = tw & words
+        if not ((hits - generic) or ((ew & words) - generic)):
+            continue                                                    # nothing distinctive in common: this is not the form asked for
         # the THING being created decides (ticket, account, promotion); verbs shared by several forms ("open") barely count
         s = 2.0 * len(hits & wv.noun_stems) + 0.5 * len(hits - wv.noun_stems) + 0.5 * len(ew & words) \
             + (1.5 / (1 + order[aid]) if aid in order else 0.0)

@@ -163,11 +163,15 @@ def compose_explain(res: ExplainResult, fs: FactSheet) -> tuple[str, list[str]]:
         if bits:
             signals.append("- **Trend context:** " + "; ".join(bits) + "." + _cite(t.get("evidence_id")))
 
+    checks_section = _rigor_lines(res, fs, takeaways)
     if takeaways:
         lines.append("**In short:** " + " ".join(takeaways))
     if bullets:
         lines.append("**Where the change comes from**")
         lines += bullets
+    if checks_section:
+        lines.append("**Reality checks**")
+        lines += checks_section
     if signals:
         lines.append("**Other signals** (associated with the change, not proven causes)")
         lines += signals
@@ -181,6 +185,53 @@ def compose_explain(res: ExplainResult, fs: FactSheet) -> tuple[str, list[str]]:
         sugg.append(f"Why did {res.identity['volume']['title'].lower()} change?")
     sugg.append(f"Compare {res.title.lower()} with the same period last year")
     return "\n".join(lines), sugg
+
+
+def _rigor_lines(res: ExplainResult, fs: FactSheet, takeaways: list[str]) -> list[str]:
+    """Is the change unusual, what if the top driver had not moved, and do the parts add up. Numbers are facts, as everywhere."""
+    rg = getattr(res, "rigor", None)
+    if not rg:
+        return []
+    out: list[str] = []
+    ab = rg.abnormal
+    if ab and ab.get("verdict") in ("within", "unusual"):
+        ev = ab.get("evidence_id")
+        n = fs.value("earlier monthly changes compared", ab["n"], "count", ev)
+        lo = fs.pct("smallest earlier monthly change", ab["low_pct"], ev)
+        hi = fs.pct("largest earlier monthly change", ab["high_pct"], ev)
+        ty = fs.share("typical size of a monthly change", ab["typical_abs_pct"], ev)
+        chg = fs.pct("this month's change", ab["change_pct"], ev)
+        rng = f"across the previous {ph(n)} month-to-month changes the range was {ph(lo)} to {ph(hi)} (typical size {ph(ty)})"
+        if ab["verdict"] == "within":
+            out.append(f"- **Is this unusual?** Not really: {rng}, and this {ph(chg)} move falls within that normal variation.{_cite(ev)}")
+            takeaways.append("Within normal month-to-month variation.")
+        else:
+            beyond = ", beyond every earlier change" if ab.get("beyond_history") else ""
+            out.append(f"- **Is this unusual?** Yes: {rng}, and this {ph(chg)} move is larger than normal variation{beyond}.{_cite(ev)}")
+            takeaways.append("Unusually large compared with recent months.")
+    elif ab and ab.get("verdict") == "insufficient" and ab.get("n"):
+        n = fs.value("earlier monthly changes available", ab["n"], "count", None)
+        out.append(f"- **Is this unusual?** I cannot judge: only {ph(n)} earlier monthly changes exist, too few for a fair comparison.")
+    cf = rg.counterfactual
+    if cf:
+        ev = cf.get("evidence_id")
+        pw = fs.pct("change without the top driver", cf["pct_without"], ev)
+        pt = fs.pct("change with the top driver", cf["pct_with"], ev)
+        line = (f"- **If {pretty(cf['group'])} had stayed at its {res.baseline.label} level**, {res.title.lower()} would have changed "
+                f"{ph(pw)} instead of {ph(pt)}")
+        if cf.get("share_of_change") is not None:
+            sh = fs.share(f"{pretty(cf['group'])} share of the change", abs(cf["share_of_change"]), ev)
+            line += f" ({pretty(cf['group'])} accounts for {ph(sh)} of the change)"
+        out.append(line + "." + _cite(ev))
+    it = rg.interaction
+    if it and it.get("interaction_share") is not None and it["interaction_share"] >= 10 and res.identity:
+        sh = fs.share("share of the change from both factors moving together", it["interaction_share"], res.identity.get("evidence_id"))
+        out.append(f"- **Interaction:** {ph(sh)} of the change comes from volume and value moving together, so the split above "
+                   f"depends on which is taken first." + _cite(res.identity.get("evidence_id")))
+    passed = [c["detail"] for c in rg.checks if c["ok"]]
+    if passed:
+        out.append("- **Checks passed:** " + "; ".join(passed) + ".")
+    return out
 
 
 def _scan_bullet(sc: DimScan, res: ExplainResult, fs: FactSheet) -> str:

@@ -39,6 +39,7 @@ class Session:
     last_verify: VerifyResult | None = None
     events: list[AgentEvent] = field(default_factory=list)
     evidence: dict[str, Evidence] = field(default_factory=dict)
+    proofs: dict[str, dict] = field(default_factory=dict)  # evidence id -> how it was produced (agent/reasoning/proof.py)
     canvases: dict[str, dict] = field(default_factory=dict)
     writes: list[str] = field(default_factory=list)  # action ids applied in this session (newest last)
     # ---- measurement for the KPIs (see docs/KPI_PLAN.md): manual vs agent work, safety gates, latency, usefulness

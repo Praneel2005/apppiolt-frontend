@@ -237,6 +237,27 @@ def get_events(sid: str, after: int = 0, limit: int = 200):
     return {"events": [e.model_dump() for e in s.events if e.seq > after][:limit]}
 
 
+@router.get("/api/session/{sid}/evidence/{evidence_id}/proof")
+def get_proof(sid: str, evidence_id: str):
+    """How one piece of evidence was produced: the governed call, metric definition, filters, period, rows and data layers."""
+    s = get_session(sid)
+    p = s.proofs.get(evidence_id)
+    if p is None:
+        raise ApiError(404, "proof_not_found", f"No recorded proof for '{evidence_id}'.")
+    return p
+
+
+@router.post("/api/session/{sid}/evidence/{evidence_id}/replay")
+async def replay_evidence(sid: str, evidence_id: str):
+    """Run the recorded call again and compare the numbers with what was shown."""
+    from agent.reasoning.proof import replay
+
+    s = get_session(sid)
+    if evidence_id not in s.evidence:
+        raise ApiError(404, "evidence_not_found", f"No evidence '{evidence_id}'.")
+    return await replay(s, evidence_id)
+
+
 @router.get("/api/session/{sid}/evidence/{evidence_id}")
 def get_evidence(sid: str, evidence_id: str):
     ev = get_session(sid).evidence.get(evidence_id)

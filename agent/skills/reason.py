@@ -12,6 +12,7 @@ from agent.answer import (allowed_numbers_from, compose_explain, compose_health,
 from agent.reasoning.engine import (ExplainResult, HealthResult, SliceCompareResult, compare_slices, explain, health_scan)
 from agent.reasoning.facts import FactSheet
 from agent.reasoning.gateway import AnalysisError, Gateway
+from agent.reasoning.proof import build_claims
 from agent.schema import Interp
 from agent.skills.base import SkillResult, emit_canvas, open_supporting_view, reset_canvases, screen_sentence
 
@@ -95,6 +96,7 @@ async def run_reason(ctx, it: Interp, out: SkillResult) -> AsyncIterator[tuple[s
     text = body
 
     out.text = text
+    out.claims = build_claims(fs, template, ctx.session)
     out.extra_text = [*getattr(result, "notes", []), *getattr(result, "caveats", [])]
     out.citations = list(dict.fromkeys(gw.evidence_ids))
     out.suggestions = sugg
