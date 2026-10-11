@@ -345,10 +345,10 @@ def repair_typos(toks: list[Tok], lex: Lexicon) -> list[Tok]:
     return out
 
 
-def perceive(text: str, lex: Lexicon, as_of: str | None = None) -> Annotations:
+def perceive(text: str, lex: Lexicon, as_of: str | None = None, repair: bool = True) -> Annotations:
     as_of = as_of or lex.as_of
     norm = norm_text(text)
-    toks = repair_typos(tokenize(norm), lex)
+    toks = repair_typos(tokenize(norm), lex) if repair else tokenize(norm)
     ann = Annotations(text=text, norm=norm, toks=toks)
     blocked: set[int] = set()
     period_tokens: set[int] = set()

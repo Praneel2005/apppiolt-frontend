@@ -133,6 +133,8 @@ class AgentConfig(_Model):
     # V3 agent: do not present a confident answer to a request that was only partly understood (unknown words or values, a period
     # outside the data); same default policy as clarify_ambiguity.
     guard_unmapped: bool = False
+    # V3 agent: repair misspelt words in the parser (ablation switch; on by default)
+    repair_typos: bool = True
     # ablation switches (evaluation turns these off one at a time)
     use_validator: bool = True
     use_verifier: bool = True

@@ -952,7 +952,7 @@ async def _form_turn(ctx: TurnContext, ann: Annotations, rf: InterpretationF) ->
 
 
 async def interpret(ctx: TurnContext) -> Interp:
-    ann = perceive(ctx.text, ctx.lex, ctx.as_of)
+    ann = perceive(ctx.text, ctx.lex, ctx.as_of, repair=getattr(ctx.cfg, "repair_typos", True))
     ctx.ann = ann
     rf = rules_interpret(ctx, ann)
     if ctx.mem.form is not None:

@@ -126,13 +126,18 @@ async def navigate(ctx, args: dict) -> dict:
         attempts += 1
         res = await executor.run_plan(s, plan, ctx.cfg, auto_confirm=getattr(ctx.cfg, "auto_confirm_writes", False))
         verified = bool(s.last_verify.ok) if s.last_verify else False
+        if not getattr(ctx.cfg, "use_verifier", True):
+            verified = True
         if res.get("ok") and verified:
             break
         if res.get("stage") == "validation":
             break
     verified = bool(s.last_verify.ok) if s.last_verify else False
+    if not getattr(ctx.cfg, "use_verifier", True):      # ablation: without the verify layer the agent trusts that its action worked
+        verified = True
     return {"ok": bool(res.get("ok")), "verified": verified and bool(res.get("ok")), "dropped": dropped,
-            "mismatches": list(s.last_verify.mismatches) if s.last_verify and not s.last_verify.ok else [],
+            "mismatches": list(s.last_verify.mismatches) if s.last_verify and not s.last_verify.ok
+            and getattr(ctx.cfg, "use_verifier", True) else [],
             "attempts": attempts, "stage": res.get("stage"), "issues": res.get("issues", [])}
 
 

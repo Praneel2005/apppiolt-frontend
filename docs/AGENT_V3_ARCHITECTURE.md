@@ -150,6 +150,12 @@ Not yet: uncertainty ranges for non-monthly periods, significance for ratio metr
   ungrounded numbers, action hallucination, and calibration error (undefined when the confidence never varies). Quote a rate only
   with the mode it was measured in.
 
+## 4b6. Ablation (pillar 4, in progress)
+`eval/ablation.py`, `scripts/run_ablation.py`: one layer off at a time, each switch wired in the agent (`repair_typos`, `guard_unmapped`,
+`clarify_ambiguity`, `use_verifier`), re-running the groups it protects (typos, unanswerable, ambiguity, fault injection). The table
+is a difference from the full system on the same cases in the same run. `use_verifier=False` makes the agent trust that a screen
+action worked, which is what the fault-injection group (dropped filter, wrong route, empty widget) is designed to expose.
+
 ## 4c. Known limits (not yet done)
 * Web app (done, untested in a browser): the assistant panel renders formatted answers (`web/src/agent/Markdown.tsx`), an
   "Understood as" card with assumptions, live progress steps, a verified / partial / failed badge, citation chips, "Open the view"
